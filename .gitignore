@@ -1,0 +1,73 @@
+# Godot 4.x 版本控制
+
+# Godot 专属目录
+.godot/
+*.translation
+
+# Godot 导入缓录
+.import/
+
+# 二进制导入文件
+*.import
+
+# 导出模板
+export_presets.cfg
+
+# 临时文件
+*.tmp
+*.bak
+*.swp
+*~
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# IDE 文件
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# 构建产物
+build/
+dist/
+export/
+
+# 日志文件
+*.log
+
+# 测试覆盖率报告
+htmlcov/
+.coverage
+.pytest_cache/
+
+# 资源缓录
+*.translation
+
+# 编译文件
+*.o
+*.obj
+*.so
+*.dylib
+*.dll
+*.exe
+
+# 打包文件
+*.zip
+*.tar.gz
+*.rar
+
+# 证书和密钥
+*.pem
+*.key
+*.crt
+*.p12
+
+# 环境变量
+.env
+.env.local
+.env.*.local
