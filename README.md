@@ -63,6 +63,7 @@ cd Miao
 ### 分支策略
 
 - `main`：稳定版本，始终保持可运行
+- `docs/xxx`：文档更新
 - `feature/xxx`：功能开发分支
 - `bugfix/xxx`：bug修复分支
 - `experiment/xxx`：实验分支（探索游戏方向）
