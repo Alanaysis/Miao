@@ -1,0 +1,99 @@
+{
+  "characters": [
+    {
+      "name": "warrior",
+      "width": 32,
+      "height": 32,
+      "style": "chibi-fantasy",
+      "palette_limit": 16,
+      "min_rgb_contrast": 40,
+      "background_rgb": [0, 0, 0],
+      "clothing": "plate armor, red cape",
+      "weapon": "sword and shield",
+      "accessories": "helmet with plume",
+      "skin_tone": "fair",
+      "animations": {
+        "idle": { "frames": 4, "fps": 6 },
+        "walk_down": { "frames": 6, "fps": 8 },
+        "walk_up": { "frames": 6, "fps": 8 },
+        "walk_left": { "frames": 6, "fps": 8 },
+        "walk_right": { "frames": 6, "fps": 8 },
+        "attack": { "frames": 6, "fps": 10 },
+        "hurt": { "frames": 3, "fps": 8 },
+        "death": { "frames": 6, "fps": 6 }
+      }
+    },
+    {
+      "name": "scout",
+      "width": 32,
+      "height": 32,
+      "style": "chibi-fantasy",
+      "palette_limit": 16,
+      "min_rgb_contrast": 40,
+      "background_rgb": [0, 0, 0],
+      "clothing": "leather vest, green hood",
+      "weapon": "bow and arrows",
+      "accessories": "quiver on back",
+      "skin_tone": "fair",
+      "animations": {
+        "idle": { "frames": 4, "fps": 6 },
+        "walk_down": { "frames": 6, "fps": 8 },
+        "walk_up": { "frames": 6, "fps": 8 },
+        "walk_left": { "frames": 6, "fps": 8 },
+        "walk_right": { "frames": 6, "fps": 8 },
+        "attack": { "frames": 6, "fps": 10 },
+        "hurt": { "frames": 3, "fps": 8 },
+        "death": { "frames": 6, "fps": 6 }
+      }
+    },
+    {
+      "name": "small_bug",
+      "width": 24,
+      "height": 24,
+      "style": "retro-8bit",
+      "palette_limit": 8,
+      "min_rgb_contrast": 50,
+      "background_rgb": [0, 0, 0],
+      "clothing": "none",
+      "weapon": "none",
+      "accessories": "antennae",
+      "skin_tone": "green chitin",
+      "animations": {
+        "idle": { "frames": 2, "fps": 4 },
+        "walk": { "frames": 4, "fps": 6 }
+      }
+    }
+  ],
+  "output": {
+    "dir": "project/assets/sprites/characters",
+    "format": ["individual_png", "sprite_sheet"],
+    "godot_resource": true
+  },
+  "source": {
+    "method": "ai",
+    "backend_priority": ["local_sd", "liblibai", "tongyi", "zhipu", "openai", "cpu_sd"],
+    "backends": {
+      "local_sd": {
+        "model": "stabilityai/sd-turbo",
+        "device": "auto"
+      },
+      "liblibai": {
+        "api_key_env": "LIBLIBAI_API_KEY",
+        "model": "sd-xl"
+      },
+      "tongyi": {
+        "api_key_env": "TONGYI_API_KEY"
+      },
+      "zhipu": {
+        "api_key_env": "ZHIPU_API_KEY"
+      },
+      "openai": {
+        "api_key_env": "OPENAI_API_KEY",
+        "model": "dall-e-3"
+      },
+      "cpu_sd": {
+        "model": "stabilityai/sd-turbo"
+      }
+    }
+  }
+}

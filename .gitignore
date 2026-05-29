@@ -71,3 +71,5 @@ htmlcov/
 .env
 .env.local
 .env.*.local
+tools/pixel-char-gen/.venv/
+__pycache__/
