@@ -1,0 +1,33 @@
+[gd_resource type="SpriteFrames" format=3]
+[ext_resource type="Texture2D" path="res://assets/sprites/characters/warrior/idle_sheet.png" id="1"]
+
+[sub_resource type="AtlasTexture" id="1"]
+atlas = ExtResource("1")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="2"]
+atlas = ExtResource("1")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="3"]
+atlas = ExtResource("1")
+region = Rect2(0, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="4"]
+atlas = ExtResource("1")
+region = Rect2(32, 32, 32, 32)
+
+[resource]
+animations = [
+{
+"frames": [
+{"duration": 1.0, "texture": SubResource("1")},
+{"duration": 1.0, "texture": SubResource("2")},
+{"duration": 1.0, "texture": SubResource("3")},
+{"duration": 1.0, "texture": SubResource("4")}
+],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+},
+]

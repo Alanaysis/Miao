@@ -9,6 +9,7 @@
 - 对比度校验（确保角色与背景可区分）
 - 多帧拼接为 sprite sheet
 - AI 生成角色动画帧（支持 6 种后端）
+- 网络搜索免费素材（OpenGameArt、itch.io）
 - 导出 Godot .tres SpriteFrames 资源文件
 
 ## 安装
@@ -21,7 +22,7 @@ source tools/pixel-char-gen/.venv/bin/activate
 # 安装依赖
 pip install Pillow requests
 
-# 可选：本地 Stable Diffusion
+# 可选：本地 Stable Diffusion（需 GPU 4GB+）
 pip install diffusers transformers accelerate torch
 
 # 可选：OpenAI DALL-E
@@ -30,23 +31,78 @@ pip install openai
 
 ## 使用
 
+### 1. 单图像素化
+
 ```bash
-# 激活虚拟环境
-source tools/pixel-char-gen/.venv/bin/activate
+python tools/pixel-char-gen/cli.py --input ./character.png --width 32 --height 32
+```
 
-# 从本地图片像素化
-python tools/pixel-char-gen/cli.py --input ./raw.png --width 32 --height 32
+### 2. 从配置文件批量处理
 
-# 从配置文件批量生成
+```bash
+# 处理所有角色
 python tools/pixel-char-gen/cli.py --config tools/pixel-char-gen/pixel_char_config.json
 
-# 仅生成 sprite sheet
-python tools/pixel-char-gen/cli.py --input-dir ./pixel/ --sheet-only
+# 处理指定角色
+python tools/pixel-char-gen/cli.py --config tools/pixel-char-gen/pixel_char_config.json --name warrior
+```
+
+### 3. 生成 sprite sheet
+
+```bash
+python tools/pixel-char-gen/cli.py --input-dir ./pixel/ --sheet-only --width 32 --height 32
+```
+
+### 4. 网络搜索素材
+
+```bash
+# 从 OpenGameArt 搜索
+python tools/pixel-char-gen/cli.py --search "pixel warrior" --count 5 --output ./downloaded/
+
+# 从 itch.io 搜索
+python tools/pixel-char-gen/cli.py --search "pixel character" --source itchio --count 10
+```
+
+### 5. AI 生成角色
+
+```bash
+# 需要先配置 AI 后端（设置环境变量或安装 diffusers）
+python tools/pixel-char-gen/cli.py --ai-generate --config tools/pixel-char-gen/pixel_char_config.json --name warrior
+```
+
+## 配置文件
+
+`pixel_char_config.json` 格式：
+
+```json
+{
+  "characters": [
+    {
+      "name": "warrior",
+      "width": 32,
+      "height": 32,
+      "style": "chibi-fantasy",
+      "palette_limit": 16,
+      "min_rgb_contrast": 40,
+      "background_rgb": [0, 0, 0],
+      "clothing": "plate armor, red cape",
+      "weapon": "sword and shield",
+      "animations": {
+        "idle": { "frames": 4, "fps": 6 },
+        "walk_down": { "frames": 6, "fps": 8 },
+        "attack": { "frames": 6, "fps": 10 }
+      }
+    }
+  ],
+  "source": {
+    "backend_priority": ["local_sd", "liblibai", "tongyi", "zhipu", "openai", "cpu_sd"]
+  }
+}
 ```
 
 ## AI 后端
 
-按优先级自动选择可用后端：
+按优先级自动选择：
 
 | 后端 | 环境变量 | 说明 |
 |------|----------|------|
@@ -63,11 +119,20 @@ python tools/pixel-char-gen/cli.py --input-dir ./pixel/ --sheet-only
 project/assets/sprites/characters/<角色名>/
 ├── raw/           # 原始图片
 ├── pixel/         # 像素化逐帧 PNG
-├── sprite_sheet.png
-├── sprite_sheet.png.import
-└── <角色名>_frames.tres
+├── idle_sheet.png
+├── walk_down_sheet.png
+├── attack_sheet.png
+├── *_sheet.png.import   # Godot 导入文件
+└── *_frames.tres        # Godot SpriteFrames 资源
 ```
 
-## 配置
+## 测试
 
-参见 `pixel_char_config.json` 配置模板。
+```bash
+# 生成测试角色动画帧（程序化绘制，不需要 AI）
+source tools/pixel-char-gen/.venv/bin/activate
+python tools/pixel-char-gen/test_generate.py
+
+# 处理测试角色
+python tools/pixel-char-gen/cli.py --config tools/pixel-char-gen/pixel_char_config.json --name warrior
+```

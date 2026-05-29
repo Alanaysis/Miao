@@ -12,6 +12,12 @@ pixel-char-gen CLI
 
     # 仅生成 sprite sheet（已有逐帧图片）
     python cli.py --input-dir ./pixel/ --sheet-only --width 32 --height 32
+
+    # 网络搜索素材
+    python cli.py --search "pixel warrior" --count 5 --output ./downloaded/
+
+    # AI 生成角色（需要配置后端）
+    python cli.py --ai-generate --name warrior --config pixel_char_config.json
 """
 
 import argparse
@@ -67,6 +73,19 @@ def parse_args():
     parser.add_argument("--name", type=str,
                         help="指定配置文件中的角色名称")
 
+    # 网络搜索
+    parser.add_argument("--search", type=str,
+                        help="搜索关键词（从网络下载素材）")
+    parser.add_argument("--source", type=str, default="opengameart",
+                        choices=["opengameart", "itchio"],
+                        help="搜索来源，默认 opengameart")
+    parser.add_argument("--count", type=int, default=5,
+                        help="搜索/下载数量，默认 5")
+
+    # AI 生成
+    parser.add_argument("--ai-generate", action="store_true",
+                        help="使用 AI 生成角色动画帧（需要配置后端）")
+
     return parser.parse_args()
 
 
@@ -109,6 +128,20 @@ def process_sheet_only_mode(args):
     return sheet_path
 
 
+def process_search_mode(args):
+    """网络搜索模式"""
+    from sources.web_searcher import search_and_download
+    results = search_and_download(
+        args.search, args.output,
+        count=args.count, source=args.source
+    )
+    if results:
+        print(f"\n下载完成: {len(results)} 个文件 -> {args.output}")
+        print("提示: 用 --input-dir 指定下载目录，再用 --sheet-only 生成 sprite sheet")
+    else:
+        print("未找到匹配的素材")
+
+
 def process_config_mode(args):
     """配置文件批量生成模式"""
     with open(args.config, "r", encoding="utf-8") as f:
@@ -123,6 +156,16 @@ def process_config_mode(args):
 
     output_base = config.get("output", {}).get("dir", args.output)
 
+    if args.ai_generate:
+        # AI 生成模式
+        _process_ai_generate(config, characters, output_base)
+    else:
+        # 本地 raw 目录处理模式
+        _process_local_raw(config, characters, output_base)
+
+
+def _process_local_raw(config, characters, output_base):
+    """从本地 raw 目录处理"""
     for char_config in characters:
         name = char_config["name"]
         w = char_config.get("width", 32)
@@ -137,10 +180,8 @@ def process_config_mode(args):
         char_output = os.path.join(output_base, name)
         pixel_dir = os.path.join(char_output, "pixel")
 
-        # 检查是否有 raw 输入目录
         raw_dir = os.path.join(char_output, "raw")
         if os.path.isdir(raw_dir):
-            # 从 raw 目录读取帧并像素化
             all_frames = {}
             for anim_name in animations:
                 prefix_frames = load_frames_from_dir(raw_dir, anim_name)
@@ -166,10 +207,56 @@ def process_config_mode(args):
     print(f"\n输出目录: {output_base}")
 
 
+def _process_ai_generate(config, characters, output_base):
+    """AI 生成模式"""
+    from sources.ai_generator import generate_character_frames
+
+    for char_config in characters:
+        name = char_config["name"]
+        w = char_config.get("width", 32)
+        h = char_config.get("height", 32)
+        palette = char_config.get("palette_limit", 16)
+        min_contrast = char_config.get("min_rgb_contrast", 40)
+        bg = tuple(char_config.get("background_rgb", [0, 0, 0]))
+        animations = char_config.get("animations", {})
+
+        print(f"\nAI 生成角色: {name}")
+
+        char_output = os.path.join(output_base, name)
+        raw_dir = os.path.join(char_output, "raw")
+        pixel_dir = os.path.join(char_output, "pixel")
+        os.makedirs(raw_dir, exist_ok=True)
+
+        # AI 生成原始帧
+        print("  正在生成原始帧...")
+        raw_frames = generate_character_frames(char_config, config)
+
+        # 保存原始帧
+        for anim_name, frames in raw_frames.items():
+            for i, frame in enumerate(frames):
+                frame.save(os.path.join(raw_dir, f"{anim_name}_{i:02d}.png"))
+            print(f"  {anim_name}: {len(frames)} 帧 -> raw/")
+
+        # 像素化处理
+        processed = process_animation_frames(
+            raw_frames, w, h, palette, min_contrast, bg
+        )
+        for anim_name, frames in processed.items():
+            save_frames(frames, pixel_dir, anim_name)
+            sheet = generate_sprite_sheet(frames)
+            sheet_path = os.path.join(char_output, f"{anim_name}_sheet.png")
+            save_sprite_sheet(sheet, sheet_path)
+            print(f"  {anim_name}: {len(frames)} 帧 -> {sheet_path}")
+
+    print(f"\n输出目录: {output_base}")
+
+
 def main():
     args = parse_args()
 
-    if args.config:
+    if args.search:
+        process_search_mode(args)
+    elif args.config:
         process_config_mode(args)
     elif args.sheet_only:
         if not args.input_dir:
@@ -179,8 +266,8 @@ def main():
     elif args.input:
         process_single_image_mode(args)
     else:
-        print("错误: 需要 --input、--input-dir 或 --config 参数")
-        parse_args()  # 显示帮助
+        print("错误: 需要 --input、--input-dir、--config 或 --search 参数")
+        parse_args()
         sys.exit(1)
 
 
