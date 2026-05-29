@@ -4,6 +4,11 @@
 .godot/
 *.translation
 
+# C# 构建产物
+obj/
+*.user
+*.userprefs
+
 # Godot 导入缓录
 .import/
 
@@ -29,7 +34,7 @@ Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj
-*.sln
+# *.sln  # Godot C# 项目需要提交 .sln 文件
 *.sw?
 
 # 构建产物
