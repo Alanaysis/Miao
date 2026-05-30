@@ -35,7 +35,9 @@ def check_contrast(image: Image.Image, min_contrast: int,
 
     for y in range(h):
         for x in range(w):
-            r, g, b, a = pixels[x, y]
+            pixel = pixels[x, y]
+            assert isinstance(pixel, tuple)
+            r, g, b, a = pixel
             if a < 128:  # 跳过透明像素
                 continue
             # 计算 RGB 欧氏距离
