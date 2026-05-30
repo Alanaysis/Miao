@@ -16,7 +16,7 @@ CX, CY = 64, 55   # 角色中心固定点
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 
-def draw_character(draw: ImageDraw,
+def draw_character(draw: ImageDraw.ImageDraw,
                    arm_angle: str = "down",
                    leg_phase: str = "stand",
                    weapon_angle: str = "down",
@@ -79,7 +79,7 @@ def draw_character(draw: ImageDraw,
 
 
 def render_frame(arm="down", leg="stand", weapon="down",
-                 head_tilt=0, cape_sway=0) -> str:
+                 head_tilt=0, cape_sway=0) -> Image.Image:
     """渲染单帧并保存"""
     img = Image.new("RGBA", (TARGET_SIZE, TARGET_SIZE), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)

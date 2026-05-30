@@ -11,7 +11,7 @@ from typing import Optional
 
 def pixelate(image: Image.Image, target_w: int, target_h: int) -> Image.Image:
     """将图片缩放到目标像素尺寸，使用最近邻插值保持像素锐利"""
-    return image.resize((target_w, target_h), Image.NEAREST)
+    return image.resize((target_w, target_h), Image.Resampling.NEAREST)
 
 
 def reduce_palette(image: Image.Image, max_colors: int) -> Image.Image:
@@ -29,6 +29,8 @@ def check_contrast(image: Image.Image, min_contrast: int,
     """校验每个像素与背景色的对比度，不满足的像素变为半透明"""
     img = image.convert("RGBA")
     pixels = img.load()
+    if not pixels:
+        raise ValueError("像素为空")
     w, h = img.size
 
     for y in range(h):
