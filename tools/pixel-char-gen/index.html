@@ -1,0 +1,1389 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pixel Forge - Character Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:wght@300;400;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-deep: #0a0a12;
+  --bg-panel: #111122;
+  --bg-card: #181830;
+  --bg-hover: #222244;
+  --border: #2a2a4a;
+  --border-glow: #4a4aff;
+  --text: #c8c8e0;
+  --text-dim: #6a6a8a;
+  --text-bright: #eeeeff;
+  --accent: #ff6b35;
+  --accent-glow: #ff8b55;
+  --accent2: #00e5ff;
+  --accent2-glow: #40f0ff;
+  --accent3: #b388ff;
+  --success: #69f0ae;
+  --warn: #ffd740;
+  --danger: #ff5252;
+  --pixel-grid: rgba(100, 100, 255, 0.04);
+  --scanline: rgba(0, 0, 0, 0.08);
+  --font-pixel: 'Press Start 2P', monospace;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-body: 'Noto Sans SC', sans-serif;
+  --radius: 4px;
+  --shadow-glow: 0 0 20px rgba(74, 74, 255, 0.15);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  font-size: 14px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) var(--bg-deep);
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg-deep);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* === SCANLINE OVERLAY === */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    var(--scanline) 2px,
+    var(--scanline) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.3;
+}
+
+/* === PIXEL GRID BACKGROUND === */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--pixel-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--pixel-grid) 1px, transparent 1px);
+  background-size: 16px 16px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* === LAYOUT === */
+.app {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 320px 1fr 360px;
+  grid-template-rows: auto 1fr;
+  height: 100vh;
+  gap: 1px;
+  background: var(--border);
+}
+
+/* === HEADER === */
+.header {
+  grid-column: 1 / -1;
+  background: var(--bg-panel);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.logo {
+  font-family: var(--font-pixel);
+  font-size: 14px;
+  color: var(--accent);
+  text-shadow: 0 0 10px var(--accent), 0 0 30px rgba(255, 107, 53, 0.3);
+  letter-spacing: 2px;
+  white-space: nowrap;
+}
+
+.logo span {
+  color: var(--accent2);
+  text-shadow: 0 0 10px var(--accent2);
+}
+
+.header-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  justify-content: flex-end;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 6px var(--success);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.status-text {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* === LEFT PANEL: Config === */
+.panel-left {
+  background: var(--bg-panel);
+  overflow-y: auto;
+  padding: 0;
+}
+
+.panel-section {
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.panel-section-header {
+  padding: 12px 16px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--accent2);
+  background: rgba(0, 229, 255, 0.03);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+  transition: background 0.2s;
+}
+
+.panel-section-header:hover {
+  background: rgba(0, 229, 255, 0.06);
+}
+
+.panel-section-header::before {
+  content: '>';
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: var(--accent);
+  transition: transform 0.2s;
+}
+
+.panel-section-header.collapsed::before {
+  transform: rotate(90deg);
+}
+
+.panel-section-body {
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.panel-section-body.collapsed {
+  display: none;
+}
+
+/* === FORM ELEMENTS === */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field-row {
+  display: flex;
+  gap: 8px;
+}
+
+.field-row .field { flex: 1; }
+
+.field label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.field input[type="text"],
+.field input[type="number"],
+.field select,
+.field textarea {
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-bright);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 8px 10px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  border-color: var(--accent2);
+  box-shadow: 0 0 0 1px var(--accent2), 0 0 12px rgba(0, 229, 255, 0.1);
+}
+
+.field textarea {
+  resize: vertical;
+  min-height: 60px;
+  line-height: 1.5;
+}
+
+.field input[type="range"] {
+  -webkit-appearance: none;
+  background: transparent;
+  width: 100%;
+}
+
+.field input[type="range"]::-webkit-slider-track {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+}
+
+.field input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--accent2);
+  border: 2px solid var(--bg-deep);
+  box-shadow: 0 0 6px var(--accent2);
+  cursor: pointer;
+  margin-top: -5px;
+}
+
+.range-value {
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  color: var(--accent2);
+  min-width: 40px;
+  text-align: right;
+}
+
+.range-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.range-row input { flex: 1; }
+
+/* === CHECKBOX === */
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.checkbox-field input[type="checkbox"] {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  background: var(--bg-deep);
+  cursor: pointer;
+  position: relative;
+}
+
+.checkbox-field input[type="checkbox"]:checked {
+  background: var(--accent2);
+  border-color: var(--accent2);
+}
+
+.checkbox-field input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 5px;
+  height: 9px;
+  border: solid var(--bg-deep);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.checkbox-field span {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text);
+}
+
+/* === COLOR PICKER === */
+.color-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.color-swatch {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius);
+  border: 2px solid var(--border);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.color-swatch input[type="color"] {
+  position: absolute;
+  inset: -4px;
+  width: calc(100% + 8px);
+  height: calc(100% + 8px);
+  border: none;
+  cursor: pointer;
+}
+
+.color-hex {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px 8px;
+  flex: 1;
+}
+
+/* === ANIMATION TAG === */
+.anim-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.anim-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 4px 10px;
+  border-radius: 2px;
+  border: 1px solid var(--border);
+  background: var(--bg-deep);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+
+.anim-tag:hover {
+  border-color: var(--accent2);
+  color: var(--text);
+}
+
+.anim-tag.active {
+  background: rgba(0, 229, 255, 0.1);
+  border-color: var(--accent2);
+  color: var(--accent2);
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.15);
+}
+
+/* === CENTER: Preview === */
+.panel-center {
+  background: var(--bg-deep);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.preview-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+}
+
+.preview-toolbar .zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-icon {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-dim);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  transition: all 0.15s;
+}
+
+.btn-icon:hover {
+  border-color: var(--accent2);
+  color: var(--accent2);
+  background: rgba(0, 229, 255, 0.05);
+}
+
+.zoom-label {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--text-dim);
+  min-width: 40px;
+  text-align: center;
+}
+
+.preview-tabs {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.preview-tab {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 4px 12px;
+  border-radius: 2px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.preview-tab:hover {
+  color: var(--text);
+  background: var(--bg-hover);
+}
+
+.preview-tab.active {
+  background: var(--bg-card);
+  border-color: var(--border);
+  color: var(--accent);
+}
+
+/* === PREVIEW AREA === */
+.preview-area {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.preview-area::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.01) 1px, transparent 1px),
+    linear-gradient(rgba(255,255,255,0.01) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none;
+}
+
+.preview-canvas-wrap {
+  position: relative;
+  background: repeating-conic-gradient(#1a1a2a 0% 25%, #151525 0% 50%) 0 0 / 32px 32px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-glow), var(--shadow-card);
+  image-rendering: pixelated;
+}
+
+#previewCanvas {
+  display: block;
+  image-rendering: pixelated;
+}
+
+.anim-controls {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(17, 17, 34, 0.9);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px 12px;
+}
+
+.anim-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.15s;
+}
+
+.anim-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 8px rgba(255, 107, 53, 0.2);
+}
+
+.anim-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg-deep);
+}
+
+.frame-indicator {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--text-dim);
+  min-width: 60px;
+  text-align: center;
+}
+
+.anim-select {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+/* === RIGHT PANEL: Output === */
+.panel-right {
+  background: var(--bg-panel);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.output-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.output-title {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+
+.output-count {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--text-dim);
+}
+
+/* === SPRITE SHEET GRID === */
+.sprite-grid {
+  padding: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 8px;
+}
+
+.sprite-cell {
+  aspect-ratio: 1;
+  background: repeating-conic-gradient(#1a1a2a 0% 25%, #151525 0% 50%) 0 0 / 16px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+
+.sprite-cell:hover {
+  border-color: var(--accent2);
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.15);
+  transform: scale(1.05);
+}
+
+.sprite-cell.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 12px rgba(255, 107, 53, 0.2);
+}
+
+.sprite-cell canvas {
+  image-rendering: pixelated;
+  max-width: 90%;
+  max-height: 90%;
+}
+
+.sprite-cell-label {
+  position: absolute;
+  bottom: 2px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: var(--font-pixel);
+  font-size: 6px;
+  color: var(--text-dim);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+
+/* === SPRITE SHEET PREVIEW === */
+.sheet-preview {
+  padding: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.sheet-preview-title {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.sheet-preview-img {
+  width: 100%;
+  background: repeating-conic-gradient(#1a1a2a 0% 25%, #151525 0% 50%) 0 0 / 16px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  image-rendering: pixelated;
+  display: block;
+}
+
+/* === EXPORT SECTION === */
+.export-section {
+  margin-top: auto;
+  padding: 16px;
+  border-top: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.btn-generate {
+  width: 100%;
+  padding: 14px 20px;
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, var(--accent), #ff4500);
+  border: none;
+  border-radius: var(--radius);
+  color: white;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.btn-generate:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(255, 107, 53, 0.4);
+}
+
+.btn-generate:active {
+  transform: translateY(0);
+}
+
+.btn-generate::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.6s;
+}
+
+.btn-generate:hover::after {
+  transform: translateX(100%);
+}
+
+.btn-secondary {
+  width: 100%;
+  padding: 10px 16px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  cursor: pointer;
+  margin-top: 8px;
+  transition: all 0.15s;
+}
+
+.btn-secondary:hover {
+  border-color: var(--accent2);
+  color: var(--accent2);
+  background: rgba(0, 229, 255, 0.05);
+}
+
+/* === PALETTE DISPLAY === */
+.palette-strip {
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+  padding: 8px;
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.palette-color {
+  width: 20px;
+  height: 20px;
+  border-radius: 2px;
+  border: 1px solid rgba(255,255,255,0.1);
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.palette-color:hover {
+  transform: scale(1.3);
+  z-index: 1;
+}
+
+/* === CONTRAST INDICATOR === */
+.contrast-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--danger), var(--warn), var(--success));
+  position: relative;
+  margin-top: 4px;
+}
+
+.contrast-marker {
+  position: absolute;
+  top: -3px;
+  width: 12px;
+  height: 12px;
+  background: white;
+  border: 2px solid var(--bg-deep);
+  border-radius: 50%;
+  transform: translateX(-50%);
+  box-shadow: 0 0 6px rgba(255,255,255,0.3);
+}
+
+/* === TOAST === */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--bg-card);
+  border: 1px solid var(--success);
+  border-radius: var(--radius);
+  padding: 12px 24px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--success);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5), 0 0 20px rgba(105, 240, 174, 0.1);
+  z-index: 10000;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+}
+
+.toast::before {
+  content: '>';
+  font-family: var(--font-pixel);
+  font-size: 8px;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 1200px) {
+  .app {
+    grid-template-columns: 280px 1fr;
+  }
+  .panel-right {
+    display: none;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- HEADER -->
+  <header class="header">
+    <div class="logo">PIXEL<span>FORGE</span></div>
+    <div class="header-info">
+      <div class="status-dot"></div>
+      <span class="status-text">Ready</span>
+    </div>
+  </header>
+
+  <!-- LEFT PANEL: Character Config -->
+  <aside class="panel-left">
+    <!-- Basic Info -->
+    <div class="panel-section">
+      <div class="panel-section-header" onclick="toggleSection(this)">Character</div>
+      <div class="panel-section-body">
+        <div class="field">
+          <label>Name</label>
+          <input type="text" id="charName" value="warrior" placeholder="character name">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Width</label>
+            <input type="number" id="charWidth" value="32" min="8" max="128" step="8">
+          </div>
+          <div class="field">
+            <label>Height</label>
+            <input type="number" id="charHeight" value="32" min="8" max="128" step="8">
+          </div>
+        </div>
+        <div class="field">
+          <label>Style</label>
+          <select id="charStyle">
+            <option value="chibi-fantasy">Chibi Fantasy</option>
+            <option value="retro-8bit">Retro 8-bit</option>
+            <option value="modern-pixel">Modern Pixel</option>
+            <option value="dark-souls">Dark Souls</option>
+            <option value="cute-chibi">Cute Chibi</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Appearance -->
+    <div class="panel-section">
+      <div class="panel-section-header" onclick="toggleSection(this)">Appearance</div>
+      <div class="panel-section-body">
+        <div class="field">
+          <label>Clothing</label>
+          <textarea id="charClothing" rows="2">plate armor, red cape</textarea>
+        </div>
+        <div class="field">
+          <label>Weapon</label>
+          <input type="text" id="charWeapon" value="sword and shield">
+        </div>
+        <div class="field">
+          <label>Accessories</label>
+          <input type="text" id="charAccessories" value="helmet with plume">
+        </div>
+        <div class="field">
+          <label>Skin Tone</label>
+          <select id="charSkin">
+            <option value="fair">Fair</option>
+            <option value="tan">Tan</option>
+            <option value="dark">Dark</option>
+            <option value="pale">Pale</option>
+            <option value="green chitin">Green Chitin</option>
+            <option value="red scales">Red Scales</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Palette -->
+    <div class="panel-section">
+      <div class="panel-section-header" onclick="toggleSection(this)">Palette</div>
+      <div class="panel-section-body">
+        <div class="field">
+          <label>Max Colors</label>
+          <div class="range-row">
+            <input type="range" id="paletteLimit" min="4" max="32" value="16" oninput="updateRange(this, 'paletteVal')">
+            <span class="range-value" id="paletteVal">16</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Min Contrast</label>
+          <div class="range-row">
+            <input type="range" id="minContrast" min="0" max="120" value="40" oninput="updateRange(this, 'contrastVal')">
+            <span class="range-value" id="contrastVal">40</span>
+          </div>
+          <div class="contrast-bar">
+            <div class="contrast-marker" id="contrastMarker" style="left: 33%"></div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Background</label>
+          <div class="color-row">
+            <div class="color-swatch">
+              <input type="color" id="bgColor" value="#000000" onchange="updateColorHex(this)">
+            </div>
+            <input type="text" class="color-hex" id="bgHex" value="#000000" readonly>
+          </div>
+        </div>
+        <div class="field">
+          <label>Extracted Palette</label>
+          <div class="palette-strip" id="paletteStrip"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Animations -->
+    <div class="panel-section">
+      <div class="panel-section-header" onclick="toggleSection(this)">Animations</div>
+      <div class="panel-section-body">
+        <div class="field">
+          <label>Active Animations</label>
+          <div class="anim-tags" id="animTags">
+            <div class="anim-tag active" data-anim="idle" onclick="toggleAnim(this)">idle <span class="anim-fps">6fps</span></div>
+            <div class="anim-tag active" data-anim="walk_down" onclick="toggleAnim(this)">walk <span class="anim-fps">8fps</span></div>
+            <div class="anim-tag active" data-anim="walk_up" onclick="toggleAnim(this)">walk_up <span class="anim-fps">8fps</span></div>
+            <div class="anim-tag active" data-anim="walk_left" onclick="toggleAnim(this)">walk_l <span class="anim-fps">8fps</span></div>
+            <div class="anim-tag active" data-anim="walk_right" onclick="toggleAnim(this)">walk_r <span class="anim-fps">8fps</span></div>
+            <div class="anim-tag active" data-anim="attack" onclick="toggleAnim(this)">attack <span class="anim-fps">10fps</span></div>
+            <div class="anim-tag" data-anim="hurt" onclick="toggleAnim(this)">hurt <span class="anim-fps">8fps</span></div>
+            <div class="anim-tag" data-anim="death" onclick="toggleAnim(this)">death <span class="anim-fps">6fps</span></div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Selected: idle</label>
+          <div class="field-row">
+            <div class="field">
+              <label>Frames</label>
+              <input type="number" id="animFrames" value="4" min="1" max="24">
+            </div>
+            <div class="field">
+              <label>FPS</label>
+              <input type="number" id="animFps" value="6" min="1" max="30">
+            </div>
+          </div>
+          <div class="checkbox-field">
+            <input type="checkbox" id="animLoop" checked>
+            <span>Loop</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Source -->
+    <div class="panel-section">
+      <div class="panel-section-header" onclick="toggleSection(this)">Source</div>
+      <div class="panel-section-body">
+        <div class="field">
+          <label>Backend</label>
+          <select id="aiBackend">
+            <option value="local_sd">Local Stable Diffusion</option>
+            <option value="liblibai">LiblibAI API</option>
+            <option value="tongyi">Tongyi Wanxiang</option>
+            <option value="zhipu">Zhipu CogView</option>
+            <option value="openai">OpenAI DALL-E 3</option>
+            <option value="cpu_sd">CPU SD (slow)</option>
+            <option value="local_file">Local File</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Input Path (local file mode)</label>
+          <input type="text" id="inputPath" placeholder="./raw_character.png">
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- CENTER: Preview -->
+  <main class="panel-center">
+    <div class="preview-toolbar">
+      <div class="zoom-controls">
+        <button class="btn-icon" onclick="zoomOut()">-</button>
+        <span class="zoom-label" id="zoomLabel">4x</span>
+        <button class="btn-icon" onclick="zoomIn()">+</button>
+      </div>
+      <div class="preview-tabs">
+        <button class="preview-tab active" onclick="switchPreview(this, 'sprite')">Sprite</button>
+        <button class="preview-tab" onclick="switchPreview(this, 'sheet')">Sheet</button>
+        <button class="preview-tab" onclick="switchPreview(this, 'all')">All</button>
+      </div>
+    </div>
+
+    <div class="preview-area" id="previewArea">
+      <div class="preview-canvas-wrap" id="canvasWrap">
+        <canvas id="previewCanvas" width="128" height="128"></canvas>
+      </div>
+
+      <div class="anim-controls">
+        <select class="anim-select" id="previewAnimSelect" onchange="changePreviewAnim()">
+          <option value="idle">idle</option>
+          <option value="walk_down">walk_down</option>
+          <option value="attack">attack</option>
+          <option value="hurt">hurt</option>
+        </select>
+        <button class="anim-btn" onclick="prevFrame()">&#9664;</button>
+        <button class="anim-btn active" id="playBtn" onclick="togglePlay()">&#9654;</button>
+        <button class="anim-btn" onclick="nextFrame()">&#9654;</button>
+        <span class="frame-indicator" id="frameIndicator">0 / 4</span>
+      </div>
+    </div>
+  </main>
+
+  <!-- RIGHT PANEL: Output -->
+  <aside class="panel-right">
+    <div class="output-header">
+      <span class="output-title">Output</span>
+      <span class="output-count" id="outputCount">0 frames</span>
+    </div>
+
+    <div class="sprite-grid" id="spriteGrid"></div>
+
+    <div class="sheet-preview" id="sheetPreview" style="display:none">
+      <div class="sheet-preview-title">Sprite Sheet</div>
+      <canvas id="sheetCanvas" class="sheet-preview-img"></canvas>
+    </div>
+
+    <div class="export-section">
+      <button class="btn-generate" onclick="generate()">&#9881; Generate</button>
+      <button class="btn-secondary" onclick="exportGodot()">Export Godot .tres</button>
+      <button class="btn-secondary" onclick="exportPNG()">Export PNG</button>
+    </div>
+  </aside>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// === STATE ===
+const state = {
+  zoom: 4,
+  currentAnim: 'idle',
+  currentFrame: 0,
+  playing: true,
+  fps: 6,
+  frames: {},     // {anim_name: [ImageData, ...]}
+  playInterval: null,
+};
+
+// === DEMO DATA: Generate pixel character frames programmatically ===
+function generateDemoFrames() {
+  const w = 32, h = 32;
+  const animations = {
+    idle: { frames: 4, fps: 6 },
+    walk_down: { frames: 6, fps: 8 },
+    attack: { frames: 6, fps: 10 },
+    hurt: { frames: 3, fps: 8 }
+  };
+
+  for (const [animName, cfg] of Object.entries(animations)) {
+    state.frames[animName] = [];
+    for (let i = 0; i < cfg.frames; i++) {
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      drawCharacterFrame(ctx, w, h, animName, i, cfg.frames);
+      state.frames[animName].push(canvas);
+    }
+  }
+}
+
+function drawCharacterFrame(ctx, w, h, anim, frameIdx, totalFrames) {
+  ctx.clearRect(0, 0, w, h);
+
+  const cx = 16, cy = 14;
+  let bodyDy = 0, armL = 'down', armR = 'down', legL = 'stand', legR = 'stand';
+  let weaponAngle = 'down', headTilt = 0, capeSway = 0;
+
+  if (anim === 'idle') {
+    bodyDy = Math.sin(frameIdx / totalFrames * Math.PI * 2) * 1;
+    capeSway = Math.sin(frameIdx / totalFrames * Math.PI * 2) * 1;
+  } else if (anim === 'walk_down') {
+    const phase = frameIdx / totalFrames;
+    bodyDy = Math.sin(phase * Math.PI * 2) * 1;
+    if (frameIdx % 2 === 1) { legL = 'walk'; legR = 'stand'; armL = 'swing'; }
+    else { legL = 'stand'; legR = 'stand'; armL = 'down'; }
+  } else if (anim === 'attack') {
+    if (frameIdx < 2) { armR = 'windup'; headTilt = 1; }
+    else if (frameIdx < 4) { armR = 'strike'; weaponAngle = 'strike'; headTilt = 2; }
+    else { armR = 'down'; weaponAngle = 'down'; }
+  } else if (anim === 'hurt') {
+    bodyDy = frameIdx === 1 ? -2 : 0;
+    capeSway = frameIdx === 1 ? -3 : -1;
+    if (frameIdx === 1) { armL = 'up'; armR = 'up'; }
+  }
+
+  const by = cy + bodyDy;
+
+  // Cape
+  ctx.fillStyle = 'rgba(180,40,40,0.8)';
+  ctx.beginPath();
+  ctx.moveTo(cx - 5, by - 1);
+  ctx.lineTo(cx + 5, by - 1);
+  ctx.lineTo(cx + 4 + capeSway, by + 9);
+  ctx.lineTo(cx - 4 + capeSway, by + 9);
+  ctx.fill();
+
+  // Body
+  ctx.fillStyle = '#3250b4';
+  ctx.fillRect(cx - 6, by - 2, 12, 10);
+
+  // Head
+  ctx.fillStyle = '#dcb48c';
+  ctx.beginPath();
+  ctx.arc(cx + headTilt, by - 7, 5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Eyes
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(cx + headTilt - 3, by - 9, 2, 2);
+  ctx.fillRect(cx + headTilt + 1, by - 9, 2, 2);
+  ctx.fillStyle = '#1a1a1a';
+  ctx.fillRect(cx + headTilt - 2, by - 8, 1, 1);
+  ctx.fillRect(cx + headTilt + 2, by - 8, 1, 1);
+
+  // Legs
+  ctx.fillStyle = '#3c3228';
+  if (anim === 'walk_down' && frameIdx % 2 === 1) {
+    ctx.fillRect(cx - 4, by + 8, 3, 6);
+    ctx.fillRect(cx + 2, by + 8, 3, 8);
+  } else {
+    ctx.fillRect(cx - 4, by + 8, 3, 7);
+    ctx.fillRect(cx + 1, by + 8, 3, 7);
+  }
+
+  // Arms
+  ctx.fillStyle = '#dcb48c';
+  if (armL === 'swing') {
+    ctx.fillRect(cx - 8, by - 4, 2, 6);
+  } else if (armL === 'up' || armR === 'up') {
+    ctx.fillRect(cx - 8, by - 6, 2, 5);
+    ctx.fillRect(cx + 6, by - 6, 2, 5);
+  } else {
+    ctx.fillRect(cx - 8, by, 2, 6);
+  }
+
+  if (armR === 'windup') {
+    ctx.fillRect(cx + 6, by - 4, 2, 5);
+  } else if (armR === 'strike') {
+    ctx.fillRect(cx + 6, by - 2, 8, 2);
+  } else if (armL !== 'up') {
+    ctx.fillRect(cx + 6, by, 2, 6);
+  }
+
+  // Weapon
+  if (weaponAngle === 'strike') {
+    ctx.fillStyle = '#b4b4c8';
+    ctx.fillRect(cx + 12, by - 3, 10, 1);
+    ctx.fillStyle = '#dcdce0';
+    ctx.beginPath();
+    ctx.moveTo(cx + 22, by - 4);
+    ctx.lineTo(cx + 24, by - 2.5);
+    ctx.lineTo(cx + 22, by - 1);
+    ctx.fill();
+  } else {
+    ctx.fillStyle = '#b4b4c8';
+    ctx.fillRect(cx + 7, by + 6, 1, 8);
+  }
+}
+
+// === UI FUNCTIONS ===
+function toggleSection(header) {
+  header.classList.toggle('collapsed');
+  header.nextElementSibling.classList.toggle('collapsed');
+}
+
+function updateRange(input, valId) {
+  document.getElementById(valId).textContent = input.value;
+  if (input.id === 'minContrast') {
+    document.getElementById('contrastMarker').style.left = (input.value / 120 * 100) + '%';
+  }
+}
+
+function updateColorHex(input) {
+  document.getElementById('bgHex').value = input.value;
+}
+
+function toggleAnim(el) {
+  el.classList.toggle('active');
+}
+
+function updateZoom() {
+  const canvas = document.getElementById('previewCanvas');
+  const wrap = document.getElementById('canvasWrap');
+  canvas.style.width = (32 * state.zoom) + 'px';
+  canvas.style.height = (32 * state.zoom) + 'px';
+  document.getElementById('zoomLabel').textContent = state.zoom + 'x';
+}
+
+function zoomIn() { state.zoom = Math.min(16, state.zoom + 1); updateZoom(); }
+function zoomOut() { state.zoom = Math.max(1, state.zoom - 1); updateZoom(); }
+
+function switchPreview(btn, mode) {
+  document.querySelectorAll('.preview-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function changePreviewAnim() {
+  state.currentAnim = document.getElementById('previewAnimSelect').value;
+  state.currentFrame = 0;
+  state.fps = { idle: 6, walk_down: 8, attack: 10, hurt: 8 }[state.currentAnim] || 6;
+  restartPlay();
+}
+
+function drawCurrentFrame() {
+  const canvas = document.getElementById('previewCanvas');
+  const ctx = canvas.getContext('2d');
+  const frames = state.frames[state.currentAnim];
+  if (!frames || frames.length === 0) return;
+
+  ctx.clearRect(0, 0, 32, 32);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(frames[state.currentFrame], 0, 0);
+
+  document.getElementById('frameIndicator').textContent =
+    `${state.currentFrame} / ${frames.length}`;
+}
+
+function nextFrame() {
+  const frames = state.frames[state.currentAnim];
+  if (!frames) return;
+  state.currentFrame = (state.currentFrame + 1) % frames.length;
+  drawCurrentFrame();
+}
+
+function prevFrame() {
+  const frames = state.frames[state.currentAnim];
+  if (!frames) return;
+  state.currentFrame = (state.currentFrame - 1 + frames.length) % frames.length;
+  drawCurrentFrame();
+}
+
+function togglePlay() {
+  state.playing = !state.playing;
+  const btn = document.getElementById('playBtn');
+  btn.innerHTML = state.playing ? '&#9654;' : '&#9646;&#9646;';
+  btn.classList.toggle('active', state.playing);
+  if (state.playing) restartPlay();
+  else clearInterval(state.playInterval);
+}
+
+function restartPlay() {
+  clearInterval(state.playInterval);
+  if (state.playing) {
+    state.playInterval = setInterval(nextFrame, 1000 / state.fps);
+  }
+}
+
+function updateSpriteGrid() {
+  const grid = document.getElementById('spriteGrid');
+  grid.innerHTML = '';
+  let count = 0;
+
+  for (const [animName, frames] of Object.entries(state.frames)) {
+    for (let i = 0; i < frames.length; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'sprite-cell';
+      const c = document.createElement('canvas');
+      c.width = 32;
+      c.height = 32;
+      c.getContext('2d').drawImage(frames[i], 0, 0);
+      cell.appendChild(c);
+      const label = document.createElement('div');
+      label.className = 'sprite-cell-label';
+      label.textContent = `${animName}_${i}`;
+      cell.appendChild(label);
+      cell.onclick = () => {
+        state.currentAnim = animName;
+        state.currentFrame = i;
+        document.getElementById('previewAnimSelect').value = animName;
+        drawCurrentFrame();
+      };
+      grid.appendChild(cell);
+      count++;
+    }
+  }
+
+  document.getElementById('outputCount').textContent = count + ' frames';
+}
+
+function updatePalette() {
+  const strip = document.getElementById('paletteStrip');
+  strip.innerHTML = '';
+  const colors = [
+    '#3250b4', '#dcb48c', '#3c3228', '#b40000',
+    '#b4b4c8', '#dcdce0', '#1a1a1a', '#ffffff',
+    '#648c32', '#8cb400', '#c8b400', '#ff6b35',
+    '#00e5ff', '#b388ff', '#69f0ae', '#ffd740'
+  ];
+  colors.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'palette-color';
+    div.style.background = c;
+    strip.appendChild(div);
+  });
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+function generate() {
+  showToast('Generating character frames...');
+  setTimeout(() => {
+    generateDemoFrames();
+    updateSpriteGrid();
+    drawCurrentFrame();
+    showToast('Generation complete! ' + Object.values(state.frames).reduce((s, f) => s + f.length, 0) + ' frames');
+  }, 500);
+}
+
+function exportGodot() {
+  showToast('Exporting Godot .tres files...');
+}
+
+function exportPNG() {
+  showToast('Exporting PNG sprite sheets...');
+}
+
+// === INIT ===
+generateDemoFrames();
+updateZoom();
+updateSpriteGrid();
+updatePalette();
+drawCurrentFrame();
+state.playInterval = setInterval(nextFrame, 1000 / state.fps);
+</script>
+
+</body>
+</html>
