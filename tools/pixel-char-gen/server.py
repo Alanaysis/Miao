@@ -25,6 +25,57 @@ from godot_export import generate_import_file, generate_sprite_frames_tres
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 
+def _generate_ai_frames(raw_dir: str, config: dict):
+    """用 AI 后端生成原始角色帧"""
+    from sources.ai_generator import get_backend, build_prompt, NEGATIVE_PROMPT
+
+    name = config.get("name", "character")
+    w = config.get("width", 32)
+    h = config.get("height", 32)
+    animations = config.get("animations", {})
+    gen_w = max(256, w * 4)
+    gen_h = max(256, h * 4)
+
+    # 加载完整配置以获取后端信息
+    config_path = os.path.join(os.path.dirname(__file__), "pixel_char_config.json")
+    full_config = {}
+    if os.path.isfile(config_path):
+        with open(config_path, "r") as f:
+            full_config = json.load(f)
+
+    # 合并用户配置到完整配置中
+    char_config = {
+        "name": name,
+        "width": w,
+        "height": h,
+        "style": config.get("style", "chibi-fantasy"),
+        "clothing": config.get("clothing", ""),
+        "weapon": config.get("weapon", ""),
+        "accessories": config.get("accessories", ""),
+        "skin_tone": config.get("skin_tone", "fair"),
+    }
+
+    backend = get_backend(full_config)
+    print(f"[AI] Using backend: {backend.name}")
+
+    total = sum(cfg.get("frames", 1) for cfg in animations.values())
+    current = 0
+
+    for anim_name, anim_cfg in animations.items():
+        frame_count = anim_cfg.get("frames", 1)
+        for i in range(frame_count):
+            current += 1
+            prompt = build_prompt(char_config, anim_name, i)
+            print(f"[AI] [{current}/{total}] {anim_name}_{i:02d}...", end=" ", flush=True)
+            try:
+                img = backend.generate(prompt, NEGATIVE_PROMPT, gen_w, gen_h)
+                img.save(os.path.join(raw_dir, f"{anim_name}_{i:02d}.png"))
+                print("OK")
+            except Exception as e:
+                print(f"FAIL: {e}")
+                raise  # 让外层 fallback 捕获
+
+
 def _generate_raw_frames(raw_dir: str, animations: dict,
                          style: str = "", clothing: str = "", weapon: str = ""):
     """程序化生成原始角色帧（128x128），保存到 raw 目录"""
@@ -253,11 +304,15 @@ class PixelForgeHandler(SimpleHTTPRequestHandler):
         if not os.path.isdir(raw_dir):
             os.makedirs(raw_dir, exist_ok=True)
 
-        # 如果 raw 目录为空，用程序化方式生成原始帧
+        # 如果 raw 目录为空，尝试 AI 生成，失败则程序化生成
         existing = [f for f in os.listdir(raw_dir) if f.endswith(".png")] if os.path.isdir(raw_dir) else []
         if not existing:
-            print(f"[generate] No raw frames for '{name}', generating programmatically...")
-            _generate_raw_frames(raw_dir, animations, style, clothing, weapon)
+            print(f"[generate] No raw frames for '{name}', trying AI generation...")
+            try:
+                _generate_ai_frames(raw_dir, data)
+            except Exception as e:
+                print(f"[generate] AI failed ({e}), falling back to programmatic...")
+                _generate_raw_frames(raw_dir, animations, style, clothing, weapon)
 
         # 加载 raw 帧
         all_frames = {}
