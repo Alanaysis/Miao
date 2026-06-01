@@ -23,6 +23,130 @@ from pixel_char_gen import (
 from godot_export import generate_import_file, generate_sprite_frames_tres
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+
+
+def _generate_raw_frames(raw_dir: str, animations: dict,
+                         style: str = "", clothing: str = "", weapon: str = ""):
+    """程序化生成原始角色帧（128x128），保存到 raw 目录"""
+    from PIL import Image, ImageDraw
+    os.makedirs(raw_dir, exist_ok=True)
+
+    size = 128
+    cx, cy = 64, 55
+
+    def draw_char(draw, arm="down", leg="stand", weap="down",
+                  head_tilt=0, cape_sway=0):
+        # Body
+        draw.rectangle([cx-12, cy-5, cx+12, cy+20], fill=(50, 80, 180, 255))
+        # Head
+        hx = cx + head_tilt
+        draw.ellipse([hx-8, cy-22, hx+8, cy-5], fill=(220, 180, 140, 255))
+        draw.rectangle([hx-5, cy-15, hx-2, cy-10], fill=(255, 255, 255, 255))
+        draw.rectangle([hx+2, cy-15, hx+5, cy-10], fill=(255, 255, 255, 255))
+        draw.rectangle([hx-4, cy-14, hx-3, cy-11], fill=(30, 30, 30, 255))
+        draw.rectangle([hx+3, cy-14, hx+4, cy-11], fill=(30, 30, 30, 255))
+        # Legs
+        if leg == "stand":
+            draw.rectangle([cx-8, cy+20, cx-3, cy+38], fill=(60, 50, 40, 255))
+            draw.rectangle([cx+3, cy+20, cx+8, cy+38], fill=(60, 50, 40, 255))
+        elif leg == "walk_left":
+            draw.rectangle([cx-12, cy+20, cx-7, cy+36], fill=(60, 50, 40, 255))
+            draw.rectangle([cx+5, cy+20, cx+10, cy+40], fill=(60, 50, 40, 255))
+        elif leg == "walk_right":
+            draw.rectangle([cx-10, cy+20, cx-5, cy+40], fill=(60, 50, 40, 255))
+            draw.rectangle([cx+7, cy+20, cx+12, cy+36], fill=(60, 50, 40, 255))
+        # Arms
+        if arm == "down":
+            draw.rectangle([cx-18, cy-2, cx-12, cy+15], fill=(220, 180, 140, 255))
+            draw.rectangle([cx+12, cy-2, cx+18, cy+15], fill=(220, 180, 140, 255))
+        elif arm == "left_up":
+            draw.rectangle([cx-20, cy-10, cx-14, cy+5], fill=(220, 180, 140, 255))
+            draw.rectangle([cx+12, cy-2, cx+18, cy+15], fill=(220, 180, 140, 255))
+        elif arm == "both_up":
+            draw.rectangle([cx-20, cy-15, cx-14, cy+0], fill=(220, 180, 140, 255))
+            draw.rectangle([cx+14, cy-15, cx+20, cy+0], fill=(220, 180, 140, 255))
+        elif arm == "attack":
+            draw.rectangle([cx-18, cy-2, cx-12, cy+15], fill=(220, 180, 140, 255))
+            draw.rectangle([cx+12, cy-5, cx+30, cy+2], fill=(220, 180, 140, 255))
+        # Weapon
+        if weap == "down":
+            draw.rectangle([cx+14, cy+15, cx+17, cy+35], fill=(180, 180, 200, 255))
+        elif weap == "attack":
+            draw.rectangle([cx+28, cy-8, cx+50, cy-4], fill=(180, 180, 200, 255))
+            draw.polygon([(cx+50, cy-10), (cx+55, cy-6), (cx+50, cy-2)],
+                         fill=(220, 220, 240, 255))
+        # Cape
+        sx = cape_sway
+        draw.polygon([(cx-10, cy-3), (cx+10, cy-3),
+                      (cx+8+sx, cy+18), (cx-8+sx, cy+18)],
+                     fill=(180, 40, 40, 200))
+
+    # Frame configs per animation
+    frame_configs = {
+        "idle": [
+            {"cape_sway": 0, "head_tilt": 0},
+            {"cape_sway": 1, "head_tilt": 1},
+            {"cape_sway": 0, "head_tilt": 0},
+            {"cape_sway": -1, "head_tilt": -1},
+        ],
+        "walk_down": [
+            {"arm": "down", "leg": "stand"},
+            {"arm": "left_up", "leg": "walk_left"},
+            {"arm": "down", "leg": "stand"},
+            {"arm": "left_up", "leg": "walk_right"},
+            {"arm": "down", "leg": "stand"},
+            {"arm": "left_up", "leg": "walk_left"},
+        ],
+        "walk_up": [
+            {"arm": "down", "leg": "stand"},
+            {"arm": "left_up", "leg": "walk_left"},
+            {"arm": "down", "leg": "stand"},
+            {"arm": "left_up", "leg": "walk_right"},
+            {"arm": "down", "leg": "stand"},
+            {"arm": "left_up", "leg": "walk_left"},
+        ],
+        "walk_left": [
+            {"arm": "down", "leg": "stand"},
+            {"arm": "left_up", "leg": "walk_left"},
+            {"arm": "down", "leg": "stand"},
+            {"arm": "left_up", "leg": "walk_right"},
+        ],
+        "walk_right": [
+            {"arm": "down", "leg": "stand"},
+            {"arm": "left_up", "leg": "walk_left"},
+            {"arm": "down", "leg": "stand"},
+            {"arm": "left_up", "leg": "walk_right"},
+        ],
+        "attack": [
+            {"arm": "down", "leg": "stand", "weap": "down"},
+            {"arm": "left_up", "leg": "stand", "weap": "down", "head_tilt": 1},
+            {"arm": "both_up", "leg": "walk_right", "weap": "down", "head_tilt": 2},
+            {"arm": "attack", "leg": "walk_right", "weap": "attack", "head_tilt": 2},
+            {"arm": "attack", "leg": "stand", "weap": "attack", "head_tilt": 1},
+            {"arm": "down", "leg": "stand", "weap": "down"},
+        ],
+        "hurt": [
+            {"arm": "down", "leg": "stand", "cape_sway": 0},
+            {"arm": "both_up", "leg": "walk_left", "cape_sway": -3},
+            {"arm": "down", "leg": "stand", "cape_sway": -1},
+        ],
+        "death": [
+            {"arm": "down", "leg": "stand"},
+            {"arm": "both_up", "leg": "walk_left", "head_tilt": -2},
+            {"arm": "both_up", "leg": "walk_left", "head_tilt": -4},
+            {"arm": "down", "leg": "walk_left", "cape_sway": -3},
+            {"arm": "down", "leg": "walk_left", "cape_sway": -5},
+            {"arm": "down", "leg": "walk_left", "cape_sway": -5},
+        ],
+    }
+
+    for anim_name in animations:
+        configs = frame_configs.get(anim_name, frame_configs["idle"])
+        for i, cfg in enumerate(configs):
+            img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+            draw = ImageDraw.Draw(img)
+            draw_char(draw, **cfg)
+            img.save(os.path.join(raw_dir, f"{anim_name}_{i:02d}.png"))
 OUTPUT_BASE = os.path.join(PROJECT_ROOT, "project", "assets", "sprites", "characters")
 TOOL_DIR = os.path.dirname(__file__)
 
@@ -84,15 +208,19 @@ class PixelForgeHandler(SimpleHTTPRequestHandler):
             return super().do_GET()
 
     def do_POST(self):
+        print(f"[POST] {self.path}")
         parsed = urlparse(self.path)
         content_len = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(content_len) if content_len > 0 else b""
 
         try:
             data = json.loads(body) if body else {}
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as e:
+            print(f"[POST] JSON error: {e}, body={body[:200]}")
             self._json_response({"error": "invalid JSON"}, 400)
             return
+
+        print(f"[POST] {parsed.path} -> data keys: {list(data.keys())}")
 
         if parsed.path == "/api/generate":
             self._handle_generate(data)
@@ -104,7 +232,7 @@ class PixelForgeHandler(SimpleHTTPRequestHandler):
             self._json_response({"error": "not found"}, 404)
 
     def _handle_generate(self, data):
-        """生成角色帧（从已有 raw 目录读取并像素化）"""
+        """生成角色帧：有 raw 目录则读取，没有则程序化生成"""
         name = data.get("name", "warrior")
         width = data.get("width", 32)
         height = data.get("height", 32)
@@ -112,17 +240,22 @@ class PixelForgeHandler(SimpleHTTPRequestHandler):
         min_contrast = data.get("min_rgb_contrast", 40)
         bg = tuple(data.get("background_rgb", [0, 0, 0]))
         animations = data.get("animations", {})
+        style = data.get("style", "chibi-fantasy")
+        clothing = data.get("clothing", "")
+        weapon = data.get("weapon", "")
 
         char_dir = os.path.join(OUTPUT_BASE, name)
         raw_dir = os.path.join(char_dir, "raw")
         pixel_dir = os.path.join(char_dir, "pixel")
 
         if not os.path.isdir(raw_dir):
-            self._json_response({
-                "error": f"raw 目录不存在: {raw_dir}",
-                "hint": "请先将原始帧图片放入 raw/ 目录"
-            }, 404)
-            return
+            os.makedirs(raw_dir, exist_ok=True)
+
+        # 如果 raw 目录为空，用程序化方式生成原始帧
+        existing = [f for f in os.listdir(raw_dir) if f.endswith(".png")] if os.path.isdir(raw_dir) else []
+        if not existing:
+            print(f"[generate] No raw frames for '{name}', generating programmatically...")
+            _generate_raw_frames(raw_dir, animations, style, clothing, weapon)
 
         # 加载 raw 帧
         all_frames = {}
