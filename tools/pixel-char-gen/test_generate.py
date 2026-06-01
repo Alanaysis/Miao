@@ -3,17 +3,15 @@
 角色固定在画布中心，只动局部（手臂/腿/武器），确保像素对齐
 """
 
-import sys
 import os
-sys.path.insert(0, os.path.dirname(__file__))
+from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-OUTPUT_DIR = "/home/siok/Miao/project/assets/sprites/characters/warrior/raw"
+
+OUTPUT_DIR = Path(__file__).parents[2] / "project/assets/sprites/characters/warrior/raw"
 TARGET_SIZE = 128  # 生成大图，后续像素化到 32x32
 CX, CY = 64, 55   # 角色中心固定点
-
-os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 
 def draw_character(draw: ImageDraw.ImageDraw,
@@ -98,48 +96,56 @@ def save_frames(prefix: str, configs: list[dict]):
         print(f"{prefix}_{i:02d}.png")
 
 
-# ============================================================
-# idle: 4帧，只有披风微微摆动 + 头微倾
-# ============================================================
-save_frames("idle", [
-    {"cape_sway": 0, "head_tilt": 0},
-    {"cape_sway": 1, "head_tilt": 1},
-    {"cape_sway": 0, "head_tilt": 0},
-    {"cape_sway": -1, "head_tilt": -1},
-])
+def main() -> None:
 
-# ============================================================
-# walk_down: 6帧，交替迈步 + 手臂摆动
-# ============================================================
-save_frames("walk_down", [
-    {"arm": "down", "leg": "stand"},
-    {"arm": "left_up", "leg": "walk_left"},
-    {"arm": "down", "leg": "stand"},
-    {"arm": "left_up", "leg": "walk_right"},
-    {"arm": "down", "leg": "stand"},
-    {"arm": "left_up", "leg": "walk_left"},
-])
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# ============================================================
-# attack: 6帧，蓄力→举剑→刺出→收回
-# ============================================================
-save_frames("attack", [
-    {"arm": "down", "leg": "stand", "weapon": "down"},
-    {"arm": "left_up", "leg": "stand", "weapon": "down", "head_tilt": 1},
-    {"arm": "both_up", "leg": "walk_right", "weapon": "down", "head_tilt": 2},
-    {"arm": "attack", "leg": "walk_right", "weapon": "attack", "head_tilt": 2},
-    {"arm": "attack", "leg": "stand", "weapon": "attack", "head_tilt": 1},
-    {"arm": "down", "leg": "stand", "weapon": "down"},
-])
+    # ============================================================
+    # idle: 4帧，只有披风微微摆动 + 头微倾
+    # ============================================================
+    save_frames("idle", [
+        {"cape_sway": 0, "head_tilt": 0},
+        {"cape_sway": 1, "head_tilt": 1},
+        {"cape_sway": 0, "head_tilt": 0},
+        {"cape_sway": -1, "head_tilt": -1},
+    ])
 
-# ============================================================
-# hurt: 3帧，手臂张开 + 披风甩动
-# ============================================================
-save_frames("hurt", [
-    {"arm": "down", "leg": "stand", "cape_sway": 0},
-    {"arm": "both_up", "leg": "walk_left", "cape_sway": -3},
-    {"arm": "down", "leg": "stand", "cape_sway": -1},
-])
+    # ============================================================
+    # walk_down: 6帧，交替迈步 + 手臂摆动
+    # ============================================================
+    save_frames("walk_down", [
+        {"arm": "down", "leg": "stand"},
+        {"arm": "left_up", "leg": "walk_left"},
+        {"arm": "down", "leg": "stand"},
+        {"arm": "left_up", "leg": "walk_right"},
+        {"arm": "down", "leg": "stand"},
+        {"arm": "left_up", "leg": "walk_left"},
+    ])
 
-total = 4 + 6 + 6 + 3
-print(f"\n生成完成! 共 {total} 帧 -> {OUTPUT_DIR}")
+    # ============================================================
+    # attack: 6帧，蓄力→举剑→刺出→收回
+    # ============================================================
+    save_frames("attack", [
+        {"arm": "down", "leg": "stand", "weapon": "down"},
+        {"arm": "left_up", "leg": "stand", "weapon": "down", "head_tilt": 1},
+        {"arm": "both_up", "leg": "walk_right", "weapon": "down", "head_tilt": 2},
+        {"arm": "attack", "leg": "walk_right", "weapon": "attack", "head_tilt": 2},
+        {"arm": "attack", "leg": "stand", "weapon": "attack", "head_tilt": 1},
+        {"arm": "down", "leg": "stand", "weapon": "down"},
+    ])
+
+    # ============================================================
+    # hurt: 3帧，手臂张开 + 披风甩动
+    # ============================================================
+    save_frames("hurt", [
+        {"arm": "down", "leg": "stand", "cape_sway": 0},
+        {"arm": "both_up", "leg": "walk_left", "cape_sway": -3},
+        {"arm": "down", "leg": "stand", "cape_sway": -1},
+    ])
+
+    total = 4 + 6 + 6 + 3
+    print(f"\n生成完成! 共 {total} 帧 -> {OUTPUT_DIR}")
+
+
+if __name__ == '__main__':
+    main()
