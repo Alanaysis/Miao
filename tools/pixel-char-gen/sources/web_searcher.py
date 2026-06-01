@@ -9,6 +9,8 @@ import requests
 from PIL import Image
 import io
 
+from typing import Optional
+
 
 def search_images(query: str, source: str = "opengameart",
                   count: int = 10) -> list[dict]:
@@ -69,7 +71,7 @@ def _search_itchio(query: str, count: int) -> list[dict]:
         return []
 
 
-def download_image(url: str, save_path: str = None) -> Image.Image:
+def download_image(url: str, save_path: Optional[str] = None) -> Image.Image:
     """下载图片并返回 PIL Image"""
     headers = {"User-Agent": "pixel-char-gen/1.0 (game dev tool)"}
     resp = requests.get(url, timeout=30, headers=headers)
