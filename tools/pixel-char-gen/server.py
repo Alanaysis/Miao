@@ -191,7 +191,9 @@ class PixelForgeHandler(SimpleHTTPRequestHandler):
             self._json_response({"name": name, "animations": anims})
         elif parsed.path.startswith("/api/sprite/"):
             # 返回精灵图
-            parts = parsed.path.split("/")
+            from urllib.parse import unquote
+            decoded_path = unquote(parsed.path)
+            parts = decoded_path.split("/")
             if len(parts) >= 5:
                 name = parts[3]
                 filename = "/".join(parts[4:])
@@ -282,11 +284,13 @@ class PixelForgeHandler(SimpleHTTPRequestHandler):
             sheet_path = os.path.join(char_dir, f"{anim_name}_sheet.png")
             save_sprite_sheet(sheet, sheet_path)
 
+            from urllib.parse import quote
+            encoded_name = quote(name)
             result[anim_name] = {
                 "frame_count": len(frames),
-                "sheet_url": f"/api/sprite/{name}/{anim_name}_sheet.png",
+                "sheet_url": f"/api/sprite/{encoded_name}/{anim_name}_sheet.png",
                 "frames": [
-                    f"/api/sprite/{name}/pixel/{anim_name}_{i:02d}.png"
+                    f"/api/sprite/{encoded_name}/pixel/{anim_name}_{i:02d}.png"
                     for i in range(len(frames))
                 ]
             }
