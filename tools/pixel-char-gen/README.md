@@ -12,13 +12,45 @@
 - 网络搜索免费素材（OpenGameArt、itch.io）
 - 导出 Godot .tres SpriteFrames 资源文件
 
+## 路径
+
+以下命令请在项目根目录 `Miao/` 下执行
+
 ## 安装
 
-```bash
-# 创建虚拟环境
-python3 -m venv tools/pixel-char-gen/.venv
-source tools/pixel-char-gen/.venv/bin/activate
+### 1. 创建虚拟环境
 
+使用 python venv 模块
+
+```bash
+python -m venv tools/pixel-char-gen/.venv
+```
+
+使用 uv 包管理器
+
+```bash
+uv venv tools/pixel-char-gen/.venv
+```
+
+### 2. 激活虚拟环境
+
+Linux
+
+```bash
+source tools/pixel-char-gen/.venv/bin/activate
+```
+
+Windows
+
+```bash
+tools/pixel-char-gen/.venv/Scripts/activate
+```
+
+### 3. 安装依赖
+
+使用 pip
+
+```bash
 # 安装依赖
 pip install Pillow requests
 
@@ -27,6 +59,19 @@ pip install diffusers transformers accelerate torch
 
 # 可选：OpenAI DALL-E
 pip install openai
+```
+
+使用 uv
+
+```bash
+# 安装依赖
+uv pip install Pillow requests
+
+# 可选：本地 Stable Diffusion（需 GPU 4GB+）
+uv pip install diffusers transformers accelerate torch
+
+# 可选：OpenAI DALL-E
+uv pip install openai
 ```
 
 ## 使用
@@ -130,7 +175,6 @@ project/assets/sprites/characters/<角色名>/
 
 ```bash
 # 生成测试角色动画帧（程序化绘制，不需要 AI）
-source tools/pixel-char-gen/.venv/bin/activate
 python tools/pixel-char-gen/test_generate.py
 
 # 处理测试角色
