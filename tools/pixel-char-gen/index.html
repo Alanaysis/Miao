@@ -1217,6 +1217,14 @@ body {
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
+<!-- Loading overlay -->
+<div id="loadingOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:16px">
+  <div style="font-size:32px;animation:spin 1s linear infinite">&#9881;</div>
+  <div style="font-size:14px;color:var(--white)" id="loadingText">Generating...</div>
+  <div style="font-size:11px;color:var(--text3)" id="loadingSub">First time may take a few minutes to download the AI model</div>
+  <style>@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}</style>
+</div>
+
 <!-- Drop overlay -->
 <div class="dropzone-overlay" id="dropOverlay">Drop image here</div>
 
@@ -1309,12 +1317,22 @@ function applyPreset(name) {
   }
 }
 
+function showLoading(msg, sub) {
+  document.getElementById('loadingText').textContent = msg || 'Generating...';
+  document.getElementById('loadingSub').textContent = sub || 'First time may take a few minutes to download the AI model';
+  document.getElementById('loadingOverlay').style.display = 'flex';
+}
+
+function hideLoading() {
+  document.getElementById('loadingOverlay').style.display = 'none';
+}
+
 async function startGenerate() {
   S.charName = document.getElementById('cfgName').value || 'untitled';
   S.width = parseInt(document.getElementById('cfgW').value) || 32;
   S.height = parseInt(document.getElementById('cfgH').value) || 32;
 
-  showToast('Generating character...');
+  showLoading('Generating character...', 'AI is creating your pixel art character. This may take a minute.');
   try {
     const resp = await fetch('/api/generate', {
       method: 'POST',
@@ -1349,6 +1367,8 @@ async function startGenerate() {
     }
   } catch (e) {
     initDemoCanvas();
+  } finally {
+    hideLoading();
   }
 
   document.getElementById('charNameDisplay').textContent = S.charName;
@@ -1921,7 +1941,7 @@ function restartAnimPlay() {
 }
 
 async function generateAllAnimations() {
-  showToast('Generating animation frames...');
+  showLoading('Generating animation frames...', 'Creating all animation poses with AI');
   try {
     const resp = await fetch('/api/generate', {
       method: 'POST',
@@ -1950,6 +1970,8 @@ async function generateAllAnimations() {
     showToast('Animations generated');
   } catch (e) {
     showToast('Server error', true);
+  } finally {
+    hideLoading();
   }
 }
 
