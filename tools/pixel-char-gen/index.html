@@ -1334,7 +1334,7 @@ async function startGenerate() {
 
   showLoading('Generating character...', 'AI is creating your pixel art character. This may take a minute.');
   try {
-    const resp = await fetch('/api/generate', {
+    const resp = await fetch('/api/generate?t=' + Date.now(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1943,7 +1943,7 @@ function restartAnimPlay() {
 async function generateAllAnimations() {
   showLoading('Generating animation frames...', 'Creating all animation poses with AI');
   try {
-    const resp = await fetch('/api/generate', {
+    const resp = await fetch('/api/generate?t=' + Date.now(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1990,7 +1990,7 @@ function initExportPanel() {
 async function doExport() {
   showToast('Exporting...');
   try {
-    const resp = await fetch('/api/export', {
+    const resp = await fetch('/api/export?t=' + Date.now(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

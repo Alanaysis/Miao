@@ -25,6 +25,52 @@ from godot_export import generate_import_file, generate_sprite_frames_tres
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 
+def _clean_backgrounds(raw_dir: str, bg_threshold: int = 240):
+    """清理 AI 生成图片的背景：将接近白色的像素变为透明"""
+    from PIL import Image
+    cleaned = 0
+    for f in os.listdir(raw_dir):
+        if not f.endswith(".png"):
+            continue
+        path = os.path.join(raw_dir, f)
+        img = Image.open(path).convert("RGBA")
+        pixels = img.load()
+        w, h = img.size
+
+        # 找到图片边缘的主色调作为背景色
+        bg_colors = []
+        for x in range(w):
+            for y in [0, 1, h-1, h-2]:  # 上下边缘
+                bg_colors.append(pixels[x, y][:3])
+        for y in range(h):
+            for x in [0, 1, w-1, w-2]:  # 左右边缘
+                bg_colors.append(pixels[x, y][:3])
+
+        # 计算边缘平均颜色作为背景色
+        if bg_colors:
+            avg_r = sum(c[0] for c in bg_colors) // len(bg_colors)
+            avg_g = sum(c[1] for c in bg_colors) // len(bg_colors)
+            avg_b = sum(c[2] for c in bg_colors) // len(bg_colors)
+        else:
+            avg_r, avg_g, avg_b = 255, 255, 255
+
+        # 将接近背景色的像素变为透明
+        threshold = bg_threshold
+        for y in range(h):
+            for x in range(w):
+                r, g, b, a = pixels[x, y]
+                # 计算与背景色的距离
+                dist = ((r - avg_r)**2 + (g - avg_g)**2 + (b - avg_b)**2) ** 0.5
+                if dist < threshold:
+                    # 越接近背景色越透明
+                    alpha = max(0, int(255 * (dist / threshold)))
+                    pixels[x, y] = (r, g, b, alpha)
+
+        img.save(path)
+        cleaned += 1
+    print(f"[cleanup] Cleaned backgrounds for {cleaned} images")
+
+
 def _generate_ai_frames(raw_dir: str, config: dict):
     """用 AI 后端生成原始角色帧"""
     from sources.ai_generator import get_backend, build_prompt, NEGATIVE_PROMPT
@@ -316,7 +362,8 @@ class PixelForgeHandler(SimpleHTTPRequestHandler):
         print(f"[generate] Generating frames for '{name}'...")
         try:
             _generate_ai_frames(raw_dir, data)
-            print(f"[generate] AI generation complete")
+            print(f"[generate] AI generation complete, cleaning backgrounds...")
+            _clean_backgrounds(raw_dir)
         except Exception as e:
             print(f"[generate] AI failed ({e}), falling back to programmatic...")
             _generate_raw_frames(raw_dir, animations, style, clothing, weapon)
