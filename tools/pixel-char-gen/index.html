@@ -1355,14 +1355,23 @@ async function startGenerate() {
       // fallback to demo
       initDemoCanvas();
     } else {
+      // 清空旧数据
+      S.animations = {};
+      state.frames = {};
+
+      // 给每个帧 URL 加时间戳防止缓存
+      const ts = Date.now();
+      for (const [name, info] of Object.entries(data.animations)) {
+        S.animations[name] = {
+          fps: info.fps || 6,
+          frames: info.frames.map(u => u + '?t=' + ts)
+        };
+      }
+
       // Load first frame as editor canvas
       const firstAnim = Object.keys(data.animations)[0];
-      if (firstAnim && data.animations[firstAnim].frames.length > 0) {
-        await loadCanvasFromUrl(data.animations[firstAnim].frames[0]);
-      }
-      S.animations = {};
-      for (const [name, info] of Object.entries(data.animations)) {
-        S.animations[name] = { fps: info.fps || 6, frames: info.frames };
+      if (firstAnim && S.animations[firstAnim].frames.length > 0) {
+        await loadCanvasFromUrl(S.animations[firstAnim].frames[0]);
       }
     }
   } catch (e) {
@@ -1963,8 +1972,13 @@ async function generateAllAnimations() {
       showToast(data.error, true);
       return;
     }
+    S.animations = {};
+    const ts = Date.now();
     for (const [name, info] of Object.entries(data.animations)) {
-      S.animations[name] = { fps: info.fps || 6, frames: info.frames };
+      S.animations[name] = {
+        fps: info.fps || 6,
+        frames: info.frames.map(u => u + '?t=' + ts)
+      };
     }
     initAnimPanel();
     showToast('Animations generated');
