@@ -17,49 +17,164 @@ except ImportError:
 
 
 # ============================================================
-# 动画帧 Prompt 模板
+# Prompt 模板 — 像素角色生成专用
 # ============================================================
 
-ANIMATION_PROMPTS = {
-    "idle": "standing front-facing, idle pose, arms at sides, {desc}",
-    "walk_down": "walking forward, left foot forward, front view, {desc}",
-    "walk_up": "walking away, seen from behind, {desc}",
-    "walk_left": "walking left, side view, {desc}",
-    "walk_right": "walking right, side view, {desc}",
-    "attack": "swinging weapon forward, action pose, dynamic, {desc}",
-    "hurt": "recoiling from hit, pain expression, knocked back, {desc}",
-    "death": "falling down, collapsing on ground, defeated, {desc}"
+# 风格修饰词（根据 style 配置自动匹配）
+STYLE_MODIFIERS = {
+    "chibi-fantasy": "chibi style, cute proportions, big head, fantasy RPG character",
+    "retro-8bit": "8-bit pixel art, NES style, limited palette, chunky pixels",
+    "modern-pixel": "modern pixel art, clean edges, detailed shading, indie game style",
+    "dark-souls": "dark fantasy, gothic style, gritty pixel art, muted colors",
+    "cute-chibi": "super deformed, kawaii style, round shapes, pastel colors",
 }
 
-BASE_PROMPT = "pixel art character, {style}, {clothing}, {weapon}, {accessories}, {skin_tone}, game sprite, transparent background"
-NEGATIVE_PROMPT = "realistic, photograph, 3d render, blurry, low quality, watermark, text, signature"
+# 基础 Prompt — 控制角色外观一致性
+BASE_PROMPT = (
+    "pixel art game sprite, single character, solo, one character only, "
+    "centered in frame, full body shot, standing on ground, "
+    "clean solid white background, isolated character, no background elements, "
+    "high contrast, crisp pixel edges, sharp outlines, "
+    "{style}, {clothing}, {weapon}, {accessories}, {skin_tone}"
+)
+
+# 动画 Pose Prompt — 控制每个动画的姿态
+ANIMATION_PROMPTS = {
+    "idle": (
+        "standing still, front-facing, idle pose, relaxed stance, "
+        "arms at sides, feet together, looking forward"
+    ),
+    "walk_down": (
+        "walking forward, front view, left foot stepping forward, "
+        "arms swinging, mid-stride pose, moving towards viewer"
+    ),
+    "walk_up": (
+        "walking away, back view, seen from behind, "
+        "arms swinging, mid-stride pose, moving away from viewer"
+    ),
+    "walk_left": (
+        "walking left, side view, profile pose, "
+        "left arm forward, right arm back, mid-stride"
+    ),
+    "walk_right": (
+        "walking right, side view, profile pose, "
+        "right arm forward, left arm back, mid-stride"
+    ),
+    "attack": (
+        "attacking, action pose, weapon raised, "
+        "dynamic strike motion, aggressive stance, mid-swing"
+    ),
+    "hurt": (
+        "recoiling from damage, flinching, knocked back, "
+        "pain expression, defensive posture, staggering"
+    ),
+    "death": (
+        "collapsing, falling down, defeated, "
+        "falling to ground, losing balance, downed"
+    ),
+}
+
+# 帧间微变化 — 让同一动画的不同帧有区别
+FRAME_VARIANTS = {
+    "idle": [
+        "breathing, slight sway",
+        "looking slightly left",
+        "looking slightly right",
+        "breathing, slight sway",
+    ],
+    "walk_down": [
+        "left foot forward, right foot back",
+        "feet together, passing position",
+        "right foot forward, left foot back",
+        "feet together, passing position",
+        "left foot forward, right foot back",
+        "feet together, passing position",
+    ],
+    "walk_up": [
+        "left foot forward, right foot back",
+        "feet together, passing position",
+        "right foot forward, left foot back",
+        "feet together, passing position",
+        "left foot forward, right foot back",
+        "feet together, passing position",
+    ],
+    "walk_left": [
+        "left leg extended forward",
+        "legs passing, mid-step",
+        "right leg extended forward",
+        "legs passing, mid-step",
+    ],
+    "walk_right": [
+        "right leg extended forward",
+        "legs passing, mid-step",
+        "left leg extended forward",
+        "legs passing, mid-step",
+    ],
+    "attack": [
+        "winding up, weapon raised high",
+        "weapon overhead, ready to strike",
+        "mid-swing, weapon coming down",
+        "weapon extended forward, follow through",
+        "recovery pose, weapon returning",
+        "back to neutral stance",
+    ],
+    "hurt": [
+        "just got hit, flinching",
+        "knocked back, arms raised defensively",
+        "recovering, returning to stance",
+    ],
+    "death": [
+        "staggering, losing balance",
+        "falling backward",
+        "halfway to ground",
+        "crumpling to ground",
+        "lying on ground",
+        "lying still on ground",
+    ],
+}
+
+# 负面 Prompt — 排除不需要的元素
+NEGATIVE_PROMPT = (
+    "multiple characters, two characters, group, crowd, "
+    "background, scenery, landscape, environment, room, indoor, outdoor, "
+    "realistic, photograph, 3d render, 3d model, cgi, "
+    "blurry, low quality, low resolution, jpeg artifacts, compression, "
+    "watermark, text, signature, logo, label, ui, "
+    "deformed, disfigured, mutated, extra limbs, extra arms, extra legs, "
+    "fused fingers, too many fingers, missing limbs, "
+    "bad anatomy, bad proportions, gross proportions, "
+    "cropped, out of frame, cut off, "
+    "anime, cartoon, illustration, drawing, painting, sketch, "
+    "monochrome, grayscale, black and white"
+)
 
 
 def build_prompt(character_config: dict, anim_name: str, frame_index: int = 0) -> str:
-    """构建单帧的完整 prompt"""
+    """构建单帧的完整 prompt
+
+    结构：基础角色描述 + 风格修饰 + 动画姿态 + 帧间变化
+    确保：单角色、白色背景、像素风格、姿态一致
+    """
+    style = character_config.get("style", "modern-pixel")
+
+    # 基础角色描述
     base = BASE_PROMPT.format(
-        style=character_config.get("style", "pixel art"),
+        style=STYLE_MODIFIERS.get(style, f"{style} pixel art"),
         clothing=character_config.get("clothing", ""),
         weapon=character_config.get("weapon", ""),
         accessories=character_config.get("accessories", ""),
         skin_tone=character_config.get("skin_tone", "")
     )
 
-    anim_template = ANIMATION_PROMPTS.get(anim_name, "{desc}")
-    anim_desc = anim_template.format(desc="")
+    # 动画姿态
+    anim_desc = ANIMATION_PROMPTS.get(anim_name, ANIMATION_PROMPTS["idle"])
 
-    # 为不同帧添加微小变化（增加动画多样性）
-    frame_variants = [
-        "", "slight movement, frame 1", "mid-motion, frame 2",
-        "continuing motion, frame 3", "approaching rest, frame 4",
-        "full motion, frame 5", "peak action, frame 6"
-    ]
-    variant = frame_variants[min(frame_index, len(frame_variants) - 1)]
+    # 帧间变化
+    variants = FRAME_VARIANTS.get(anim_name, FRAME_VARIANTS["idle"])
+    variant = variants[frame_index % len(variants)]
 
-    parts = [base, anim_desc]
-    if variant:
-        parts.append(variant)
-
+    # 组合
+    parts = [base, anim_desc, variant]
     return ", ".join(p for p in parts if p)
 
 
