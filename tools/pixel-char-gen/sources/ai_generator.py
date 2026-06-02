@@ -123,11 +123,33 @@ class LocalSDBackend(AIBackend):
         device = "cuda" if self.device == "auto" and torch.cuda.is_available() else "cpu"
         dtype = torch.float16 if device == "cuda" else torch.float32
 
+        # 优先从 ModelScope 下载（国内快）
+        local_path = self._download_from_modelscope()
+        model_id = local_path if local_path else self.model_id
+
+        print(f"[LocalSD] Loading model from: {model_id}")
         self._pipe = AutoPipelineForText2Image.from_pretrained(
-            self.model_id,
+            model_id,
             torch_dtype=dtype,
             safety_checker=None
         ).to(device)
+
+    def _download_from_modelscope(self) -> str:
+        """从 ModelScope 下载模型，返回本地路径，失败返回空字符串"""
+        try:
+            from modelscope import snapshot_download
+            # ModelScope 上的 SD Turbo 模型 ID
+            model_map = {
+                "stabilityai/sd-turbo": "AI-ModelScope/sd-turbo",
+            }
+            ms_id = model_map.get(self.model_id, self.model_id)
+            print(f"[LocalSD] Downloading from ModelScope: {ms_id}")
+            local_dir = snapshot_download(ms_id, cache_dir="./models")
+            print(f"[LocalSD] Model saved to: {local_dir}")
+            return local_dir
+        except Exception as e:
+            print(f"[LocalSD] ModelScope failed ({e}), trying HuggingFace...")
+            return ""
 
     def generate(self, prompt: str, negative_prompt: str,
                  width: int, height: int) -> Image.Image:
