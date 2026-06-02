@@ -304,15 +304,23 @@ class PixelForgeHandler(SimpleHTTPRequestHandler):
         if not os.path.isdir(raw_dir):
             os.makedirs(raw_dir, exist_ok=True)
 
-        # 如果 raw 目录为空，尝试 AI 生成，失败则程序化生成
-        existing = [f for f in os.listdir(raw_dir) if f.endswith(".png")] if os.path.isdir(raw_dir) else []
-        if not existing:
-            print(f"[generate] No raw frames for '{name}', trying AI generation...")
-            try:
-                _generate_ai_frames(raw_dir, data)
-            except Exception as e:
-                print(f"[generate] AI failed ({e}), falling back to programmatic...")
-                _generate_raw_frames(raw_dir, animations, style, clothing, weapon)
+        # 强制重新生成：清空 raw 和 pixel 目录
+        import shutil
+        if os.path.isdir(raw_dir):
+            shutil.rmtree(raw_dir)
+        if os.path.isdir(pixel_dir):
+            shutil.rmtree(pixel_dir)
+        os.makedirs(raw_dir, exist_ok=True)
+
+        # 尝试 AI 生成，失败则程序化生成
+        print(f"[generate] Generating frames for '{name}'...")
+        try:
+            _generate_ai_frames(raw_dir, data)
+            print(f"[generate] AI generation complete")
+        except Exception as e:
+            print(f"[generate] AI failed ({e}), falling back to programmatic...")
+            _generate_raw_frames(raw_dir, animations, style, clothing, weapon)
+            print(f"[generate] Programmatic generation complete")
 
         # 加载 raw 帧
         all_frames = {}
