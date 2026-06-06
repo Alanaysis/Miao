@@ -1,5 +1,6 @@
 using Godot;
 using Miao.System;
+using Miao.Weapon;
 
 namespace Miao.Player;
 
@@ -57,6 +58,15 @@ public partial class Player : CharacterBody2D
     [Signal]
     public delegate void ShootEventHandler();
 
+    /// <summary>武器拾取选择信号</summary>
+    [Signal]
+    public delegate void WeaponPickupChoiceEventHandler(WeaponData newWeapon);
+
+    private WeaponData _nearbyWeaponData;
+    private Node2D _nearbyWeaponDrop;
+
+    public EquipmentSlot Equipment { get; private set; }
+
     // 技能系统
     [Export] public float Skill1Cooldown = 8.0f;
     [Export] public float Skill2Cooldown = 15.0f;
@@ -89,6 +99,7 @@ public partial class Player : CharacterBody2D
         AddToGroup("player");
         _sprite = GetNode<Sprite2D>("Sprite2D");
         _weaponSlot = GetNode<Node2D>("WeaponSlot");
+        Equipment = GetNode<EquipmentSlot>("WeaponSlot/EquipmentSlot");
 
         // 注册到GameManager
         if (GameManager.Instance != null)
@@ -139,6 +150,10 @@ public partial class Player : CharacterBody2D
         if (@event.IsActionPressed("super_ability") && IsSuperReady)
         {
             UseSuper();
+        }
+        if (@event.IsActionPressed("interact") && _nearbyWeaponData != null)
+        {
+            HandleWeaponPickup();
         }
     }
 
@@ -223,5 +238,32 @@ public partial class Player : CharacterBody2D
     {
         EmitSignal(SignalName.PlayerDied);
         GD.Print("玩家死亡！");
+    }
+
+    public void SetNearbyWeapon(WeaponData data, Node2D drop)
+    {
+        _nearbyWeaponData = data;
+        _nearbyWeaponDrop = drop;
+    }
+
+    public void ClearNearbyWeapon()
+    {
+        _nearbyWeaponData = null;
+        _nearbyWeaponDrop = null;
+    }
+
+    private void HandleWeaponPickup()
+    {
+        if (Equipment.CurrentWeapon == null)
+        {
+            Equipment.EquipWeapon(_nearbyWeaponData);
+            _nearbyWeaponDrop?.QueueFree();
+            _nearbyWeaponData = null;
+            _nearbyWeaponDrop = null;
+        }
+        else
+        {
+            EmitSignal(SignalName.WeaponPickupChoice, _nearbyWeaponData);
+        }
     }
 }
