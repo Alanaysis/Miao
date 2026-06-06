@@ -107,6 +107,7 @@ public partial class RoomGenerator : Node
     private void OnEnemyDied(int experience)
     {
         _enemiesRemaining--;
+        if (_enemiesRemaining < 0) _enemiesRemaining = 0;
         if (_enemiesRemaining <= 0)
         {
             GetTree().CreateTimer(2.0).Timeout += SpawnWave;

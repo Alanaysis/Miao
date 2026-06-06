@@ -21,8 +21,21 @@ public partial class GameManager : Node
 
     public override void _Ready()
     {
+        if (Instance != null && Instance != this)
+        {
+            QueueFree();
+            return;
+        }
         Instance = this;
         InputConfig.Load();
+    }
+
+    public override void _ExitTree()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
+        }
     }
 
     public override void _Process(double delta)
