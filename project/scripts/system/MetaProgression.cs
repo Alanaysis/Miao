@@ -1,114 +1,96 @@
 using Godot;
-using System.Collections.Generic;
 
 namespace Miao.System;
 
-/// <summary>
-/// 局外进度系统
-/// 管理金币、解锁内容
-/// </summary>
 public partial class MetaProgression : Node
 {
     public static MetaProgression Instance { get; private set; }
 
-    /// <summary>金币数量</summary>
-    public int Gold { get; private set; }
+    // 持久化数据
+    public int Glimmer { get; private set; }
+    public int BaseHealthLevel { get; private set; }
+    public int BaseDamageLevel { get; private set; }
+    public int MoveSpeedLevel { get; private set; }
+    public int DropRateLevel { get; private set; }
+    public int StartWeaponLevel { get; private set; }
 
-    /// <summary>已解锁的角色ID列表</summary>
-    public List<string> UnlockedCharacters { get; private set; } = new() { "warrior" };
-
-    /// <summary>已解锁的武器ID列表</summary>
-    public List<string> UnlockedWeapons { get; private set; } = new() { "spin_blade" };
+    private readonly int[] _upgradeCosts = { 100, 200, 400, 800, 1600, 3200, 6400, 12800, 25600, 51200 };
 
     public override void _Ready()
     {
         Instance = this;
-        LoadProgress();
+        Load();
     }
 
-    /// <summary>
-    /// 添加金币（游戏结束时调用）
-    /// </summary>
-    /// <param name="amount">金币数量</param>
-    public void AddGold(int amount)
+    public int GetBonusHealth() => BaseHealthLevel * 10;
+    public float GetBonusDamage() => 1.0f + BaseDamageLevel * 0.05f;
+    public float GetBonusMoveSpeed() => 1.0f + MoveSpeedLevel * 0.03f;
+    public float GetBonusDropRate() => 1.0f + DropRateLevel * 0.05f;
+
+    public bool CanAffordUpgrade(int currentLevel, int maxLevel)
     {
-        Gold += amount;
-        SaveProgress();
-        GD.Print($"获得 {amount} 金币，总计: {Gold}");
+        if (currentLevel >= maxLevel) return false;
+        return Glimmer >= _upgradeCosts[currentLevel];
     }
 
-    /// <summary>
-    /// 解锁角色
-    /// </summary>
-    /// <param name="characterId">角色ID</param>
-    /// <param name="cost">花费金币</param>
-    /// <returns>是否解锁成功</returns>
-    public bool UnlockCharacter(string characterId, int cost)
+    public bool TryUpgrade(string upgradeId, int maxLevel)
     {
-        if (UnlockedCharacters.Contains(characterId)) return false;
-        if (Gold < cost) return false;
+        int currentLevel = upgradeId switch
+        {
+            "base_health" => BaseHealthLevel,
+            "base_damage" => BaseDamageLevel,
+            "move_speed" => MoveSpeedLevel,
+            "drop_rate" => DropRateLevel,
+            "start_weapon" => StartWeaponLevel,
+            _ => 0
+        };
 
-        Gold -= cost;
-        UnlockedCharacters.Add(characterId);
-        SaveProgress();
-        GD.Print($"解锁角色: {characterId}");
+        if (!CanAffordUpgrade(currentLevel, maxLevel)) return false;
+
+        int cost = _upgradeCosts[currentLevel];
+        Glimmer -= cost;
+
+        switch (upgradeId)
+        {
+            case "base_health": BaseHealthLevel++; break;
+            case "base_damage": BaseDamageLevel++; break;
+            case "move_speed": MoveSpeedLevel++; break;
+            case "drop_rate": DropRateLevel++; break;
+            case "start_weapon": StartWeaponLevel++; break;
+        }
+
+        Save();
         return true;
     }
 
-    /// <summary>
-    /// 解锁武器
-    /// </summary>
-    /// <param name="weaponId">武器ID</param>
-    /// <param name="cost">花费金币</param>
-    /// <returns>是否解锁成功</returns>
-    public bool UnlockWeapon(string weaponId, int cost)
+    public void AddGlimmer(int amount)
     {
-        if (UnlockedWeapons.Contains(weaponId)) return false;
-        if (Gold < cost) return false;
-
-        Gold -= cost;
-        UnlockedWeapons.Add(weaponId);
-        SaveProgress();
-        GD.Print($"解锁武器: {weaponId}");
-        return true;
+        Glimmer += amount;
+        Save();
     }
 
-    /// <summary>
-    /// 根据游戏表现计算金币奖励
-    /// </summary>
-    /// <param name="gameTime">存活时间（秒）</param>
-    /// <param name="killCount">击杀数</param>
-    /// <returns>金币数量</returns>
-    public int CalculateGoldReward(float gameTime, int killCount)
-    {
-        int timeGold = (int)(gameTime / 10); // 每10秒1金币
-        int killGold = killCount / 5;         // 每5击杀1金币
-        return timeGold + killGold;
-    }
-
-    private void SaveProgress()
+    public void Save()
     {
         var config = new ConfigFile();
-        config.SetValue("meta", "gold", Gold);
-
-        // 保存为逗号分隔的字符串
-        config.SetValue("meta", "unlocked_characters", string.Join(",", UnlockedCharacters));
-        config.SetValue("meta", "unlocked_weapons", string.Join(",", UnlockedWeapons));
+        config.SetValue("meta", "glimmer", Glimmer);
+        config.SetValue("meta", "base_health_level", BaseHealthLevel);
+        config.SetValue("meta", "base_damage_level", BaseDamageLevel);
+        config.SetValue("meta", "move_speed_level", MoveSpeedLevel);
+        config.SetValue("meta", "drop_rate_level", DropRateLevel);
+        config.SetValue("meta", "start_weapon_level", StartWeaponLevel);
         config.Save("user://meta_progress.cfg");
     }
 
-    private void LoadProgress()
+    public void Load()
     {
         var config = new ConfigFile();
-        var error = config.Load("user://meta_progress.cfg");
-        if (error != Error.Ok) return;
+        if (config.Load("user://meta_progress.cfg") != Error.Ok) return;
 
-        Gold = (int)(long)config.GetValue("meta", "gold", 0);
-
-        var charactersStr = (string)config.GetValue("meta", "unlocked_characters", "warrior");
-        UnlockedCharacters = new List<string>(charactersStr.Split(','));
-
-        var weaponsStr = (string)config.GetValue("meta", "unlocked_weapons", "spin_blade");
-        UnlockedWeapons = new List<string>(weaponsStr.Split(','));
+        Glimmer = (int)config.GetValue("meta", "glimmer", 0);
+        BaseHealthLevel = (int)config.GetValue("meta", "base_health_level", 0);
+        BaseDamageLevel = (int)config.GetValue("meta", "base_damage_level", 0);
+        MoveSpeedLevel = (int)config.GetValue("meta", "move_speed_level", 0);
+        DropRateLevel = (int)config.GetValue("meta", "drop_rate_level", 0);
+        StartWeaponLevel = (int)config.GetValue("meta", "start_weapon_level", 0);
     }
 }
