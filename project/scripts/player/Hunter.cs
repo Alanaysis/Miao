@@ -66,6 +66,7 @@ public partial class Hunter : Player
     {
         // 虚空箭雨：扇形射出大量箭矢，穿透所有敌人
         SuperCharge = 0;
+        EmitSignal(SignalName.SuperChargeChanged, SuperCharge, SuperMaxCharge);
         EmitSignal(SignalName.SuperUsed);
 
         int arrowCount = 20;

@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/player/Hunter.cs" id="1"]
 [ext_resource type="Texture2D" path="res://assets/sprites/player.png" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/weapon/Bullet.tscn" id="3_bullet"]
 
 [sub_resource type="RectangleShape2D" id="1"]
 size = Vector2(24, 28)
@@ -10,6 +11,7 @@ size = Vector2(24, 28)
 collision_layer = 1
 collision_mask = 1
 script = ExtResource("1")
+ArrowScene = ExtResource("3_bullet")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture = ExtResource("2")
