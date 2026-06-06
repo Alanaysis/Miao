@@ -128,6 +128,7 @@ public partial class LevelUpManager : Node
             data.KnockbackForce = 50f;
 
             var projectile = new Weapon.Projectile();
+            projectile.BulletScene = GD.Load<PackedScene>("res://scenes/weapon/Bullet.tscn");
             projectile.SetWeaponData(data);
             _player.AddChild(projectile);
         }

@@ -95,13 +95,6 @@ public partial class Enemy : CharacterBody2D
     {
         CurrentHealth -= damage;
 
-        // 受击击退
-        if (_player != null)
-        {
-            var awayDir = (GlobalPosition - _player.GlobalPosition).Normalized();
-            _knockbackVelocity = awayDir * KnockbackForce * 0.5f;
-        }
-
         if (CurrentHealth <= 0)
         {
             CallDeferred(nameof(Die));
