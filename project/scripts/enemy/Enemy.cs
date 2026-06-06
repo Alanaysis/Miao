@@ -43,6 +43,7 @@ public partial class Enemy : CharacterBody2D
     private Vector2 _knockbackVelocity;
     private float _markMultiplier = 1.0f;
     private float _markTimer = 0;
+    private float _shield;
 
     [Signal]
     public delegate void EnemyDiedEventHandler(int experienceValue);
@@ -109,14 +110,35 @@ public partial class Enemy : CharacterBody2D
         _markTimer = duration;
     }
 
+    public void AddShield(float amount)
+    {
+        _shield += amount;
+    }
+
+    public void Heal(int amount)
+    {
+        CurrentHealth = Mathf.Min(CurrentHealth + amount, MaxHealth);
+    }
+
     /// <summary>
     /// 对敌人造成伤害
     /// </summary>
     /// <param name="damage">伤害值</param>
     public void TakeDamage(int damage)
     {
+        // 先扣护盾
+        if (_shield > 0)
+        {
+            float absorbed = Mathf.Min(_shield, damage);
+            _shield -= absorbed;
+            damage -= Mathf.RoundToInt(absorbed);
+        }
+
+        // 应用标记加成
         damage = Mathf.RoundToInt(damage * _markMultiplier);
+
         CurrentHealth -= damage;
+        CurrentHealth = Mathf.Max(CurrentHealth, 0);
 
         if (CurrentHealth <= 0)
         {
@@ -152,6 +174,10 @@ public partial class Enemy : CharacterBody2D
 
         // 掉落微光（通过击杀和完成游戏获得）
         // (already handled by MetaProgression elsewhere)
+
+        // 精英分裂
+        var eliteMod = GetNodeOrNull<EliteModifier>("EliteModifier");
+        eliteMod?.OnDeath();
 
         QueueFree();
     }
