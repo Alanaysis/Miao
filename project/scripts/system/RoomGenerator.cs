@@ -117,8 +117,19 @@ public partial class RoomGenerator : Node
     private void SpawnBoss()
     {
         EmitSignal(SignalName.WaveStarted, -1);
-        GD.Print("Boss 战开始！");
-        // Boss will be implemented in Task 10
+
+        var boss = GD.Load<PackedScene>("res://scenes/enemy/BugQueen.tscn").Instantiate<BugQueen>();
+        boss.GlobalPosition = _player.GlobalPosition + new Vector2(0, -300);
+        boss.SmallBugScene = SmallBugScene;
+        boss.EnemyDied += OnBossDied;
+        _enemyContainer.AddChild(boss);
+    }
+
+    private void OnBossDied(int experience)
+    {
+        GD.Print("虫后被击败！");
+        EmitSignal(SignalName.RoomCleared, CurrentRoom);
+        EmitSignal(SignalName.AllRoomsCleared);
     }
 
     private PackedScene ChooseEnemyType()
