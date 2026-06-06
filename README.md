@@ -1,6 +1,6 @@
 # Miao 游戏项目
 
-一个由3-5人小团队协作开发的游戏项目，使用 Godot 4.x 引擎，AI辅助开发。
+一个使用 Godot 4.x 引擎开发的像素风刷宝射击游戏，AI 辅助开发。
 
 ## 项目特点
 
@@ -11,7 +11,7 @@
 ## 技术栈
 
 - **引擎**：Godot 4.x
-- **脚本语言**：GDScript
+- **脚本语言**：C#（游戏逻辑）+ GDScript（引导脚本）
 - **版本控制**：Git + GitHub
 
 ## 项目结构
@@ -20,9 +20,12 @@
 Miao/
 ├── .github/              # GitHub模板和配置
 ├── docs/                 # 项目文档
+│   ├── superpowers/     # 设计规格文档
+│   │   └── specs/       # 各系统设计文档
+│   └── game_design.md   # 游戏设计总览
 ├── project/              # Godot项目目录
 │   ├── scenes/          # 场景文件
-│   ├── scripts/         # 脚本文件
+│   ├── scripts/         # 脚本文件（C#）
 │   │   ├── player/     # 玩家相关
 │   │   ├── enemy/      # 敌人相关
 │   │   ├── system/     # 系统脚本
@@ -32,7 +35,8 @@ Miao/
 │   │   ├── tilesets/   # 瓦片集
 │   │   └── audio/      # 音频
 │   └── addons/          # 插件
-├── tests/                # 测试文件
+├── tools/                # 开发工具
+│   └── pixel-char-gen/ # 像素角色生成管线
 ├── agent.md              # AI行为规范（重要！）
 └── README.md
 ```
@@ -85,9 +89,15 @@ AI助手请前往 [agent.md](./agent.md) 查看完整的行为规范。
 
 游戏类型和设计方向正在探索中。当前实验分支：
 
-- `experiment/roguelike`：Roguelike类型实验
+- `experiment/roguelike`：Roguelike 类型实验（完整 MVP）
+- `experiment/destiny`：命运 2 风格横版刷宝射击（当前方向）
+- `experiment/ARPG`：ARPG 实验
 
-详细设计文档请查看 [docs/game_design.md](./docs/game_design.md)
+**当前方向：** 横版 2D 像素风刷宝射击游戏，灵感来自命运 2 的核心刷宝循环与职业 Build 系统。
+
+核心设计文档：
+- [MVP 设计文档](./docs/superpowers/specs/2026-06-06-destiny-looter-shooter-mvp-design.md) — 完整的武器/职业/地图/Meta 系统设计
+- [游戏设计总览](./docs/game_design.md) — 整体游戏设计方向
 
 ## 贡献指南
 
@@ -100,6 +110,7 @@ AI助手请前往 [agent.md](./agent.md) 查看完整的行为规范。
 ## 文档
 
 - [AI行为规范](./agent.md) - AI助手必读
+- [MVP 设计文档](./docs/superpowers/specs/2026-06-06-destiny-looter-shooter-mvp-design.md) - 刷宝射击 MVP 完整设计
 - [游戏设计文档](./docs/game_design.md) - 游戏设计方向
 - [GitHub模板](./.github/) - Issue和PR模板
 

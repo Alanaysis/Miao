@@ -73,3 +73,7 @@ htmlcov/
 .env.*.local
 tools/pixel-char-gen/.venv/
 __pycache__/
+
+# AI 模型文件（太大，不入版本控制）
+models/
+tools/pixel-char-gen/models/
