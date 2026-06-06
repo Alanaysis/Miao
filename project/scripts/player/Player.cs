@@ -63,8 +63,8 @@ public partial class Player : CharacterBody2D
     [Export] public float SuperChargePerKill = 5.0f;
     [Export] public float SuperMaxCharge = 100.0f;
 
-    public float Skill1Timer { get; private set; }
-    public float Skill2Timer { get; private set; }
+    public float Skill1Timer { get; protected set; }
+    public float Skill2Timer { get; protected set; }
     public float SuperCharge { get; protected set; }
     public bool IsSuperReady => SuperCharge >= SuperMaxCharge;
 
