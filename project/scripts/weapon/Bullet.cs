@@ -1,61 +1,54 @@
 using Godot;
+using System.Collections.Generic;
+using Miao.Enemy;
 
 namespace Miao.Weapon;
 
-/// <summary>
-/// 子弹实体
-/// 由远程武器发射，碰到敌人造成伤害后消失
-/// </summary>
 public partial class Bullet : Area2D
 {
-    /// <summary>子弹速度</summary>
-    public Vector2 Velocity;
+    public Vector2 Velocity { get; set; }
+    public int Damage { get; set; }
+    public float Knockback { get; set; }
+    public bool CanPenetrate { get; set; }
+    public float Lifetime { get; set; } = 3.0f;
 
-    /// <summary>伤害值</summary>
-    public int Damage;
-
-    /// <summary>存活时间</summary>
-    public float Lifetime = 3.0f;
+    private float _lifetime;
+    private HashSet<Node2D> _hitTargets = new();
 
     public override void _Ready()
     {
-        // 设置碰撞检测
+        _lifetime = Lifetime;
         CollisionLayer = 0;
-        CollisionMask = 2; // 检测敌人
+        CollisionMask = 2; // 敌人层
 
         var shape = new CircleShape2D();
-        shape.Radius = 5f;
-
+        shape.Radius = 5;
         var collision = new CollisionShape2D();
         collision.Shape = shape;
         AddChild(collision);
 
-        // 连接碰撞信号
         BodyEntered += OnBodyEntered;
     }
 
     public override void _Process(double delta)
     {
-        GlobalPosition += Velocity * (float)delta;
-        Lifetime -= (float)delta;
-
-        if (Lifetime <= 0)
-        {
-            QueueFree();
-        }
+        Position += Velocity * (float)delta;
+        _lifetime -= (float)delta;
+        if (_lifetime <= 0) QueueFree();
     }
 
     private void OnBodyEntered(Node2D body)
     {
-        if (body is Enemy.Enemy enemy)
+        if (body is Enemy enemy && !_hitTargets.Contains(body))
         {
+            _hitTargets.Add(body);
             enemy.TakeDamage(Damage);
-            CallDeferred(nameof(Destroy));
-        }
-    }
+            enemy.ApplyKnockback(Velocity.Normalized() * Knockback);
 
-    private void Destroy()
-    {
-        QueueFree();
+            if (!CanPenetrate)
+            {
+                QueueFree();
+            }
+        }
     }
 }

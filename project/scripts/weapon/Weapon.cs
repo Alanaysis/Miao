@@ -1,46 +1,73 @@
 using Godot;
+using Miao.System;
 
 namespace Miao.Weapon;
 
-/// <summary>
-/// 武器基类
-/// 所有武器继承此类，实现自动攻击逻辑
-/// </summary>
 public partial class Weapon : Node2D
 {
-    /// <summary>武器伤害</summary>
-    [Export] public int Damage = 10;
+    [Export] public PackedScene BulletScene;
 
-    /// <summary>攻击间隔（秒）</summary>
-    [Export] public float AttackCooldown = 1.0f;
+    public WeaponData Data { get; private set; }
+    private float _cooldownTimer;
 
-    /// <summary>攻击速度倍率（由升级系统修改）</summary>
-    public float AttackSpeedMultiplier = 1.0f;
+    // Perk 修饰后的实际属性
+    public float EffectiveFireRate => Data.FireRate * PerkSystem.GetFireRateMultiplier(Data);
+    public int EffectiveDamage => Mathf.RoundToInt(Data.BaseDamage * PerkSystem.GetDamageMultiplier(Data));
+    public float EffectiveKnockback => Data.KnockbackForce * PerkSystem.GetKnockbackMultiplier(Data);
 
-    protected float _cooldownTimer;
-    protected Node2D _owner;
-
-    public override void _Ready()
+    public void SetWeaponData(WeaponData data)
     {
-        _owner = GetParent() as Node2D;
+        Data = data;
+        _cooldownTimer = 0;
     }
 
     public override void _Process(double delta)
     {
+        if (Data == null) return;
         _cooldownTimer -= (float)delta;
-
-        if (_cooldownTimer <= 0)
-        {
-            Attack();
-            _cooldownTimer = AttackCooldown / AttackSpeedMultiplier;
-        }
     }
 
     /// <summary>
-    /// 执行攻击（子类重写）
+    /// 由 Player 的 Shoot 信号调用
     /// </summary>
-    protected virtual void Attack()
+    public void TryFire()
     {
-        // 子类实现具体攻击逻辑
+        if (Data == null || _cooldownTimer > 0) return;
+
+        _cooldownTimer = 1.0f / EffectiveFireRate;
+
+        var fireDirection = GlobalTransform.X.Normalized();
+
+        if (Data.BulletCount <= 1)
+        {
+            FireBullet(fireDirection);
+        }
+        else
+        {
+            // 霰弹枪：多发子弹扇形散射
+            float totalSpread = Data.SpreadAngle;
+            float step = totalSpread / (Data.BulletCount - 1);
+            float startAngle = -totalSpread / 2;
+
+            for (int i = 0; i < Data.BulletCount; i++)
+            {
+                float offset = startAngle + step * i;
+                var dir = fireDirection.Rotated(offset);
+                FireBullet(dir);
+            }
+        }
+    }
+
+    private void FireBullet(Vector2 direction)
+    {
+        if (BulletScene == null) return;
+
+        var bullet = BulletScene.Instantiate<Bullet>();
+        bullet.GlobalPosition = GlobalPosition;
+        bullet.Velocity = direction * Data.BulletSpeed;
+        bullet.Damage = EffectiveDamage;
+        bullet.Knockback = EffectiveKnockback;
+        bullet.CanPenetrate = PerkSystem.HasPerk(Data, PerkId.Penetration);
+        GetTree().CurrentScene.AddChild(bullet);
     }
 }

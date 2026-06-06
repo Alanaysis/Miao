@@ -79,6 +79,15 @@ public partial class Enemy : CharacterBody2D
     }
 
     /// <summary>
+    /// 对敌人施加击退力
+    /// </summary>
+    /// <param name="force">击退力向量</param>
+    public void ApplyKnockback(Vector2 force)
+    {
+        _knockbackVelocity += force;
+    }
+
+    /// <summary>
     /// 对敌人造成伤害
     /// </summary>
     /// <param name="damage">伤害值</param>

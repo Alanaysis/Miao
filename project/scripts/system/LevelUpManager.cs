@@ -68,12 +68,12 @@ public partial class LevelUpManager : Node
         switch (upgradeId)
         {
             case "attack_speed":
-                // 攻击速度 +20%（需要遍历所有武器）
+                // 攻击速度 +20%（修改 WeaponData 的 FireRate）
                 foreach (var child in _player.GetChildren())
                 {
-                    if (child is Weapon.Weapon weapon)
+                    if (child is Weapon.Weapon weapon && weapon.Data != null)
                     {
-                        weapon.AttackSpeedMultiplier *= 1.2f;
+                        weapon.Data.FireRate *= 1.2f;
                     }
                 }
                 GD.Print("升级效果：攻击速度 +20%");
@@ -117,20 +117,28 @@ public partial class LevelUpManager : Node
 
         if (!hasProjectile)
         {
+            // 创建默认 WeaponData 并分配给新武器
+            var data = new Weapon.WeaponData();
+            data.Type = Weapon.WeaponType.AutoRifle;
+            data.Rarity = Weapon.Rarity.Common;
+            data.DisplayName = "Auto Rifle";
+            data.BaseDamage = 12;
+            data.FireRate = 1.25f;       // 0.8s cooldown -> 1.25 shots/sec
+            data.BulletSpeed = 400f;
+            data.KnockbackForce = 50f;
+
             var projectile = new Weapon.Projectile();
-            projectile.Damage = 12;
-            projectile.AttackCooldown = 0.8f;
-            projectile.BulletSpeed = 400f;
+            projectile.SetWeaponData(data);
             _player.AddChild(projectile);
         }
         else
         {
-            // 已有远程武器，增加伤害
+            // 已有远程武器，增加基础伤害
             foreach (var child in _player.GetChildren())
             {
-                if (child is Weapon.Weapon weapon)
+                if (child is Weapon.Weapon weapon && weapon.Data != null)
                 {
-                    weapon.Damage += 5;
+                    weapon.Data.BaseDamage += 5;
                 }
             }
         }
