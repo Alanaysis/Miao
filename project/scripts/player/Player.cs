@@ -12,6 +12,12 @@ public partial class Player : CharacterBody2D
     /// <summary>移动速度</summary>
     [Export] public float MoveSpeed = 200f;
 
+    /// <summary>子弹场景</summary>
+    [Export] public PackedScene BulletScene;
+
+    private float _aimAngle;
+    private Sprite2D _sprite;
+
     /// <summary>最大生命值</summary>
     [Export] public int MaxHealth = 100;
 
@@ -46,10 +52,15 @@ public partial class Player : CharacterBody2D
     [Signal]
     public delegate void LevelUpEventHandler(int newLevel);
 
+    /// <summary>射击信号</summary>
+    [Signal]
+    public delegate void ShootEventHandler();
+
     public override void _Ready()
     {
         CurrentHealth = MaxHealth;
         AddToGroup("player");
+        _sprite = GetNode<Sprite2D>("Sprite2D");
 
         // 注册到GameManager
         if (GameManager.Instance != null)
@@ -60,9 +71,29 @@ public partial class Player : CharacterBody2D
 
     public override void _PhysicsProcess(double delta)
     {
-        var input = Input.GetVector("move_left", "move_right", "move_up", "move_down");
-        Velocity = input * MoveSpeed;
+        // 移动（高位俯视角，8方向移动）
+        var inputDir = Input.GetVector("move_left", "move_right", "move_up", "move_down");
+        Velocity = inputDir * MoveSpeed;
         MoveAndSlide();
+
+        // 精灵翻转：根据移动方向（非瞄准方向）
+        if (inputDir.X != 0)
+        {
+            _sprite.FlipH = inputDir.X < 0;
+        }
+
+        // 瞄准：武器独立朝向鼠标（角色本身不旋转）
+        var mousePos = GetGlobalMousePosition();
+        _aimAngle = (mousePos - GlobalPosition).Angle();
+        GetNode<Node2D>("WeaponSlot").Rotation = _aimAngle;
+    }
+
+    public override void _UnhandledInput(InputEvent @event)
+    {
+        if (@event.IsActionPressed("shoot"))
+        {
+            EmitSignal(SignalName.Shoot);
+        }
     }
 
     /// <summary>

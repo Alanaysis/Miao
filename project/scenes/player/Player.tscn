@@ -1,8 +1,7 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Texture2D" path="res://assets/sprites/player.png" id="1"]
 [ext_resource type="Script" path="res://scripts/player/Player.cs" id="2"]
-[ext_resource type="Script" path="res://scripts/weapon/SpinBlade.cs" id="3"]
 
 [sub_resource type="RectangleShape2D" id="1"]
 size = Vector2(24, 28)
@@ -21,9 +20,5 @@ shape = SubResource("1")
 [node name="Camera2D" type="Camera2D" parent="."]
 zoom = Vector2(1.5, 1.5)
 
-[node name="SpinBlade" type="Node2D" parent="."]
-script = ExtResource("3")
-Damage = 15
-AttackCooldown = 0.5
-SpinRadius = 60.0
-SpinSpeed = 3.0
+[node name="WeaponSlot" type="Marker2D" parent="."]
+position = Vector2(20, 0)
