@@ -1,118 +1,126 @@
 using Godot;
+using Miao.Player;
+using Miao.System;
+using Miao.Weapon;
 
 namespace Miao.UI;
 
-/// <summary>
-/// 游戏内HUD
-/// 显示生命值、经验值、等级、游戏时间、击杀数
-/// </summary>
 public partial class HUD : CanvasLayer
 {
-    private Player.Player _player;
-    private Label _levelLabel;
-    private Label _timeLabel;
-    private Label _killLabel;
     private ProgressBar _healthBar;
-    private ProgressBar _expBar;
+    private ProgressBar _shieldBar;
+    private ProgressBar _superBar;
+    private Label _weaponLabel;
+    private Label _perksLabel;
+    private Label _skill1Label;
+    private Label _skill2Label;
+    private Label _superLabel;
+    private Player _player;
 
     public override void _Ready()
     {
-        _player = GetTree().GetFirstNodeInGroup("player") as Player.Player;
-        CreateUI();
+        // 光等条（左上）
+        _healthBar = CreateBar(new Vector2(20, 20), new Vector2(200, 20), Colors.Red);
+        _shieldBar = CreateBar(new Vector2(20, 45), new Vector2(200, 12), Colors.Cyan);
 
-        if (_player != null)
+        // 技能图标 + 超能能量（左下）
+        _skill1Label = CreateLabel(new Vector2(20, 660), 16);
+        _skill2Label = CreateLabel(new Vector2(80, 660), 16);
+        _superBar = CreateBar(new Vector2(20, 690), new Vector2(140, 12), new Color(1, 0.8f, 0));
+        _superLabel = CreateLabel(new Vector2(170, 688), 12);
+
+        // 武器信息（右下）
+        _weaponLabel = CreateLabel(new Vector2(1050, 660), 14);
+        _perksLabel = CreateLabel(new Vector2(1050, 680), 12);
+
+        // 自动查找玩家（兼容旧场景加载方式）
+        if (_player == null)
         {
-            _player.HealthChanged += OnHealthChanged;
-            _player.ExperienceChanged += OnExperienceChanged;
-            _player.LevelUp += OnLevelUp;
+            var node = GetTree().GetFirstNodeInGroup("player");
+            if (node is Player p)
+                SetPlayer(p);
         }
+    }
+
+    public void SetPlayer(Player player)
+    {
+        _player = player;
+        player.HealthChanged += OnHealthChanged;
+        player.ShieldChanged += OnShieldChanged;
+        player.SuperChargeChanged += OnSuperChargeChanged;
     }
 
     public override void _Process(double delta)
     {
         if (_player == null) return;
 
-        // 更新游戏时间
-        var time = Time.GetTicksMsec() / 1000.0f;
-        var minutes = (int)(time / 60);
-        var seconds = (int)(time % 60);
-        _timeLabel.Text = $"时间: {minutes:D2}:{seconds:D2}";
+        _skill1Label.Text = _player.Skill1Timer > 0
+            ? $"Q: {_player.Skill1Timer:F1}s"
+            : "Q: 就绪";
+        _skill2Label.Text = _player.Skill2Timer > 0
+            ? $"R: {_player.Skill2Timer:F1}s"
+            : "R: 就绪";
+        _superLabel.Text = _player.IsSuperReady
+            ? "F: 超能就绪！"
+            : $"F: {_player.SuperCharge:F0}/{_player.SuperMaxCharge:F0}";
 
-        // 更新击杀数
-        _killLabel.Text = $"击杀: {_player.KillCount}";
+        var weapon = _player.Equipment?.CurrentWeapon?.Data;
+        if (weapon != null)
+        {
+            string rarityColor = weapon.Rarity switch
+            {
+                Rarity.Common => "白",
+                Rarity.Uncommon => "绿",
+                Rarity.Rare => "蓝",
+                Rarity.Epic => "紫",
+                Rarity.Legendary => "金",
+                _ => ""
+            };
+            _weaponLabel.Text = $"[{rarityColor}] {weapon.DisplayName}";
+            _perksLabel.Text = string.Join(" | ", weapon.Perks.ConvertAll(p => PerkSystem.PerkInfo[p].Name));
+        }
+        else
+        {
+            _weaponLabel.Text = "无武器";
+            _perksLabel.Text = "";
+        }
     }
 
-    private void CreateUI()
+    private void OnHealthChanged(int current, int max)
     {
-        // 根容器，铺满整个屏幕
-        var root = new Control();
-        root.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-        AddChild(root);
-
-        // 生命值标签
-        var healthLabel = new Label();
-        healthLabel.Text = "HP";
-        healthLabel.Position = new Vector2(10, 8);
-        root.AddChild(healthLabel);
-
-        // 生命值条
-        _healthBar = new ProgressBar();
-        _healthBar.Position = new Vector2(35, 10);
-        _healthBar.Size = new Vector2(180, 18);
-        _healthBar.MinValue = 0;
-        _healthBar.MaxValue = _player?.MaxHealth ?? 100;
-        _healthBar.Value = _player?.CurrentHealth ?? 100;
-        root.AddChild(_healthBar);
-
-        // 经验值条（屏幕底部）
-        _expBar = new ProgressBar();
-        _expBar.Position = new Vector2(0, 700);
-        _expBar.Size = new Vector2(1280, 14);
-        _expBar.MinValue = 0;
-        _expBar.MaxValue = _player?.ExperienceToLevel ?? 10;
-        _expBar.Value = _player?.CurrentExperience ?? 0;
-        root.AddChild(_expBar);
-
-        // 等级标签（右上角）
-        _levelLabel = new Label();
-        _levelLabel.Text = $"等级: {_player?.Level ?? 1}";
-        _levelLabel.Position = new Vector2(1130, 10);
-        _levelLabel.Size = new Vector2(140, 25);
-        _levelLabel.HorizontalAlignment = HorizontalAlignment.Right;
-        root.AddChild(_levelLabel);
-
-        // 时间标签
-        _timeLabel = new Label();
-        _timeLabel.Text = "时间: 00:00";
-        _timeLabel.Position = new Vector2(1130, 35);
-        _timeLabel.Size = new Vector2(140, 25);
-        _timeLabel.HorizontalAlignment = HorizontalAlignment.Right;
-        root.AddChild(_timeLabel);
-
-        // 击杀标签
-        _killLabel = new Label();
-        _killLabel.Text = "击杀: 0";
-        _killLabel.Position = new Vector2(1130, 60);
-        _killLabel.Size = new Vector2(140, 25);
-        _killLabel.HorizontalAlignment = HorizontalAlignment.Right;
-        root.AddChild(_killLabel);
+        _healthBar.MaxValue = max;
+        _healthBar.Value = current;
     }
 
-    private void OnHealthChanged(int currentHealth, int maxHealth)
+    private void OnShieldChanged(float current, float max)
     {
-        _healthBar.MaxValue = maxHealth;
-        _healthBar.Value = currentHealth;
+        _shieldBar.MaxValue = max;
+        _shieldBar.Value = current;
     }
 
-    private void OnExperienceChanged(int currentExp, int expToLevel, int level)
+    private void OnSuperChargeChanged(float current, float max)
     {
-        _expBar.MaxValue = expToLevel;
-        _expBar.Value = currentExp;
-        _levelLabel.Text = $"等级: {level}";
+        _superBar.MaxValue = max;
+        _superBar.Value = current;
     }
 
-    private void OnLevelUp(int newLevel)
+    private ProgressBar CreateBar(Vector2 pos, Vector2 size, Color color)
     {
-        _levelLabel.Text = $"等级: {newLevel}";
+        var bar = new ProgressBar();
+        bar.Position = pos;
+        bar.Size = size;
+        bar.MaxValue = 100;
+        bar.Value = 100;
+        bar.ShowPercentage = false;
+        AddChild(bar);
+        return bar;
+    }
+
+    private Label CreateLabel(Vector2 pos, int fontSize)
+    {
+        var label = new Label();
+        label.Position = pos;
+        AddChild(label);
+        return label;
     }
 }

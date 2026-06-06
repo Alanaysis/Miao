@@ -2,6 +2,6 @@
 
 [ext_resource type="Script" path="res://scripts/ui/GameOverUI.cs" id="1"]
 
-[node name="GameOverUI" type="CanvasLayer"]
+[node name="SettlementUI" type="CanvasLayer"]
 layer = 20
 script = ExtResource("1")

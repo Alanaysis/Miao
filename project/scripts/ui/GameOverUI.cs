@@ -3,109 +3,60 @@ using Miao.System;
 
 namespace Miao.UI;
 
-/// <summary>
-/// 游戏结束界面
-/// 显示存活时间、击杀数、重新开始按钮
-/// </summary>
-public partial class GameOverUI : CanvasLayer
+public partial class SettlementUI : CanvasLayer
 {
-    private Label _timeLabel;
-    private Label _killLabel;
-    private Label _goldLabel;
+    private Label _statsLabel;
+    private Label _glimmerLabel;
+    private Label _weaponLabel;
 
     public override void _Ready()
     {
         ProcessMode = ProcessModeEnum.Always;
-        CreateUI();
+
+        var panel = new PanelContainer();
+        panel.Size = new Vector2(600, 400);
+        panel.Position = new Vector2(340, 160);
+
+        var vbox = new VBoxContainer();
+
+        var title = new Label();
+        title.Text = "任务结算";
+        title.HorizontalAlignment = HorizontalAlignment.Center;
+        vbox.AddChild(title);
+
+        _statsLabel = new Label();
+        vbox.AddChild(_statsLabel);
+
+        _glimmerLabel = new Label();
+        vbox.AddChild(_glimmerLabel);
+
+        _weaponLabel = new Label();
+        vbox.AddChild(_weaponLabel);
+
+        var buttonBox = new HBoxContainer();
+        buttonBox.Alignment = BoxContainer.AlignmentMode.Center;
+
+        var restartBtn = new Button();
+        restartBtn.Text = "再来一局";
+        restartBtn.Pressed += () => GameManager.Instance.StartGame();
+        buttonBox.AddChild(restartBtn);
+
+        var menuBtn = new Button();
+        menuBtn.Text = "返回大厅";
+        menuBtn.Pressed += () => GameManager.Instance.ReturnToMainMenu();
+        buttonBox.AddChild(menuBtn);
+
+        vbox.AddChild(buttonBox);
+        panel.AddChild(vbox);
+        AddChild(panel);
     }
 
-    public void SetStats(float gameTime, int killCount, int goldReward = 0)
+    public void SetRunStats(float time, int kills, int glimmerEarned, string weaponName)
     {
-        var minutes = (int)(gameTime / 60);
-        var seconds = (int)(gameTime % 60);
-        if (_timeLabel != null)
-            _timeLabel.Text = $"存活时间: {minutes:D2}:{seconds:D2}";
-        if (_killLabel != null)
-            _killLabel.Text = $"击杀数: {killCount}";
-        if (_goldLabel != null)
-            _goldLabel.Text = $"获得金币: {goldReward}";
-    }
-
-    private void CreateUI()
-    {
-        // 根容器
-        var root = new Control();
-        root.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-        AddChild(root);
-
-        // 背景遮罩
-        var background = new ColorRect();
-        background.Color = new Color(0, 0, 0, 0.8f);
-        background.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-        root.AddChild(background);
-
-        // 标题
-        var titleLabel = new Label();
-        titleLabel.Text = "游戏结束";
-        titleLabel.HorizontalAlignment = HorizontalAlignment.Center;
-        titleLabel.AddThemeFontSizeOverride("font_size", 48);
-        titleLabel.Position = new Vector2(0, 180);
-        titleLabel.Size = new Vector2(1280, 60);
-        root.AddChild(titleLabel);
-
-        // 存活时间
-        _timeLabel = new Label();
-        _timeLabel.Text = "存活时间: 00:00";
-        _timeLabel.HorizontalAlignment = HorizontalAlignment.Center;
-        _timeLabel.AddThemeFontSizeOverride("font_size", 24);
-        _timeLabel.Position = new Vector2(0, 300);
-        _timeLabel.Size = new Vector2(1280, 40);
-        root.AddChild(_timeLabel);
-
-        // 击杀数
-        _killLabel = new Label();
-        _killLabel.Text = "击杀数: 0";
-        _killLabel.HorizontalAlignment = HorizontalAlignment.Center;
-        _killLabel.AddThemeFontSizeOverride("font_size", 24);
-        _killLabel.Position = new Vector2(0, 350);
-        _killLabel.Size = new Vector2(1280, 40);
-        root.AddChild(_killLabel);
-
-        // 金币奖励
-        _goldLabel = new Label();
-        _goldLabel.Text = "获得金币: 0";
-        _goldLabel.HorizontalAlignment = HorizontalAlignment.Center;
-        _goldLabel.AddThemeFontSizeOverride("font_size", 24);
-        _goldLabel.Position = new Vector2(0, 400);
-        _goldLabel.Size = new Vector2(1280, 40);
-        root.AddChild(_goldLabel);
-
-        // 重新开始按钮
-        var restartButton = new Button();
-        restartButton.Text = "重新开始";
-        restartButton.Position = new Vector2(540, 480);
-        restartButton.Size = new Vector2(200, 50);
-        restartButton.Pressed += OnRestartPressed;
-        root.AddChild(restartButton);
-
-        // 返回菜单按钮
-        var menuButton = new Button();
-        menuButton.Text = "返回菜单";
-        menuButton.Position = new Vector2(540, 550);
-        menuButton.Size = new Vector2(200, 50);
-        menuButton.Pressed += OnMenuPressed;
-        root.AddChild(menuButton);
-    }
-
-    private void OnRestartPressed()
-    {
-        GetTree().Paused = false;
-        GameManager.Instance.StartGame();
-    }
-
-    private void OnMenuPressed()
-    {
-        GetTree().Paused = false;
-        GameManager.Instance.ReturnToMainMenu();
+        int minutes = (int)(time / 60);
+        int seconds = (int)(time % 60);
+        _statsLabel.Text = $"击杀: {kills} | 用时: {minutes}:{seconds:D2}";
+        _glimmerLabel.Text = $"获得微光: {glimmerEarned}";
+        _weaponLabel.Text = $"通关武器: {weaponName}";
     }
 }
