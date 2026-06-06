@@ -27,6 +27,7 @@ public partial class GameManager : Node
     public override void _Ready()
     {
         Instance = this;
+        InputConfig.Load();
     }
 
     public override void _Process(double delta)

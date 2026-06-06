@@ -33,5 +33,6 @@ public static class InputConfig
             return;
         }
         // 未来：读取配置并重新映射 InputMap
+        GD.PushWarning("InputConfig: Load() 未实现，使用默认键位");
     }
 }
