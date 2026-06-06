@@ -8,6 +8,8 @@ using Miao.Weapon;
 /// <summary>
 /// Perk 系统 —— 8 种 Perk 的完整实现
 /// </summary>
+// TODO: KillClip — 击杀后下一弹夹 +30% 伤害，需在战斗系统的击杀回调中触发增伤状态切换
+// TODO: KillReturn — 击杀回复 1 发子弹，需在战斗系统的击杀回调中调用弹药系统回填
 public static class PerkSystem
 {
     // Perk 名称和描述（中文）
@@ -50,6 +52,7 @@ public static class PerkSystem
 
     public static float GetDamageMultiplier(WeaponData data)
     {
+        // TODO: 在战斗系统中接入 KillClip 增伤逻辑（击杀后下一弹夹 +30% 伤害）
         float mult = 1.0f;
         // 杀戮弹夹的加成在击杀时触发，这里返回基础倍率
         return mult;
@@ -98,7 +101,11 @@ public static class PerkSystem
             }
         }
 
-        if (available.Count == 0) return PerkId.KillClip; // fallback
+        if (available.Count == 0)
+        {
+            GD.PushWarning("PerkSystem: RollRandomPerk 无可用 Perk，使用 fallback");
+            return PerkId.KillClip; // fallback
+        }
         return available[GD.RandRange(0, available.Count - 1)];
     }
 }
