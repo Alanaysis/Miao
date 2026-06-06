@@ -27,7 +27,7 @@ public enum PerkId
 
 public enum LegendaryTraitId
 {
-    // 金武独有特性，后续任务实现
+    Default, // 占位，后续任务实现更多特性
 }
 
 public partial class WeaponData : Resource

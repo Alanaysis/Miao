@@ -1,4 +1,5 @@
 using Godot;
+using Miao.Weapon;
 
 namespace Miao.Enemy;
 
@@ -28,6 +29,12 @@ public partial class Enemy : CharacterBody2D
 
     /// <summary>经验球场景</summary>
     [Export] public PackedScene ExperienceOrbScene;
+
+    /// <summary>房间索引（用于掉落等级）</summary>
+    [Export] public int RoomIndex { get; set; }
+
+    /// <summary>是否为精英/Boss（影响掉落稀有度）</summary>
+    [Export] public bool IsElite { get; set; }
 
     public int CurrentHealth { get; private set; }
 
@@ -136,6 +143,64 @@ public partial class Enemy : CharacterBody2D
             GetTree().CurrentScene.AddChild(orb);
         }
 
+        // 掉落武器
+        if (GD.Randf() < LootTable.BaseDropChance)
+        {
+            var weaponData = LootTable.GenerateWeapon(RoomIndex, IsElite);
+            SpawnWeaponDrop(weaponData);
+        }
+
+        // 掉落微光（通过击杀和完成游戏获得）
+        // (already handled by MetaProgression elsewhere)
+
         QueueFree();
+    }
+
+    private void SpawnWeaponDrop(WeaponData data)
+    {
+        var drop = new Area2D();
+        drop.CollisionLayer = 4;
+        drop.CollisionMask = 1;
+
+        var shape = new CircleShape2D();
+        shape.Radius = 16;
+        var collision = new CollisionShape2D();
+        collision.Shape = shape;
+        drop.AddChild(collision);
+
+        var color = data.Rarity switch
+        {
+            Rarity.Common => new Color(0.7f, 0.7f, 0.7f),
+            Rarity.Uncommon => new Color(0.2f, 0.8f, 0.2f),
+            Rarity.Rare => new Color(0.2f, 0.4f, 1.0f),
+            Rarity.Epic => new Color(0.6f, 0.2f, 0.8f),
+            Rarity.Legendary => new Color(1.0f, 0.8f, 0.0f),
+            _ => Colors.White
+        };
+
+        var sprite = new Sprite2D();
+        sprite.Modulate = color;
+        drop.AddChild(sprite);
+
+        drop.GlobalPosition = GlobalPosition + new Vector2(GD.RandRange(-20, 20), GD.RandRange(-20, 20));
+
+        drop.SetMeta("weapon_data", data);
+
+        drop.BodyEntered += (body) =>
+        {
+            if (body is Miao.Player.Player player)
+            {
+                player.SetNearbyWeapon(data, drop);
+            }
+        };
+        drop.BodyExited += (body) =>
+        {
+            if (body is Miao.Player.Player player)
+            {
+                player.ClearNearbyWeapon();
+            }
+        };
+
+        GetTree().CurrentScene.AddChild(drop);
     }
 }
