@@ -62,7 +62,6 @@ public partial class EliteModifier : Node
                 var smallBug = GD.Load<PackedScene>("res://scenes/enemy/SmallBug.tscn").Instantiate<Enemy>();
                 smallBug.GlobalPosition = _enemy.GlobalPosition + new Vector2(GD.RandRange(-30, 30), GD.RandRange(-30, 30));
                 smallBug.MaxHealth = _enemy.MaxHealth / 3;
-                smallBug.CurrentHealth = smallBug.MaxHealth;
                 GetTree().CurrentScene.AddChild(smallBug);
             }
         }
