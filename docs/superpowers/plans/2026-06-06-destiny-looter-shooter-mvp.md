@@ -4,7 +4,7 @@
 
 **Goal:** Build a playable looter-shooter MVP with free-aim shooting, weapon perks, hunter class, room-based progression, and a boss fight.
 
-**Architecture:** Extend the existing roguelike C# codebase. Transform auto-attack weapons into mouse-aimed shooting, replace infinite spawning with room-based waves, add perk/loot/equipment systems. Keep the CharacterBody2D-based player/enemy architecture.
+**Architecture:** Extend the existing roguelike C# codebase. Transform auto-attack weapons into mouse-aimed shooting, replace infinite spawning with room-based waves, add perk/loot/equipment systems. Keep the CharacterBody2D-based player/enemy architecture. Use 2D high-angle top-down perspective (similar to Helldivers 1) with free mouse aiming.
 
 **Tech Stack:** Godot 4.x, C#, .NET
 
@@ -42,7 +42,9 @@
 | `project/scripts/weapon/WeaponData.cs` | Weapon data class: type, rarity, perks, stats |
 | `project/scripts/weapon/PerkSystem.cs` | Perk pool, random generation, effect application |
 | `project/scripts/weapon/LootTable.cs` | Drop probability by room/layer |
-| `project/scripts/weapon/EquipmentSlot.cs` | Single weapon slot, equip/absorb logic |
+| `project/scripts/weapon/EquipmentSlot.cs` | Single weapon slot, equip/infuse logic |
+| `project/scripts/weapon/LegendaryTrait.cs` | Legendary weapon unique traits (upgradeable with kills) |
+| `project/scripts/system/InputConfig.cs` | Keybinding config file read/write |
 | `project/scripts/enemy/EliteModifier.cs` | Elite enemy modifiers (speed/shield/split/regen) |
 | `project/scripts/enemy/BugQueen.cs` | Boss AI: 3-phase state machine |
 | `project/scripts/system/RoomGenerator.cs` | Random room layout + wave composition |
@@ -109,7 +111,49 @@ interact={
 }
 ```
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Create InputConfig.cs — save keybindings to config file**
+
+```csharp
+using Godot;
+
+namespace Miao.System;
+
+/// <summary>
+/// 操作方案保存到配置文件，以便后续修改
+/// </summary>
+public static class InputConfig
+{
+    private const string ConfigPath = "user://input_config.cfg";
+
+    public static void SaveDefaults()
+    {
+        var config = new ConfigFile();
+        config.SetValue("controls", "move_up", "W");
+        config.SetValue("controls", "move_down", "S");
+        config.SetValue("controls", "move_left", "A");
+        config.SetValue("controls", "move_right", "D");
+        config.SetValue("controls", "shoot", "MouseLeft");
+        config.SetValue("controls", "skill_1", "Q");
+        config.SetValue("controls", "skill_2", "R");
+        config.SetValue("controls", "super_ability", "F");
+        config.SetValue("controls", "interact", "E");
+        config.Save(ConfigPath);
+    }
+
+    public static void Load()
+    {
+        var config = new ConfigFile();
+        if (config.Load(ConfigPath) != Error.Ok)
+        {
+            SaveDefaults();
+            return;
+        }
+        // 未来：读取配置并重新映射 InputMap
+    }
+}
+```
+
+- [ ] **Step 6: Commit**
 
 ```bash
 git add project/scripts/ project/scenes/ project/project.godot
@@ -120,7 +164,7 @@ git commit -m "chore: merge roguelike codebase as starting point"
 
 ## Task 2: Player Aiming — Free Aim with Mouse
 
-**Goal:** Replace auto-attack with mouse-aimed shooting. Player rotates to face mouse cursor, fires bullets on click.
+**Goal:** Replace auto-attack with mouse-aimed shooting. High-angle top-down perspective (Helldivers 1 style). Player sprite faces movement direction, weapon aims at mouse cursor independently.
 
 ### Files:
 - Modify: `project/scripts/player/Player.cs`
@@ -135,18 +179,32 @@ Replace the `_PhysicsProcess` method and add shooting logic:
 [Export] public PackedScene BulletScene;
 
 private float _aimAngle;
+private Sprite2D _sprite;
+
+public override void _Ready()
+{
+    // ... existing code ...
+    _sprite = GetNode<Sprite2D>("Sprite2D");
+}
 
 public override void _PhysicsProcess(double delta)
 {
-    // 移动
+    // 移动（高位俯视角，8方向移动）
     var inputDir = Input.GetVector("move_left", "move_right", "move_up", "move_down");
     Velocity = inputDir * MoveSpeed;
     MoveAndSlide();
 
-    // 瞄准：计算角色到鼠标的角度
+    // 精灵翻转：根据移动方向（非瞄准方向）
+    if (inputDir.X != 0)
+    {
+        _sprite.FlipH = inputDir.X < 0;
+    }
+
+    // 瞄准：武器独立朝向鼠标（角色本身不旋转）
     var mousePos = GetGlobalMousePosition();
     _aimAngle = (mousePos - GlobalPosition).Angle();
-    Rotation = _aimAngle;
+    // 武器槽位旋转到瞄准方向
+    GetNode<Node2D>("WeaponSlot").Rotation = _aimAngle;
 }
 
 public override void _UnhandledInput(InputEvent @event)
@@ -230,6 +288,16 @@ public partial class WeaponData : Resource
     [Export] public float KnockbackForce { get; set; }
 
     public List<PerkId> Perks { get; set; } = new();
+
+    /// <summary>
+    /// 金武独有特性（仅 Legendary 有）
+    /// </summary>
+    public LegendaryTraitId? LegendaryTrait { get; set; }
+
+    /// <summary>
+    /// 金武独有特性的升级等级（通过累计击杀升级）
+    /// </summary>
+    public int LegendaryTraitLevel { get; set; } = 0;
 
     /// <summary>
     /// 稀有度对应的 Perk 槽数
@@ -465,15 +533,16 @@ public static class PerkSystem
         { PerkId.HeadHunter, ("猎头者", "对精英/Boss伤害+25%") }
     };
 
-    // Perk 对武器类型的限制
+    // MVP 中所有武器 Perk 池内容相同，不做类型限制
+    // 未来可根据武器类型分化 Perk 池
     public static readonly Dictionary<PerkId, WeaponType[]> PerkWeaponRestriction = new()
     {
         { PerkId.KillClip, new[] { WeaponType.AutoRifle, WeaponType.Shotgun, WeaponType.HandCannon } },
-        { PerkId.CriticalMaster, new[] { WeaponType.AutoRifle, WeaponType.HandCannon } },
-        { PerkId.ShotgunSpread, new[] { WeaponType.Shotgun } },
-        { PerkId.Penetration, new[] { WeaponType.AutoRifle, WeaponType.HandCannon } },
+        { PerkId.CriticalMaster, new[] { WeaponType.AutoRifle, WeaponType.Shotgun, WeaponType.HandCannon } },
+        { PerkId.ShotgunSpread, new[] { WeaponType.AutoRifle, WeaponType.Shotgun, WeaponType.HandCannon } },
+        { PerkId.Penetration, new[] { WeaponType.AutoRifle, WeaponType.Shotgun, WeaponType.HandCannon } },
         { PerkId.KillReturn, new[] { WeaponType.AutoRifle, WeaponType.Shotgun, WeaponType.HandCannon } },
-        { PerkId.RapidFire, new[] { WeaponType.AutoRifle, WeaponType.HandCannon } },
+        { PerkId.RapidFire, new[] { WeaponType.AutoRifle, WeaponType.Shotgun, WeaponType.HandCannon } },
         { PerkId.StableGrip, new[] { WeaponType.AutoRifle, WeaponType.Shotgun, WeaponType.HandCannon } },
         { PerkId.HeadHunter, new[] { WeaponType.AutoRifle, WeaponType.Shotgun, WeaponType.HandCannon } }
     };
@@ -815,7 +884,7 @@ git commit -m "feat(player): add Hunter class with Blink, Mark, and Void Arrow R
 
 ## Task 6: Equipment Slot + Weapon Pickup
 
-**Goal:** Implement single weapon slot, weapon pickup with equip/absorb choices.
+**Goal:** Implement single weapon slot, weapon pickup with equip/infuse choices. Infusion requires same weapon type and rarity (blue+ only).
 
 ### Files:
 - Create: `project/scripts/weapon/EquipmentSlot.cs`
@@ -850,43 +919,47 @@ public partial class EquipmentSlot : Node2D
     }
 
     /// <summary>
-    /// 吸收 Perk：将新武器的 Perk 转移到当前武器
+    /// 灌注 Perk：将新武器的 1 个 Perk 转移到当前武器
+    /// 规则：蓝武以上才能灌注，必须同类型同稀有度，金武独有特性不可灌注
     /// </summary>
-    public bool TryAbsorbPerk(WeaponData newWeaponData)
+    public bool CanInfuse(WeaponData newWeaponData)
     {
         if (CurrentWeapon?.Data == null) return false;
         if (newWeaponData.Perks.Count == 0) return false;
 
         var currentData = CurrentWeapon.Data;
 
-        // 白武无 Perk 不可吸收
-        if (newWeaponData.Rarity == Rarity.Common) return false;
-        // 金武独特被动不可吸收
-        if (newWeaponData.Rarity == Rarity.Legendary) return false;
+        // 白武、绿武不显示灌注选项
+        if (newWeaponData.Rarity < Rarity.Rare) return false;
+        // 必须同类型
+        if (newWeaponData.Type != currentData.Type) return false;
+        // 必须同稀有度
+        if (newWeaponData.Rarity != currentData.Rarity) return false;
 
-        if (currentData.Perks.Count < currentData.MaxPerkSlots)
-        {
-            // 直接吸收第一个 Perk
-            currentData.Perks.Add(newWeaponData.Perks[0]);
-            return true;
-        }
-        else if (currentData.Perks.Count >= 2)
-        {
-            // 已满，需要选择替换（UI 层处理选择逻辑）
-            return false; // 返回 false，让 UI 弹出选择
-        }
-
-        return false;
+        return true;
     }
 
     /// <summary>
-    /// 替换指定位置的 Perk
+    /// 灌注：选择新武器的 1 个 Perk 替换当前武器的 1 个 Perk
+    /// 金武独有特性不可被灌注替换
     /// </summary>
-    public void ReplacePerk(int slotIndex, PerkId newPerk)
+    public bool TryInfusePerk(WeaponData newWeaponData, PerkId sourcePerk, int targetSlotIndex)
     {
-        if (CurrentWeapon?.Data == null) return;
-        if (slotIndex < 0 || slotIndex >= CurrentWeapon.Data.Perks.Count) return;
-        CurrentWeapon.Data.Perks[slotIndex] = newPerk;
+        if (!CanInfuse(newWeaponData)) return false;
+        if (!newWeaponData.Perks.Contains(sourcePerk)) return false;
+
+        var currentData = CurrentWeapon.Data;
+        if (targetSlotIndex < 0 || targetSlotIndex >= currentData.Perks.Count) return false;
+
+        // 金武独有特性不可灌注
+        if (currentData.Rarity == Rarity.Legendary && currentData.LegendaryTrait.HasValue)
+        {
+            // 如果目标槽位是独有特性，拒绝
+            // （独有特性不在 Perks 列表中，而是单独字段，所以此检查可能不需要）
+        }
+
+        currentData.Perks[targetSlotIndex] = sourcePerk;
+        return true;
     }
 
     public List<PerkId> GetCurrentPerks()
@@ -922,7 +995,7 @@ public partial class PickupPrompt : CanvasLayer
         _equipLabel.HorizontalAlignment = HorizontalAlignment.Center;
 
         _absorbLabel = new Label();
-        _absorbLabel.Text = "[E] 吸收Perk";
+        _absorbLabel.Text = "[E] 灌注Perk";
         _absorbLabel.HorizontalAlignment = HorizontalAlignment.Center;
 
         vbox.AddChild(_equipLabel);
@@ -1024,9 +1097,9 @@ namespace Miao.Weapon;
 public static class LootTable
 {
     /// <summary>
-    /// 掉落武器的概率（基础）
+    /// 掉落武器的概率（基础，30% 感觉偏高，待定）
     /// </summary>
-    public const float BaseDropChance = 0.3f;
+    public const float BaseDropChance = 0.3f; // TODO: 调整平衡
 
     /// <summary>
     /// 根据当前层数决定稀有度权重
@@ -1139,6 +1212,13 @@ public static class LootTable
             exclude.Add(perk);
         }
 
+        // 金武：分配独有特性
+        if (rarity == Rarity.Legendary)
+        {
+            data.LegendaryTrait = LegendaryTrait.RollForWeaponType(type);
+            data.LegendaryTraitLevel = 1;
+        }
+
         return data;
     }
 
@@ -1191,8 +1271,20 @@ public void Die()
         SpawnWeaponDrop(weaponData);
     }
 
-    // 掉落微光（金币）
+    // 掉落微光（通过击杀和完成游戏获得）
     EmitSignal(SignalName.GlimmerDropped, _isElite ? 20 : 5);
+
+    // 金武独有特性：累计击杀升级
+    var players = GetTree().GetNodesInGroup("player");
+    if (players.Count > 0 && players[0] is Miao.Player.Player p)
+    {
+        var weapon = p.Equipment?.CurrentWeapon?.Data;
+        if (weapon?.LegendaryTrait.HasValue == true)
+        {
+            weapon.LegendaryTraitLevel++;
+            GD.Print($"金武特性升级：Lv.{weapon.LegendaryTraitLevel}");
+        }
+    }
 
     QueueFree();
 }
@@ -2128,8 +2220,11 @@ public partial class CollectionCodex : Node
     public static CollectionCodex Instance { get; private set; }
 
     public HashSet<string> DiscoveredWeapons { get; private set; } = new();
+    public HashSet<string> WeaponsClearedWith { get; private set; } = new(); // 使用通关过的武器
+    public HashSet<string> WeaponsPerkClearedWith { get; private set; } = new(); // 携带 Perk 通关过的武器
     public HashSet<PerkId> DiscoveredPerks { get; private set; } = new();
-    public int TotalDiscoveries => DiscoveredWeapons.Count + DiscoveredPerks.Count;
+    public HashSet<string> DiscoveredEnemies { get; private set; } = new();
+    public int TotalDiscoveries => DiscoveredWeapons.Count + DiscoveredPerks.Count + DiscoveredEnemies.Count;
 
     // 每解锁 10 个条目，+2% 全局伤害
     public float CollectionDamageBonus => 1.0f + (TotalDiscoveries / 10) * 0.02f;
@@ -2146,7 +2241,6 @@ public partial class CollectionCodex : Node
         if (DiscoveredWeapons.Add(key))
         {
             GD.Print($"图鉴解锁：{data.DisplayName}");
-            Save();
         }
 
         foreach (var perk in data.Perks)
@@ -2158,6 +2252,34 @@ public partial class CollectionCodex : Node
         }
 
         Save();
+    }
+
+    /// <summary>
+    /// 注册通关武器（结算时调用）
+    /// </summary>
+    public void RegisterClearWeapon(WeaponData data)
+    {
+        string key = $"{data.Type}_{data.Rarity}";
+        WeaponsClearedWith.Add(key);
+
+        if (data.Perks.Count > 0)
+        {
+            WeaponsPerkClearedWith.Add(key);
+        }
+
+        Save();
+    }
+
+    /// <summary>
+    /// 注册敌人发现
+    /// </summary>
+    public void RegisterEnemy(string enemyId)
+    {
+        if (DiscoveredEnemies.Add(enemyId))
+        {
+            GD.Print($"图鉴解锁敌人：{enemyId}");
+            Save();
+        }
     }
 
     public void Save()
@@ -2274,17 +2396,15 @@ public partial class HUD : CanvasLayer
         _healthBar = CreateBar(new Vector2(20, 20), new Vector2(200, 20), Colors.Red);
         _shieldBar = CreateBar(new Vector2(20, 45), new Vector2(200, 12), Colors.Cyan);
 
-        // 超能条（底部中央）
-        _superBar = CreateBar(new Vector2(540, 680), new Vector2(200, 15), new Color(1, 0.8f, 0));
+        // 技能图标 + 超能能量（左下）
+        _skill1Label = CreateLabel(new Vector2(20, 660), 16);
+        _skill2Label = CreateLabel(new Vector2(80, 660), 16);
+        _superBar = CreateBar(new Vector2(20, 690), new Vector2(140, 12), new Color(1, 0.8f, 0));
+        _superLabel = CreateLabel(new Vector2(170, 688), 12);
 
         // 武器信息（右下）
         _weaponLabel = CreateLabel(new Vector2(1050, 660), 14);
         _perksLabel = CreateLabel(new Vector2(1050, 680), 12);
-
-        // 技能图标（左下）
-        _skill1Label = CreateLabel(new Vector2(20, 660), 16);
-        _skill2Label = CreateLabel(new Vector2(80, 660), 16);
-        _superLabel = CreateLabel(new Vector2(540, 700), 12);
     }
 
     public void SetPlayer(Player player)
@@ -2433,12 +2553,14 @@ public partial class SettlementUI : CanvasLayer
         AddChild(panel);
     }
 
-    public void SetRunStats(float time, int kills, int glimmerEarned)
+    public void SetRunStats(float time, int kills, int glimmerEarned, string weaponName)
     {
         int minutes = (int)(time / 60);
         int seconds = (int)(time % 60);
         _statsLabel.Text = $"击杀: {kills} | 用时: {minutes}:{seconds:D2}";
         _glimmerLabel.Text = $"获得微光: {glimmerEarned}";
+        // 显示本局通关使用的武器（而非选择保留）
+        _weaponList.AddChild(new Label { Text = $"通关武器: {weaponName}" });
     }
 }
 ```
