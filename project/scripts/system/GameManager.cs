@@ -1,28 +1,23 @@
 using Godot;
+using Miao.Player;
 
 namespace Miao.System;
 
-/// <summary>
-/// 游戏管理器
-/// 管理游戏状态、场景切换、游戏结束处理
-/// </summary>
 public partial class GameManager : Node
 {
-    public enum GameState
-    {
-        MainMenu,
-        Playing,
-        Paused,
-        GameOver
-    }
-
     public static GameManager Instance { get; private set; }
 
-    public GameState CurrentState { get; private set; } = GameState.MainMenu;
+    public enum GameState { MainMenu, Playing, RoomTransition, Boss, Settlement, GameOver }
+    public GameState CurrentState { get; private set; }
 
-    private Player.Player _player;
+    private Player _player;
+    private RoomGenerator _roomGenerator;
     private float _gameTime;
     private int _killCount;
+    private int _glimmer;
+
+    [Signal]
+    public delegate void GlimmerChangedEventHandler(int amount);
 
     public override void _Ready()
     {
@@ -38,9 +33,6 @@ public partial class GameManager : Node
         }
     }
 
-    /// <summary>
-    /// 开始新游戏
-    /// </summary>
     public void StartGame()
     {
         CurrentState = GameState.Playing;
@@ -49,62 +41,63 @@ public partial class GameManager : Node
         GetTree().ChangeSceneToFile("res://scenes/main.tscn");
     }
 
-    private float _gameTimeAtDeath;
-    private int _killCountAtDeath;
-    private int _goldReward;
-
-    /// <summary>
-    /// 游戏结束
-    /// </summary>
-    public void GameOver()
-    {
-        CurrentState = GameState.GameOver;
-        _gameTimeAtDeath = _gameTime;
-        _killCountAtDeath = _killCount;
-
-        // 计算金币奖励
-        _goldReward = 0;
-        if (MetaProgression.Instance != null)
-        {
-            _goldReward = MetaProgression.Instance.CalculateGoldReward(_gameTime, _killCount);
-            MetaProgression.Instance.AddGold(_goldReward);
-        }
-
-        GetTree().Paused = true;
-        CallDeferred(nameof(ShowGameOverUI));
-    }
-
-    private void ShowGameOverUI()
-    {
-        var gameOverUI = new UI.GameOverUI();
-        gameOverUI.SetStats(_gameTimeAtDeath, _killCountAtDeath, _goldReward);
-        GetTree().CurrentScene.AddChild(gameOverUI);
-    }
-
-    /// <summary>
-    /// 返回主菜单
-    /// </summary>
-    public void ReturnToMainMenu()
-    {
-        CurrentState = GameState.MainMenu;
-        GetTree().Paused = false;
-        GetTree().ChangeSceneToFile("res://scenes/ui/MainMenu.tscn");
-    }
-
-    /// <summary>
-    /// 注册玩家（由Player._Ready调用）
-    /// </summary>
-    public void RegisterPlayer(Player.Player player)
+    public void RegisterPlayer(Player player)
     {
         _player = player;
-        _player.PlayerDied += OnPlayerDied;
+        player.PlayerDied += OnPlayerDied;
+    }
+
+    public void RegisterRoomGenerator(RoomGenerator rg)
+    {
+        _roomGenerator = rg;
+        rg.RoomCleared += OnRoomCleared;
+        rg.AllRoomsCleared += OnAllRoomsCleared;
+        rg.StartRun(_player);
+    }
+
+    private void OnRoomCleared(int roomIndex)
+    {
+        CurrentState = GameState.RoomTransition;
+        GD.Print($"房间 {roomIndex + 1} 清空！按 E 进入下一房间");
+    }
+
+    public void NextRoom()
+    {
+        CurrentState = GameState.Playing;
+        _roomGenerator.AdvanceRoom();
+    }
+
+    private void OnAllRoomsCleared()
+    {
+        CurrentState = GameState.Settlement;
+        GD.Print("所有房间清空！进入结算");
     }
 
     private void OnPlayerDied()
     {
-        GameOver();
+        CurrentState = GameState.GameOver;
+        GetTree().Paused = true;
     }
 
+    public void AddGlimmer(int amount)
+    {
+        _glimmer += amount;
+        EmitSignal(SignalName.GlimmerChanged, _glimmer);
+    }
+
+    public void AddKill()
+    {
+        _killCount++;
+    }
+
+    public int GetGlimmer() => _glimmer;
     public float GetGameTime() => _gameTime;
     public int GetKillCount() => _killCount;
+
+    public void ReturnToMainMenu()
+    {
+        GetTree().Paused = false;
+        CurrentState = GameState.MainMenu;
+        GetTree().ChangeSceneToFile("res://scenes/ui/MainMenu.tscn");
+    }
 }
