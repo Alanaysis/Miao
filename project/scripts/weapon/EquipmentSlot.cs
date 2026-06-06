@@ -1,5 +1,6 @@
 using Godot;
 using System.Collections.Generic;
+using Miao.System;
 
 namespace Miao.Weapon;
 
@@ -18,6 +19,8 @@ public partial class EquipmentSlot : Node2D
         CurrentWeapon = WeaponScene.Instantiate<Weapon>();
         CurrentWeapon.SetWeaponData(data);
         AddChild(CurrentWeapon);
+
+        CollectionCodex.Instance?.RegisterWeapon(data);
     }
 
     /// <summary>

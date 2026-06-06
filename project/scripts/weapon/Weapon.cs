@@ -12,7 +12,14 @@ public partial class Weapon : Node2D
 
     // Perk 修饰后的实际属性
     public float EffectiveFireRate => Data.FireRate * PerkSystem.GetFireRateMultiplier(Data);
-    public int EffectiveDamage => Mathf.RoundToInt(Data.BaseDamage * PerkSystem.GetDamageMultiplier(Data));
+    public int EffectiveDamage
+    {
+        get
+        {
+            float bonus = CollectionCodex.Instance?.CollectionDamageBonus ?? 1.0f;
+            return Mathf.RoundToInt(Data.BaseDamage * PerkSystem.GetDamageMultiplier(Data) * bonus);
+        }
+    }
     public float EffectiveKnockback => Data.KnockbackForce * PerkSystem.GetKnockbackMultiplier(Data);
 
     public void SetWeaponData(WeaponData data)
