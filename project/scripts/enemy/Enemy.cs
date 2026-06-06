@@ -34,6 +34,8 @@ public partial class Enemy : CharacterBody2D
     private Node2D _player;
     private float _damageCooldownTimer;
     private Vector2 _knockbackVelocity;
+    private float _markMultiplier = 1.0f;
+    private float _markTimer = 0;
 
     [Signal]
     public delegate void EnemyDiedEventHandler(int experienceValue);
@@ -53,6 +55,13 @@ public partial class Enemy : CharacterBody2D
         if (_damageCooldownTimer > 0)
         {
             _damageCooldownTimer -= (float)delta;
+        }
+
+        // 标记计时
+        if (_markTimer > 0)
+        {
+            _markTimer -= (float)delta;
+            if (_markTimer <= 0) _markMultiplier = 1.0f;
         }
 
         // 击退衰减
@@ -87,12 +96,19 @@ public partial class Enemy : CharacterBody2D
         _knockbackVelocity += force;
     }
 
+    public void ApplyMark(float multiplier, float duration)
+    {
+        _markMultiplier = multiplier;
+        _markTimer = duration;
+    }
+
     /// <summary>
     /// 对敌人造成伤害
     /// </summary>
     /// <param name="damage">伤害值</param>
     public void TakeDamage(int damage)
     {
+        damage = Mathf.RoundToInt(damage * _markMultiplier);
         CurrentHealth -= damage;
 
         if (CurrentHealth <= 0)
@@ -104,6 +120,13 @@ public partial class Enemy : CharacterBody2D
     private void Die()
     {
         EmitSignal(SignalName.EnemyDied, ExperienceValue);
+
+        // 找到 player 并充能超能
+        var players = GetTree().GetNodesInGroup("player");
+        if (players.Count > 0 && players[0] is Miao.Player.Player p)
+        {
+            p.AddSuperCharge(p.SuperChargePerKill);
+        }
 
         // 掉落经验球
         if (ExperienceOrbScene != null)

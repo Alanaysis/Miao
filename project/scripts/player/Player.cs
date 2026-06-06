@@ -57,6 +57,32 @@ public partial class Player : CharacterBody2D
     [Signal]
     public delegate void ShootEventHandler();
 
+    // 技能系统
+    [Export] public float Skill1Cooldown = 8.0f;
+    [Export] public float Skill2Cooldown = 15.0f;
+    [Export] public float SuperChargePerKill = 5.0f;
+    [Export] public float SuperMaxCharge = 100.0f;
+
+    public float Skill1Timer { get; private set; }
+    public float Skill2Timer { get; private set; }
+    public float SuperCharge { get; protected set; }
+    public bool IsSuperReady => SuperCharge >= SuperMaxCharge;
+
+    // 护盾
+    public float Shield { get; protected set; }
+    public float MaxShield { get; protected set; }
+
+    [Signal]
+    public delegate void Skill1UsedEventHandler();
+    [Signal]
+    public delegate void Skill2UsedEventHandler();
+    [Signal]
+    public delegate void SuperUsedEventHandler();
+    [Signal]
+    public delegate void ShieldChangedEventHandler(float current, float max);
+    [Signal]
+    public delegate void SuperChargeChangedEventHandler(float current, float max);
+
     public override void _Ready()
     {
         CurrentHealth = MaxHealth;
@@ -69,6 +95,12 @@ public partial class Player : CharacterBody2D
         {
             GameManager.Instance.RegisterPlayer(this);
         }
+    }
+
+    public override void _Process(double delta)
+    {
+        if (Skill1Timer > 0) Skill1Timer -= (float)delta;
+        if (Skill2Timer > 0) Skill2Timer -= (float)delta;
     }
 
     public override void _PhysicsProcess(double delta)
@@ -96,6 +128,18 @@ public partial class Player : CharacterBody2D
         {
             EmitSignal(SignalName.Shoot);
         }
+        if (@event.IsActionPressed("skill_1") && Skill1Timer <= 0)
+        {
+            UseSkill1();
+        }
+        if (@event.IsActionPressed("skill_2") && Skill2Timer <= 0)
+        {
+            UseSkill2();
+        }
+        if (@event.IsActionPressed("super_ability") && IsSuperReady)
+        {
+            UseSuper();
+        }
     }
 
     /// <summary>
@@ -104,13 +148,17 @@ public partial class Player : CharacterBody2D
     /// <param name="damage">伤害值</param>
     public void TakeDamage(int damage)
     {
-        CurrentHealth = Mathf.Clamp(CurrentHealth - damage, 0, MaxHealth);
-        EmitSignal(SignalName.HealthChanged, CurrentHealth, MaxHealth);
+        // 先扣护盾
+        float shieldAbsorb = Mathf.Min(Shield, damage);
+        Shield -= shieldAbsorb;
+        damage -= Mathf.RoundToInt(shieldAbsorb);
 
-        if (CurrentHealth <= 0)
-        {
-            Die();
-        }
+        CurrentHealth -= damage;
+        CurrentHealth = Mathf.Max(CurrentHealth, 0);
+        EmitSignal(SignalName.HealthChanged, CurrentHealth, MaxHealth);
+        EmitSignal(SignalName.ShieldChanged, Shield, MaxShield);
+
+        if (CurrentHealth <= 0) Die();
     }
 
     /// <summary>
@@ -159,6 +207,16 @@ public partial class Player : CharacterBody2D
         EmitSignal(SignalName.LevelUp, Level);
         EmitSignal(SignalName.ExperienceChanged, CurrentExperience, ExperienceToLevel, Level);
         GD.Print($"升级！当前等级: {Level}");
+    }
+
+    protected virtual void UseSkill1() { }
+    protected virtual void UseSkill2() { }
+    protected virtual void UseSuper() { }
+
+    public void AddSuperCharge(float amount)
+    {
+        SuperCharge = Mathf.Min(SuperCharge + amount, SuperMaxCharge);
+        EmitSignal(SignalName.SuperChargeChanged, SuperCharge, SuperMaxCharge);
     }
 
     private void Die()
