@@ -74,7 +74,9 @@
     "backend_priority": ["local_sd", "liblibai", "tongyi", "zhipu", "openai", "cpu_sd"],
     "backends": {
       "local_sd": {
-        "model": "stabilityai/sd-turbo",
+        "model": "stabilityai/sdxl-base-1.0",
+        "lora": "./models/loras/pixel-art-xl.safetensors",
+        "lora_weight": 0.8,
         "device": "auto"
       },
       "liblibai": {
@@ -93,6 +95,10 @@
       },
       "cpu_sd": {
         "model": "stabilityai/sd-turbo"
+      },
+      "qwen_vl": {
+        "api_key_env": "DASHSCOPE_API_KEY",
+        "model": "qwen-vl-max"
       }
     }
   }

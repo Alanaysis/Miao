@@ -300,10 +300,7 @@ body {
 /* Canvas area */
 .canvas-area {
   flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
+  overflow: auto;
   position: relative;
   background:
     linear-gradient(45deg, #151520 25%, transparent 25%),
@@ -313,12 +310,28 @@ body {
   background-size: 20px 20px;
   background-position: 0 0, 0 10px, 10px -10px, -10px 0;
   background-color: #12121a;
+  cursor: crosshair;
+}
+
+.canvas-area.panning {
+  cursor: grab;
+}
+
+.canvas-area.panning:active {
+  cursor: grabbing;
+}
+
+.canvas-wrap {
+  display: inline-block;
+  padding: 80px;
+  transform-origin: 0 0;
 }
 
 .canvas-container {
   position: relative;
   image-rendering: pixelated;
-  cursor: crosshair;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.5);
+  background: repeating-conic-gradient(#222 0% 25%, #1a1a2a 0% 50%) 0 0 / 16px 16px;
 }
 
 #editorCanvas {
@@ -326,7 +339,6 @@ body {
   display: block;
 }
 
-/* Grid overlay */
 .grid-overlay {
   position: absolute;
   inset: 0;
@@ -770,6 +782,16 @@ body {
   border-color: var(--accent2);
 }
 
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: auto;
+  opacity: 1;
+  height: 28px;
+}
+
 .form-textarea { resize: vertical; min-height: 48px; font-size: 12px; }
 
 .form-row { display: flex; gap: 8px; }
@@ -944,23 +966,28 @@ body {
         <div class="import-card-title">Blank Canvas</div>
         <div class="import-card-desc">Start from scratch with a blank pixel canvas</div>
       </div>
+      <div class="import-card" onclick="selectImport('programmatic')">
+        <span class="import-card-icon">&#9881;</span>
+        <div class="import-card-title">Programmatic</div>
+        <div class="import-card-desc">Generate animations from presets or custom config (no AI needed)</div>
+      </div>
     </div>
 
     <!-- AI Config Panel -->
     <div class="ai-config" id="aiConfig">
       <h3 style="color:var(--white);margin-bottom:16px;font-size:15px">Character Configuration</h3>
+      <div class="form-group">
+        <label class="form-label">System Prompt (base template)</label>
+        <textarea class="form-textarea" id="cfgSystemPrompt" rows="3" style="font-size:11px;font-family:var(--font-mono)">pixel art, single character, white background, centered, full body, standing</textarea>
+      </div>
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">Name</label>
           <input class="form-input" id="cfgName" value="warrior">
         </div>
         <div class="form-group">
-          <label class="form-label">Size</label>
-          <div class="form-row">
-            <input class="form-input" id="cfgW" value="32" style="width:60px">
-            <span style="color:var(--text3);align-self:center">&times;</span>
-            <input class="form-input" id="cfgH" value="32" style="width:60px">
-          </div>
+          <label class="form-label">Variants</label>
+          <input class="form-input" id="cfgVariants" value="4" type="number" min="1" max="8" style="width:72px">
         </div>
       </div>
       <div class="form-group">
@@ -987,6 +1014,17 @@ body {
         </div>
       </div>
       <div class="form-group">
+        <label class="form-label">Skin Tone</label>
+        <select class="form-select" id="cfgSkin">
+          <option value="fair">Fair</option>
+          <option value="tan">Tan</option>
+          <option value="dark">Dark</option>
+          <option value="pale">Pale</option>
+          <option value="green chitin">Green Chitin</option>
+          <option value="red scales">Red Scales</option>
+        </select>
+      </div>
+      <div class="form-group">
         <label class="form-label">Preset</label>
         <div class="preset-row">
           <button class="preset-btn" onclick="applyPreset('warrior')">Warrior</button>
@@ -1009,6 +1047,75 @@ body {
       <div style="font-size:12px;color:var(--text3)">or click to select file</div>
       <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleFileSelect(this)">
     </div>
+
+    <!-- Programmatic Config Panel -->
+    <div class="ai-config" id="programmaticConfig" style="max-height:80vh;overflow-y:auto">
+      <h3 style="color:var(--white);margin-bottom:16px;font-size:15px">Programmatic Generation</h3>
+
+      <div class="form-group">
+        <select class="form-select" id="progMode" onchange="updateProgMode()">
+          <option value="preset">Use Preset</option>
+          <option value="import">Import Config (JSON)</option>
+          <option value="custom">Custom Colors</option>
+        </select>
+      </div>
+
+      <!-- Preset Mode -->
+      <div id="progPresetSection">
+        <div class="form-group">
+          <label class="form-label">Preset</label>
+          <select class="form-select" id="progPreset">
+            <optgroup label="Humanoid">
+              <option value="warrior">Warrior</option>
+              <option value="mage">Mage</option>
+              <option value="archer">Archer</option>
+              <option value="rogue">Rogue</option>
+              <option value="cleric">Cleric</option>
+              <option value="skeleton">Skeleton</option>
+              <option value="goblin">Goblin</option>
+            </optgroup>
+            <optgroup label="Slime">
+              <option value="slime_green">Green Slime</option>
+              <option value="slime_blue">Blue Slime</option>
+            </optgroup>
+            <optgroup label="Quadruped">
+              <option value="wolf">Wolf</option>
+            </optgroup>
+          </select>
+        </div>
+      </div>
+
+      <!-- Import Mode -->
+      <div id="progImportSection" style="display:none">
+        <div class="form-group">
+          <label class="form-label">Config JSON</label>
+          <textarea class="form-textarea" id="progImportJson" rows="6" placeholder='{"name":"my_char","body_parts":{...},"animations":{...}}' style="font-size:10px;font-family:var(--font-mono)"></textarea>
+        </div>
+        <button class="btn btn-secondary" onclick="loadProgConfig()" style="font-size:11px">Load Config</button>
+      </div>
+
+      <!-- Custom Mode -->
+      <div id="progCustomSection" style="display:none">
+        <div class="form-group">
+          <label class="form-label">Character Name</label>
+          <input class="form-input" id="progCustomName" value="custom">
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:8px">Body Part Colors</div>
+        <div id="progCustomColors" style="display:grid;grid-template-columns:1fr 1fr;gap:4px"></div>
+      </div>
+
+      <div class="form-row" style="margin-top:12px">
+        <div class="form-group">
+          <label class="form-label">Size</label>
+          <input class="form-input" id="progSize" value="32" type="number" min="8" max="128">
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn btn-primary" onclick="startProgrammatic()">Generate</button>
+        <button class="btn btn-secondary" onclick="selectImport('')">Back</button>
+      </div>
+    </div>
   </div>
 
   <!-- STEP 2: EDITOR -->
@@ -1027,6 +1134,7 @@ body {
             <button class="tool-btn" data-tool="move" onclick="selectTool('move')" title="Move">&#8644;<span class="tooltip">Move (V)</span></button>
             <button class="tool-btn" data-tool="line" onclick="selectTool('line')" title="Line">&#9585;<span class="tooltip">Line (L)</span></button>
             <button class="tool-btn" data-tool="rect" onclick="selectTool('rect')" title="Rectangle">&#9634;<span class="tooltip">Rect (R)</span></button>
+            <button class="tool-btn" data-tool="bodyparts" onclick="selectTool('bodyparts')" title="Body Parts">&#9786;<span class="tooltip">Body Parts</span></button>
           </div>
         </div>
 
@@ -1056,7 +1164,11 @@ body {
           <button class="tool-btn" onclick="editorUndo()" title="Undo">&#8617;<span class="tooltip">Undo (Ctrl+Z)</span></button>
           <button class="tool-btn" onclick="editorRedo()" title="Redo">&#8618;<span class="tooltip">Redo (Ctrl+Y)</span></button>
           <div class="tool-sep"></div>
-          <button class="tool-btn" onclick="toggleGrid()" id="gridBtn" title="Grid">&#9638;<span class="tooltip">Grid (G)</span></button>
+          <button class="tool-btn" onclick="toggleGrid()" id="gridBtn" title="Grid">&#9638;<span class="tooltip">Grid</span></button>
+          <div class="tool-sep"></div>
+          <button class="tool-btn" onclick="flipH()" title="Flip Horizontal">&#8644;<span class="tooltip">Flip H</span></button>
+          <button class="tool-btn" onclick="flipV()" title="Flip Vertical">&#8645;<span class="tooltip">Flip V</span></button>
+          <button class="tool-btn" onclick="rotateCW()" title="Rotate 90°">&#8635;<span class="tooltip">Rotate 90°</span></button>
           <div class="tool-sep"></div>
           <div class="zoom-control">
             <button class="tool-btn" onclick="editorZoomOut()" style="width:24px;height:24px;font-size:12px">-</button>
@@ -1069,10 +1181,19 @@ body {
         </div>
 
         <div class="canvas-area" id="canvasArea">
-          <div class="canvas-container" id="canvasContainer">
-            <canvas id="editorCanvas"></canvas>
-            <canvas class="grid-overlay" id="gridCanvas"></canvas>
-            <div class="selection-overlay" id="selectionOverlay"></div>
+          <div class="canvas-wrap" id="canvasWrap">
+            <div class="canvas-container" id="canvasContainer">
+              <canvas id="editorCanvas"></canvas>
+              <canvas class="grid-overlay" id="gridCanvas"></canvas>
+              <div class="selection-overlay" id="selectionOverlay"></div>
+              <div id="bodyPartsOverlay" style="display:none;position:absolute;inset:0;pointer-events:none"></div>
+              <div id="selectionActions" style="display:none;position:absolute;top:-36px;left:0;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:4px;display:flex;gap:2px;z-index:10">
+                <button class="tool-btn" onclick="fillSelection()" title="Fill" style="width:28px;height:28px;font-size:11px">F<span class="tooltip">Fill</span></button>
+                <button class="tool-btn" onclick="deleteSelection()" title="Delete" style="width:28px;height:28px;font-size:11px">X<span class="tooltip">Delete</span></button>
+                <button class="tool-btn" onclick="copySelection()" title="Copy" style="width:28px;height:28px;font-size:11px">C<span class="tooltip">Copy</span></button>
+                <button class="tool-btn" onclick="moveSelection()" title="Move" style="width:28px;height:28px;font-size:11px">M<span class="tooltip">Move</span></button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1112,6 +1233,49 @@ body {
           </div>
         </div>
 
+        <div class="panel-section">
+          <div class="panel-title">Preview</div>
+          <div style="padding:8px 12px;display:flex;flex-direction:column;gap:6px">
+            <div class="form-row">
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">W</label>
+                <input class="form-input" id="previewW" value="32" style="width:50px;padding:4px 6px;font-size:11px">
+              </div>
+              <span style="color:var(--text3);align-self:flex-end;padding-bottom:4px">&times;</span>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">H</label>
+                <input class="form-input" id="previewH" value="32" style="width:50px;padding:4px 6px;font-size:11px">
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">Algorithm</label>
+              <select class="form-select" id="previewAlgo" style="font-size:11px;padding:4px 6px">
+                <option value="nearest">Nearest Neighbor (像素风)</option>
+                <option value="bilinear">Bilinear (平滑)</option>
+                <option value="bicubic">Bicubic (更平滑)</option>
+                <option value="lanczos">Lanczos (锐利)</option>
+              </select>
+            </div>
+            <button class="btn btn-secondary" onclick="previewResize()" style="padding:6px 12px;font-size:11px">Preview</button>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+            Body Parts
+            <button class="btn btn-ghost" id="toggleBodyPartsBtn" onclick="toggleBodyPartsOverlay()" style="font-size:10px;padding:2px 6px">Show</button>
+          </div>
+          <div style="padding:8px 12px">
+            <button class="btn btn-primary btn-block" onclick="autoDetectBodyParts()" style="font-size:11px;margin-bottom:8px">Auto Detect (Qwen-VL)</button>
+            <div style="font-size:10px;color:var(--text3);margin-bottom:6px">Check parts to include, pick colors</div>
+            <div id="bodyPartsConfig" style="display:flex;flex-direction:column;gap:3px;margin-bottom:8px"></div>
+            <div style="display:flex;gap:4px">
+              <button class="btn btn-secondary" onclick="resetBodyParts()" style="font-size:10px;padding:4px 8px;flex:1">Reset</button>
+              <button class="btn btn-secondary" onclick="exportBodyPartsConfig()" style="font-size:10px;padding:4px 8px;flex:1">Export JSON</button>
+            </div>
+          </div>
+        </div>
+
         <div class="panel-section" style="flex:1">
           <div class="panel-title">Layers</div>
           <div id="layerList">
@@ -1122,8 +1286,9 @@ body {
           </div>
         </div>
 
-        <div style="padding:12px">
-          <button class="btn btn-primary btn-block" onclick="goStep(3)">Next: Animate &#9656;</button>
+        <div style="padding:12px;display:flex;flex-direction:column;gap:6px">
+          <button class="btn btn-secondary btn-block" onclick="previewResize()">Preview Resize</button>
+          <button class="btn btn-primary btn-block" onclick="goStep(3)">Generate Animations &#9656;</button>
         </div>
       </div>
     </div>
@@ -1136,8 +1301,10 @@ body {
       <div class="anim-left">
         <div class="panel-title" style="padding:12px;border-bottom:1px solid var(--border)">Animations</div>
         <div id="animList"></div>
-        <div style="padding:12px">
-          <button class="btn btn-secondary btn-block" onclick="generateAllAnimations()">Generate All Frames</button>
+        <div style="padding:12px;border-top:1px solid var(--border)">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Select animations to generate:</div>
+          <div id="animCheckboxes" style="display:flex;flex-direction:column;gap:3px;margin-bottom:8px"></div>
+          <button class="btn btn-primary btn-block" onclick="generateAllAnimations()">Generate Selected</button>
         </div>
       </div>
 
@@ -1225,6 +1392,19 @@ body {
   <style>@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}</style>
 </div>
 
+<!-- Base image selection overlay -->
+<div id="baseSelectOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9998;align-items:center;justify-content:center;flex-direction:column;gap:20px;padding:40px">
+  <div style="font-size:18px;font-weight:700;color:var(--white)">Select Base Image</div>
+  <div style="font-size:12px;color:var(--text3)">Choose one character design to generate animations from</div>
+  <div id="baseImageGrid" style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center"></div>
+  <div style="display:flex;align-items:center;gap:8px;margin-top:12px">
+    <label style="font-size:12px;color:var(--text3)">Variants:</label>
+    <input class="form-input" id="baseSelectVariantCount" type="number" min="1" max="8" value="4" style="width:72px">
+    <button class="btn btn-primary" onclick="regenerateBase()">Regenerate</button>
+    <button class="btn btn-secondary" onclick="cancelBaseSelect()">Cancel</button>
+  </div>
+</div>
+
 <!-- Drop overlay -->
 <div class="dropzone-overlay" id="dropOverlay">Drop image here</div>
 
@@ -1278,6 +1458,13 @@ function goStep(n) {
   document.querySelectorAll('.step-panel').forEach(p => {
     p.classList.toggle('active', parseInt(p.dataset.step) === n);
   });
+  if (n === 1) {
+    // 返回初始界面：显示 importPanel，隐藏所有配置子面板
+    document.getElementById('importPanel').style.display = 'flex';
+    document.getElementById('aiConfig').classList.remove('active');
+    document.getElementById('uploadZone').classList.remove('active');
+    document.getElementById('programmaticConfig').classList.remove('active');
+  }
   if (n === 3) initAnimPanel();
   if (n === 4) initExportPanel();
 }
@@ -1289,6 +1476,7 @@ function selectImport(mode) {
   document.getElementById('importPanel').style.display = 'none';
   document.getElementById('aiConfig').classList.remove('active');
   document.getElementById('uploadZone').classList.remove('active');
+  document.getElementById('programmaticConfig').classList.remove('active');
 
   if (mode === 'ai') {
     document.getElementById('aiConfig').classList.add('active');
@@ -1298,22 +1486,30 @@ function selectImport(mode) {
   } else if (mode === 'blank') {
     initBlankCanvas();
     goStep(2);
+  } else if (mode === 'programmatic') {
+    document.getElementById('programmaticConfig').classList.add('active');
+    initProgCustomColors();
+  } else {
+    document.getElementById('importPanel').style.display = 'flex';
   }
 }
 
 function applyPreset(name) {
   const presets = {
-    warrior: { clothing: 'plate armor, red cape', weapon: 'sword and shield', accessories: 'helmet with plume' },
-    mage: { clothing: 'blue robe, stars pattern', weapon: 'magic staff', accessories: 'pointy hat' },
-    archer: { clothing: 'green tunic, leather vest', weapon: 'bow and arrows', accessories: 'quiver on back' },
-    rogue: { clothing: 'dark cloak, leather armor', weapon: 'dual daggers', accessories: 'mask' },
-    slime: { clothing: 'none', weapon: 'none', accessories: 'none' },
+    warrior: { name: 'warrior', style: 'chibi-fantasy', clothing: 'plate armor, red cape', weapon: 'sword and shield', accessories: 'helmet with plume', skin: 'fair' },
+    mage: { name: 'mage', style: 'chibi-fantasy', clothing: 'blue robe, stars pattern', weapon: 'magic staff', accessories: 'pointy hat', skin: 'pale' },
+    archer: { name: 'archer', style: 'chibi-fantasy', clothing: 'green tunic, leather vest', weapon: 'bow and arrows', accessories: 'quiver on back', skin: 'tan' },
+    rogue: { name: 'rogue', style: 'chibi-fantasy', clothing: 'dark cloak, leather armor', weapon: 'dual daggers', accessories: 'mask', skin: 'fair' },
+    slime: { name: 'slime', style: 'cute-chibi', clothing: 'none', weapon: 'none', accessories: 'none', skin: 'green chitin' },
   };
   const p = presets[name];
   if (p) {
+    document.getElementById('cfgName').value = p.name;
+    document.getElementById('cfgStyle').value = p.style;
     document.getElementById('cfgClothing').value = p.clothing;
     document.getElementById('cfgWeapon').value = p.weapon;
     document.getElementById('cfgAccessories').value = p.accessories;
+    document.getElementById('cfgSkin').value = p.skin;
   }
 }
 
@@ -1323,65 +1519,146 @@ function showLoading(msg, sub) {
   document.getElementById('loadingOverlay').style.display = 'flex';
 }
 
+function updateLoadingText(msg) {
+  document.getElementById('loadingText').textContent = msg;
+}
+
 function hideLoading() {
   document.getElementById('loadingOverlay').style.display = 'none';
 }
 
+// === Two-stage generate ===
+
 async function startGenerate() {
   S.charName = document.getElementById('cfgName').value || 'untitled';
-  S.width = parseInt(document.getElementById('cfgW').value) || 32;
-  S.height = parseInt(document.getElementById('cfgH').value) || 32;
+  S.width = 1024;
+  S.height = 1024;
+  S.style = document.getElementById('cfgStyle').value;
+  S.clothing = document.getElementById('cfgClothing').value;
+  S.weapon = document.getElementById('cfgWeapon').value;
+  S.accessories = document.getElementById('cfgAccessories').value;
 
-  showLoading('Generating character...', 'AI is creating your pixel art character. This may take a minute.');
+  const systemPrompt = document.getElementById('cfgSystemPrompt')?.value || '';
+  const variantCount = parseInt(document.getElementById('cfgVariants')?.value) || 4;
+
+  showLoading(`Generating 0/${variantCount}...`, 'Starting AI generation...');
   try {
-    const resp = await fetch('/api/generate?t=' + Date.now(), {
+    const resp = await fetch('/api/generate-base?t=' + Date.now(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: S.charName,
         width: S.width,
         height: S.height,
-        animations: {
-          idle: { frames: 4, fps: 6 },
-          walk_down: { frames: 6, fps: 8 },
-          attack: { frames: 6, fps: 10 },
-          hurt: { frames: 3, fps: 8 }
-        }
+        style: S.style,
+        clothing: S.clothing,
+        weapon: S.weapon,
+        accessories: S.accessories,
+        skin_tone: document.getElementById('cfgSkin')?.value || 'fair',
+        system_prompt: systemPrompt,
+        count: variantCount
       })
     });
-    const data = await resp.json();
-    if (data.error) {
-      showToast(data.error, true);
-      // fallback to demo
-      initDemoCanvas();
-    } else {
-      // 清空旧数据
-      S.animations = {};
-      state.frames = {};
 
-      // 给每个帧 URL 加时间戳防止缓存
-      const ts = Date.now();
-      for (const [name, info] of Object.entries(data.animations)) {
-        S.animations[name] = {
-          fps: info.fps || 6,
-          frames: info.frames.map(u => u + '?t=' + ts)
-        };
-      }
+    // 读取 SSE 流
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let allImages = [];
+    let streamDone = false;
 
-      // Load first frame as editor canvas
-      const firstAnim = Object.keys(data.animations)[0];
-      if (firstAnim && S.animations[firstAnim].frames.length > 0) {
-        await loadCanvasFromUrl(S.animations[firstAnim].frames[0]);
+    while (!streamDone) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const jsonStr = line.slice(6).trim();
+        if (!jsonStr) continue;
+
+        try {
+          const event = JSON.parse(jsonStr);
+
+          if (event.status === 'progress') {
+            updateLoadingText(`Generating ${event.current}/${event.total}...`);
+          } else if (event.status === 'error') {
+            showToast(`Variant ${event.current} failed: ${event.error}`, true);
+          } else if (event.status === 'done') {
+            allImages = event.images || [];
+            streamDone = true;
+            reader.cancel();
+            break;
+          }
+        } catch (e) {
+          // ignore parse errors
+        }
       }
     }
-  } catch (e) {
-    initDemoCanvas();
-  } finally {
-    hideLoading();
-  }
 
-  document.getElementById('charNameDisplay').textContent = S.charName;
-  goStep(2);
+    hideLoading();
+
+    if (allImages.length > 0) {
+      showBaseSelect(allImages);
+    } else {
+      showToast('No images generated', true);
+    }
+  } catch (e) {
+    hideLoading();
+    console.error('[GenerateBase] Error:', e);
+    showToast('Generation failed', true);
+  }
+}
+
+function showBaseSelect(images) {
+  const grid = document.getElementById('baseImageGrid');
+  grid.innerHTML = '';
+  // 同步 variant count 到 overlay
+  document.getElementById('baseSelectVariantCount').value = images.length;
+
+  images.forEach(img => {
+    const imgUrl = img.data_url || (img.url + '?t=' + Date.now());
+    const card = document.createElement('div');
+    card.style.cssText = 'cursor:pointer;border:2px solid var(--border);border-radius:8px;overflow:hidden;transition:all 0.15s;background:var(--bg3);width:200px';
+    card.innerHTML = `
+      <img src="${imgUrl}" style="width:200px;height:200px;object-fit:contain;background:#111;display:block;image-rendering:auto">
+      <div style="padding:8px;text-align:center;font-size:11px;color:var(--text2)">Variant ${img.index + 1}</div>
+    `;
+    card.onmouseenter = () => { card.style.borderColor = 'var(--accent2)'; card.style.transform = 'scale(1.05)'; };
+    card.onmouseleave = () => { card.style.borderColor = 'var(--border)'; card.style.transform = 'scale(1)'; };
+    card.onclick = () => selectBaseImage(imgUrl);
+    grid.appendChild(card);
+  });
+
+  document.getElementById('baseSelectOverlay').style.display = 'flex';
+}
+
+function cancelBaseSelect() {
+  document.getElementById('baseSelectOverlay').style.display = 'none';
+}
+
+async function regenerateBase() {
+  const count = parseInt(document.getElementById('baseSelectVariantCount').value) || 4;
+  // 同步到配置面板
+  document.getElementById('cfgVariants').value = count;
+  document.getElementById('baseSelectOverlay').style.display = 'none';
+  await startGenerate();
+}
+
+async function selectBaseImage(baseUrl) {
+  document.getElementById('baseSelectOverlay').style.display = 'none';
+  try {
+    await loadCanvasFromUrl(baseUrl);
+    document.getElementById('charNameDisplay').textContent = S.charName;
+    goStep(2);
+    showToast('Image loaded into editor. Edit it, then click Generate Animations.');
+  } catch (e) {
+    console.error('[selectBaseImage] Failed to load:', baseUrl, e);
+    showToast('Failed to load image', true);
+  }
 }
 
 function handleFileSelect(input) {
@@ -1398,7 +1675,37 @@ function handleFileSelect(input) {
 }
 
 async function loadCanvasFromUrl(url) {
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      console.log('[loadCanvas] Image loaded:', img.width, 'x', img.height, 'from', url);
+      S.width = img.width;
+      S.height = img.height;
+      const c = document.createElement('canvas');
+      c.width = img.width;
+      c.height = img.height;
+      c.getContext('2d').drawImage(img, 0, 0);
+      S.canvas = c.getContext('2d').getImageData(0, 0, img.width, img.height);
+      // 大图自动降低 zoom，让画布适配屏幕
+      const maxDim = Math.max(img.width, img.height);
+      if (maxDim >= 512) S.zoom = 1;
+      else if (maxDim >= 256) S.zoom = 2;
+      else if (maxDim >= 128) S.zoom = 4;
+      else if (maxDim >= 64) S.zoom = 6;
+      else S.zoom = 8;
+      initEditor();
+      resolve();
+    };
+    img.onerror = (e) => {
+      console.error('[loadCanvas] Failed to load:', url, e);
+      reject(e);
+    };
+    img.src = url;
+  });
+}
+
+async function loadCanvasFromDataUrl(dataUrl) {
+  return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
       S.width = img.width;
@@ -1411,23 +1718,9 @@ async function loadCanvasFromUrl(url) {
       initEditor();
       resolve();
     };
-    img.src = url;
-  });
-}
-
-async function loadCanvasFromDataUrl(dataUrl) {
-  return new Promise(resolve => {
-    const img = new Image();
-    img.onload = () => {
-      S.width = img.width;
-      S.height = img.height;
-      const c = document.createElement('canvas');
-      c.width = img.width;
-      c.height = img.height;
-      c.getContext('2d').drawImage(img, 0, 0);
-      S.canvas = c.getContext('2d').getImageData(0, 0, img.width, img.height);
-      initEditor();
-      resolve();
+    img.onerror = (e) => {
+      console.error('[loadCanvasFromDataUrl] Failed to load image:', e);
+      reject(e);
     };
     img.src = dataUrl;
   });
@@ -1488,11 +1781,22 @@ function initEditor() {
 
   S.undoStack = [];
   S.redoStack = [];
+  S.selStart = null;
+  S.selEnd = null;
   pushUndo();
 
+  // 同步 zoom 滑块
+  const zoomSlider = document.getElementById('zoomSlider');
+  if (zoomSlider) {
+    zoomSlider.value = S.zoom;
+    document.getElementById('zoomLabel').textContent = S.zoom + 'x';
+  }
+
   renderEditor();
+  updateSelection();
   updatePaletteGrid();
   updateEditorStatus();
+  initBodyPartsConfig();
 }
 
 function renderEditor() {
@@ -1500,13 +1804,272 @@ function renderEditor() {
   const ctx = canvas.getContext('2d');
   ctx.putImageData(S.canvas, 0, 0);
 
-  const container = document.getElementById('canvasContainer');
-  canvas.style.width = (S.width * S.zoom) + 'px';
-  canvas.style.height = (S.height * S.zoom) + 'px';
-  container.style.width = (S.width * S.zoom) + 'px';
-  container.style.height = (S.height * S.zoom) + 'px';
+  // 用 CSS transform 缩放，不改变 canvas 实际尺寸
+  const wrap = document.getElementById('canvasWrap');
+  wrap.style.transform = `scale(${S.zoom})`;
 
   renderGrid();
+  if (S.showBodyPartsOverlay) renderBodyPartsOverlay();
+}
+
+// === Body Parts Tool ===
+S.bodyParts = {};
+S.selectedPart = null;
+S.isDraggingPart = false;
+S.dragPartOffset = { x: 0, y: 0 };
+S.showBodyPartsOverlay = false;
+
+function initBodyPartsConfig() {
+  // 初始化 body parts（如果没有的话）
+  if (!S.bodyParts || Object.keys(S.bodyParts).length === 0) {
+    S.bodyParts = JSON.parse(JSON.stringify(DEFAULT_PARTS));
+  }
+
+  const container = document.getElementById('bodyPartsConfig');
+  if (!container) return;
+  container.innerHTML = '';
+
+  for (const [name, part] of Object.entries(S.bodyParts)) {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:11px';
+    row.innerHTML = `
+      <input type="checkbox" data-part="${name}" checked style="accent-color:var(--accent)">
+      <input type="color" value="${part.color}" data-part-color="${name}" style="width:22px;height:18px;border:1px solid var(--border);border-radius:2px;background:var(--bg);cursor:pointer;padding:0">
+      <span style="color:var(--text2);flex:1">${name}</span>
+    `;
+    container.appendChild(row);
+
+    // 颜色变更
+    row.querySelector(`[data-part-color="${name}"]`).addEventListener('input', (e) => {
+      S.bodyParts[name].color = e.target.value;
+      if (S.showBodyPartsOverlay) renderBodyPartsOverlay();
+    });
+
+    // 勾选变更
+    row.querySelector(`[data-part="${name}"]`).addEventListener('change', (e) => {
+      if (S.showBodyPartsOverlay) renderBodyPartsOverlay();
+    });
+  }
+}
+
+function toggleBodyPartsOverlay() {
+  S.showBodyPartsOverlay = !S.showBodyPartsOverlay;
+  const btn = document.getElementById('toggleBodyPartsBtn');
+  if (btn) btn.textContent = S.showBodyPartsOverlay ? 'Hide' : 'Show';
+  renderBodyPartsOverlay();
+}
+
+function renderBodyPartsOverlay() {
+  const overlay = document.getElementById('bodyPartsOverlay');
+  if (!overlay) return;
+
+  if (!S.showBodyPartsOverlay) {
+    overlay.style.display = 'none';
+    return;
+  }
+
+  overlay.style.display = 'block';
+  overlay.innerHTML = '';
+
+  // body parts 坐标基于 32x32 设计，按实际画布尺寸缩放
+  const scale = S.width / 32;
+  const checkedParts = document.querySelectorAll('#bodyPartsConfig input[type="checkbox"]:checked');
+
+  for (const cb of checkedParts) {
+    const name = cb.dataset.part;
+    const part = S.bodyParts[name];
+    if (!part) continue;
+
+    const [rx1, ry1, rx2, ry2] = part.rect;
+    const x1 = rx1 * scale, y1 = ry1 * scale;
+    const x2 = rx2 * scale, y2 = ry2 * scale;
+    const div = document.createElement('div');
+    div.style.cssText = `
+      position: absolute;
+      left: ${x1 * S.zoom}px;
+      top: ${y1 * S.zoom}px;
+      width: ${(x2 - x1) * S.zoom}px;
+      height: ${(y2 - y1) * S.zoom}px;
+      border: 2px dashed var(--accent);
+      background: ${part.color}33;
+      pointer-events: auto;
+      cursor: move;
+    `;
+    const label = document.createElement('span');
+    label.textContent = name;
+    label.style.cssText = 'font-size:8px;color:white;background:rgba(0,0,0,0.7);padding:1px 3px;border-radius:2px;pointer-events:none';
+    div.appendChild(label);
+
+    // 拖拽移动
+    div.addEventListener('mousedown', (e) => {
+      e.stopPropagation();
+      S.selectedPart = name;
+      S.isDraggingPart = true;
+      S.dragPartOffset = { x: e.clientX - x1 * S.zoom, y: e.clientY - y1 * S.zoom };
+
+      const onMove = (ev) => {
+        // 屏幕像素 → 画布像素 → 32x32 坐标
+        const canvasX = (ev.clientX - S.dragPartOffset.x) / S.zoom;
+        const canvasY = (ev.clientY - S.dragPartOffset.y) / S.zoom;
+        const newX = Math.round(canvasX / scale);
+        const newY = Math.round(canvasY / scale);
+        const w = rx2 - rx1, h = ry2 - ry1;
+        S.bodyParts[name].rect = [newX, newY, newX + w, newY + h];
+        renderBodyPartsOverlay();
+      };
+      const onUp = () => {
+        S.isDraggingPart = false;
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+
+    overlay.appendChild(div);
+  }
+}
+
+async function autoDetectBodyParts() {
+  const canvas = document.getElementById('editorCanvas');
+  const dataUrl = canvas.toDataURL('image/png');
+
+  showLoading('Analyzing character...', 'Qwen-VL is detecting body parts');
+  try {
+    const resp = await fetch('/api/analyze-body-parts?t=' + Date.now(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: dataUrl })
+    });
+    const data = await resp.json();
+    hideLoading();
+
+    if (data.error) {
+      showToast(data.error, true);
+      return;
+    }
+
+    if (data.body_parts && Object.keys(data.body_parts).length > 0) {
+      // 归一化坐标到 32x32 空间
+      const imgW = data.image_size?.width || S.width;
+      const imgH = data.image_size?.height || S.height;
+      const scale = 32 / Math.max(imgW, imgH);
+
+      S.bodyParts = {};
+      for (const [name, part] of Object.entries(data.body_parts)) {
+        S.bodyParts[name] = {
+          rect: part.rect.map((v, i) => Math.round(v * (i % 2 === 0 ? (32 / imgW) : (32 / imgH)))),
+          color: part.color || '#888888'
+        };
+      }
+
+      S.showBodyPartsOverlay = true;
+      const btn = document.getElementById('toggleBodyPartsBtn');
+      if (btn) btn.textContent = 'Hide';
+      initBodyPartsConfig();
+      renderBodyPartsOverlay();
+      showToast(`Detected ${Object.keys(data.body_parts).length} body parts`);
+    } else {
+      showToast('No body parts detected', true);
+    }
+  } catch (e) {
+    hideLoading();
+    showToast('Analysis failed: ' + e.message, true);
+  }
+}
+
+function resetBodyParts() {
+  S.bodyParts = JSON.parse(JSON.stringify(DEFAULT_PARTS));
+  initBodyPartsConfig();
+  if (S.showBodyPartsOverlay) renderBodyPartsOverlay();
+  showToast('Body parts reset to defaults');
+}
+
+const DEFAULT_PARTS = {
+  head:      { rect: [11, 2, 21, 10],  color: '#dcb48c' },
+  torso:     { rect: [10, 10, 22, 22], color: '#3250b4' },
+  left_arm:  { rect: [6, 10, 10, 20],  color: '#dcb48c' },
+  right_arm: { rect: [22, 10, 26, 20], color: '#dcb48c' },
+  left_leg:  { rect: [11, 22, 15, 30], color: '#3c3228' },
+  right_leg: { rect: [17, 22, 21, 30], color: '#3c3228' },
+  weapon:    { rect: [24, 14, 27, 30], color: '#b4b4c8' },
+  cape:      { rect: [8, 10, 24, 20],  color: '#b42828' },
+};
+
+function initBodyParts() {
+  S.bodyParts = JSON.parse(JSON.stringify(DEFAULT_PARTS));
+  renderBodyParts();
+}
+
+function renderBodyParts() {
+  const overlay = document.getElementById('bodyPartsOverlay');
+  if (!overlay || S.tool !== 'bodyparts') {
+    if (overlay) overlay.style.display = 'none';
+    return;
+  }
+  overlay.style.display = 'block';
+  overlay.innerHTML = '';
+
+  for (const [name, part] of Object.entries(S.bodyParts)) {
+    const [x1, y1, x2, y2] = part.rect;
+    const div = document.createElement('div');
+    div.style.cssText = `
+      position: absolute;
+      left: ${x1 * S.zoom}px;
+      top: ${y1 * S.zoom}px;
+      width: ${(x2 - x1) * S.zoom}px;
+      height: ${(y2 - y1) * S.zoom}px;
+      border: 2px ${name === S.selectedPart ? 'solid var(--accent2)' : 'dashed var(--accent)'};
+      background: ${part.color}33;
+      pointer-events: auto;
+      cursor: move;
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-start;
+    `;
+    const label = document.createElement('span');
+    label.textContent = name;
+    label.style.cssText = 'font-size:8px;color:white;background:rgba(0,0,0,0.7);padding:1px 3px;border-radius:2px;pointer-events:none';
+    div.appendChild(label);
+
+    div.addEventListener('mousedown', (e) => {
+      e.stopPropagation();
+      S.selectedPart = name;
+      S.isDraggingPart = true;
+      S.dragPartOffset = { x: e.clientX / S.zoom - x1, y: e.clientY / S.zoom - y1 };
+      renderBodyParts();
+    });
+
+    overlay.appendChild(div);
+  }
+}
+
+function exportBodyPartsConfig() {
+  const name = S.charName || 'character';
+  const config = {
+    name,
+    size: [S.width, S.height],
+    body_parts: {},
+    animations: {
+      idle: { frames: 4, fps: 6, loop: true },
+      walk_down: { frames: 6, fps: 8, loop: true },
+      attack: { frames: 6, fps: 10, loop: false },
+      hurt: { frames: 3, fps: 8, loop: false }
+    }
+  };
+  for (const [partName, part] of Object.entries(S.bodyParts)) {
+    config.body_parts[partName] = { rect: part.rect, color: part.color };
+  }
+
+  const json = JSON.stringify(config, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${name}_config.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Config exported as JSON');
 }
 
 function renderGrid() {
@@ -1519,11 +2082,9 @@ function renderGrid() {
     return;
   }
   grid.style.display = 'block';
-  grid.style.width = (S.width * S.zoom) + 'px';
-  grid.style.height = (S.height * S.zoom) + 'px';
 
   ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-  ctx.lineWidth = 0.5 / S.zoom;
+  ctx.lineWidth = 0.5;
   for (let x = 0; x <= S.width; x++) {
     ctx.beginPath();
     ctx.moveTo(x, 0);
@@ -1602,6 +2163,12 @@ function floodFill(sx, sy, newColor) {
 }
 
 function selectTool(name) {
+  // 切换工具时清除选区
+  if (name !== 'select' && S.selStart) {
+    S.selStart = null;
+    S.selEnd = null;
+    updateSelection();
+  }
   S.tool = name;
   document.querySelectorAll('.tool-btn[data-tool]').forEach(b => {
     b.classList.toggle('active', b.dataset.tool === name);
@@ -1614,6 +2181,60 @@ function selectTool(name) {
                          name === 'picker' ? 'copy' :
                          name === 'select' ? 'crosshair' :
                          name === 'move' ? 'grab' : 'default';
+
+  // Body parts 模式
+  if (name === 'bodyparts') {
+    S.showBodyPartsOverlay = true;
+    const btn = document.getElementById('toggleBodyPartsBtn');
+    if (btn) btn.textContent = 'Hide';
+    renderBodyPartsOverlay();
+  } else {
+    S.showBodyPartsOverlay = false;
+    const btn = document.getElementById('toggleBodyPartsBtn');
+    if (btn) btn.textContent = 'Show';
+    renderBodyPartsOverlay();
+    hideBodyPartsPanel();
+  }
+}
+
+function showBodyPartsPanel() {
+  let panel = document.getElementById('bodyPartsPanel');
+  if (!panel) {
+    panel = document.createElement('div');
+    panel.id = 'bodyPartsPanel';
+    panel.style.cssText = 'padding:8px 12px;border-top:1px solid var(--border)';
+    panel.innerHTML = `
+      <div style="font-size:10px;color:var(--text3);margin-bottom:6px">BODY PARTS</div>
+      <div style="font-size:11px;color:var(--text2);margin-bottom:8px">Click part to select, drag to move</div>
+      <div id="bodyPartsList" style="display:flex;flex-direction:column;gap:2px;margin-bottom:8px"></div>
+      <div style="display:flex;gap:4px">
+        <button class="btn btn-secondary" onclick="exportBodyPartsConfig()" style="font-size:10px;padding:4px 8px;flex:1">Export JSON</button>
+      </div>
+    `;
+    // 插入到 Layers 前面
+    const layers = document.querySelector('.panel-section:last-child');
+    layers.parentNode.insertBefore(panel, layers);
+  }
+  panel.style.display = 'block';
+  updateBodyPartsList();
+}
+
+function hideBodyPartsPanel() {
+  const panel = document.getElementById('bodyPartsPanel');
+  if (panel) panel.style.display = 'none';
+}
+
+function updateBodyPartsList() {
+  const list = document.getElementById('bodyPartsList');
+  if (!list) return;
+  list.innerHTML = '';
+  for (const [name, part] of Object.entries(S.bodyParts)) {
+    const item = document.createElement('div');
+    item.style.cssText = `display:flex;align-items:center;gap:6px;padding:3px 6px;border-radius:3px;cursor:pointer;font-size:11px;${name === S.selectedPart ? 'background:rgba(0,204,255,0.1);color:var(--white)' : 'color:var(--text2)'}`;
+    item.innerHTML = `<span style="width:14px;height:14px;border-radius:2px;background:${part.color};border:1px solid var(--border)"></span>${name}`;
+    item.onclick = () => { S.selectedPart = name; updateBodyPartsList(); renderBodyParts(); };
+    list.appendChild(item);
+  }
 }
 
 function toggleGrid() {
@@ -1622,11 +2243,159 @@ function toggleGrid() {
   renderGrid();
 }
 
+// Clipboard
+S.clipboard = null;
+
+function copySelection() {
+  if (!S.selStart || !S.selEnd) return;
+  const minX = Math.min(S.selStart.x, S.selEnd.x);
+  const minY = Math.min(S.selStart.y, S.selEnd.y);
+  const maxX = Math.max(S.selStart.x, S.selEnd.x);
+  const maxY = Math.max(S.selStart.y, S.selEnd.y);
+  const w = maxX - minX + 1, h = maxY - minY + 1;
+  const data = new Uint8ClampedArray(w * h * 4);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const si = ((minY + y) * S.width + (minX + x)) * 4;
+      const di = (y * w + x) * 4;
+      data[di] = S.canvas.data[si]; data[di+1] = S.canvas.data[si+1];
+      data[di+2] = S.canvas.data[si+2]; data[di+3] = S.canvas.data[si+3];
+    }
+  }
+  S.clipboard = { data, w, h };
+  showToast('Copied');
+}
+
+function pasteSelection() {
+  if (!S.clipboard) return;
+  pushUndo();
+  const { data, w, h } = S.clipboard;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const sx = x, sy = y;
+      if (sx >= S.width || sy >= S.height) continue;
+      const si = (y * w + x) * 4;
+      const di = (sy * S.width + sx) * 4;
+      S.canvas.data[di] = data[si]; S.canvas.data[di+1] = data[si+1];
+      S.canvas.data[di+2] = data[si+2]; S.canvas.data[di+3] = data[si+3];
+    }
+  }
+  renderEditor();
+  showToast('Pasted');
+}
+
+function selectAll() {
+  S.selStart = { x: 0, y: 0 };
+  S.selEnd = { x: S.width - 1, y: S.height - 1 };
+  updateSelection();
+}
+
+function deleteSelection() {
+  if (!S.selStart || !S.selEnd) return;
+  pushUndo();
+  const minX = Math.min(S.selStart.x, S.selEnd.x);
+  const minY = Math.min(S.selStart.y, S.selEnd.y);
+  const maxX = Math.max(S.selStart.x, S.selEnd.x);
+  const maxY = Math.max(S.selStart.y, S.selEnd.y);
+  for (let y = minY; y <= maxY; y++) {
+    for (let x = minX; x <= maxX; x++) {
+      const i = (y * S.width + x) * 4;
+      S.canvas.data[i] = 0; S.canvas.data[i+1] = 0;
+      S.canvas.data[i+2] = 0; S.canvas.data[i+3] = 0;
+    }
+  }
+  renderEditor();
+}
+
+function fillSelection() {
+  if (!S.selStart || !S.selEnd) return;
+  pushUndo();
+  const minX = Math.min(S.selStart.x, S.selEnd.x);
+  const minY = Math.min(S.selStart.y, S.selEnd.y);
+  const maxX = Math.max(S.selStart.x, S.selEnd.x);
+  const maxY = Math.max(S.selStart.y, S.selEnd.y);
+  const c = hexToRgb(S.color);
+  for (let y = minY; y <= maxY; y++) {
+    for (let x = minX; x <= maxX; x++) {
+      const i = (y * S.width + x) * 4;
+      S.canvas.data[i] = c.r; S.canvas.data[i+1] = c.g;
+      S.canvas.data[i+2] = c.b; S.canvas.data[i+3] = S.color === 'transparent' ? 0 : 255;
+    }
+  }
+  renderEditor();
+}
+
+function moveSelection() {
+  if (!S.selStart || !S.selEnd) return;
+  // 把选区内容存到剪贴板，然后删除原区域
+  copySelection();
+  deleteSelection();
+  S.tool = 'move';
+  showToast('Selection cut. Click to paste.');
+}
+
+function flipH() {
+  pushUndo();
+  const d = S.canvas.data;
+  const w = S.width, h = S.height;
+  const newData = new Uint8ClampedArray(d);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const si = (y * w + x) * 4;
+      const di = (y * w + (w - 1 - x)) * 4;
+      newData[di] = d[si]; newData[di+1] = d[si+1]; newData[di+2] = d[si+2]; newData[di+3] = d[si+3];
+    }
+  }
+  S.canvas = new ImageData(newData, w, h);
+  renderEditor();
+}
+
+function flipV() {
+  pushUndo();
+  const d = S.canvas.data;
+  const w = S.width, h = S.height;
+  const newData = new Uint8ClampedArray(d);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const si = (y * w + x) * 4;
+      const di = ((h - 1 - y) * w + x) * 4;
+      newData[di] = d[si]; newData[di+1] = d[si+1]; newData[di+2] = d[si+2]; newData[di+3] = d[si+3];
+    }
+  }
+  S.canvas = new ImageData(newData, w, h);
+  renderEditor();
+}
+
+function rotateCW() {
+  pushUndo();
+  const d = S.canvas.data;
+  const w = S.width, h = S.height;
+  // 旋转后宽高互换
+  const newData = new Uint8ClampedArray(w * h * 4);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const si = (y * w + x) * 4;
+      // 顺时针90度：(x,y) -> (h-1-y, x)
+      const di = (x * h + (h - 1 - y)) * 4;
+      newData[di] = d[si]; newData[di+1] = d[si+1]; newData[di+2] = d[si+2]; newData[di+3] = d[si+3];
+    }
+  }
+  S.width = h;
+  S.height = w;
+  S.canvas = new ImageData(newData, h, w);
+  initEditor();
+}
+
 function setEditorZoom(v) {
   S.zoom = parseInt(v);
   document.getElementById('zoomLabel').textContent = S.zoom + 'x';
   document.getElementById('statusZoom').textContent = 'Zoom: ' + S.zoom + 'x';
   renderEditor();
+  // 滚动到画布中心
+  const area = document.getElementById('canvasArea');
+  const wrap = document.getElementById('canvasWrap');
+  area.scrollLeft = (wrap.offsetWidth * S.zoom - area.offsetWidth) / 2;
+  area.scrollTop = (wrap.offsetHeight * S.zoom - area.offsetHeight) / 2;
 }
 
 function editorZoomIn() { setEditorZoom(Math.min(32, S.zoom + 1)); document.getElementById('zoomSlider').value = S.zoom; }
@@ -1666,7 +2435,94 @@ function getCanvasPos(e) {
   return { x: Math.max(0, Math.min(S.width - 1, x)), y: Math.max(0, Math.min(S.height - 1, y)) };
 }
 
+// === Zoom & Pan (like Windows Paint) ===
+S.isPanning = false;
+S.panStart = { x: 0, y: 0 };
+S.spaceHeld = false;
+
+document.getElementById('canvasArea').addEventListener('wheel', e => {
+  e.preventDefault();
+  const area = document.getElementById('canvasArea');
+  const wrap = document.getElementById('canvasWrap');
+
+  // 鼠标在 canvas 上的位置（缩放前）
+  const rect = wrap.getBoundingClientRect();
+  const mx = (e.clientX - rect.left) / S.zoom;
+  const my = (e.clientY - rect.top) / S.zoom;
+
+  // 缩放
+  const oldZoom = S.zoom;
+  if (e.deltaY < 0) {
+    S.zoom = Math.min(64, S.zoom + (S.zoom >= 8 ? 2 : 1));
+  } else {
+    S.zoom = Math.max(1, S.zoom - (S.zoom > 8 ? 2 : 1));
+  }
+
+  // 调整滚动位置，让鼠标下的点保持不动
+  const zoomRatio = S.zoom / oldZoom;
+  area.scrollLeft = (area.scrollLeft + e.clientX - rect.left) * zoomRatio - (e.clientX - rect.left);
+  area.scrollTop = (area.scrollTop + e.clientY - rect.top) * zoomRatio - (e.clientY - rect.top);
+
+  renderEditor();
+  document.getElementById('zoomSlider').value = S.zoom;
+  document.getElementById('zoomLabel').textContent = S.zoom + 'x';
+  document.getElementById('statusZoom').textContent = 'Zoom: ' + S.zoom + 'x';
+});
+
+// 空格键按下时进入平移模式
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space' && S.step === 2 && !e.repeat) {
+    e.preventDefault();
+    S.spaceHeld = true;
+    document.getElementById('canvasArea').classList.add('panning');
+  }
+});
+
+document.addEventListener('keyup', e => {
+  if (e.code === 'Space') {
+    S.spaceHeld = false;
+    S.isPanning = false;
+    document.getElementById('canvasArea').classList.remove('panning');
+  }
+});
+
+document.getElementById('canvasArea').addEventListener('mousedown', e => {
+  if (S.spaceHeld || e.button === 1) {
+    e.preventDefault();
+    S.isPanning = true;
+    S.panStart = { x: e.clientX, y: e.clientY };
+    S.panScrollStart = {
+      x: document.getElementById('canvasArea').scrollLeft,
+      y: document.getElementById('canvasArea').scrollTop
+    };
+  }
+});
+
+document.addEventListener('mousemove', e => {
+  if (S.isPanning) {
+    const area = document.getElementById('canvasArea');
+    area.scrollLeft = S.panScrollStart.x - (e.clientX - S.panStart.x);
+    area.scrollTop = S.panScrollStart.y - (e.clientY - S.panStart.y);
+  }
+});
+
+document.addEventListener('mouseup', e => {
+  if (S.isPanning) {
+    S.isPanning = false;
+    document.querySelector('.canvas-area')?.classList.remove('panning');
+  }
+});
+
+// 鼠标离开窗口时也重置平移状态
+window.addEventListener('blur', () => {
+  S.isPanning = false;
+  S.isDrawing = false;
+  S.spaceHeld = false;
+  document.querySelector('.canvas-area')?.classList.remove('panning');
+});
+
 document.getElementById('editorCanvas').addEventListener('mousedown', e => {
+  if (S.spaceHeld) return; // 平移模式不画
   const pos = getCanvasPos(e);
   S.isDrawing = true;
 
@@ -1689,6 +2545,24 @@ document.getElementById('editorCanvas').addEventListener('mousedown', e => {
     S.selStart = pos;
     S.selEnd = pos;
     updateSelection();
+  } else if (S.tool === 'move') {
+    // 如果剪贴板有内容，粘贴到点击位置
+    if (S.clipboard) {
+      pushUndo();
+      const { data, w, h } = S.clipboard;
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const dx = pos.x + x, dy = pos.y + y;
+          if (dx >= S.width || dy >= S.height) continue;
+          const si = (y * w + x) * 4;
+          const di = (dy * S.width + dx) * 4;
+          S.canvas.data[di] = data[si]; S.canvas.data[di+1] = data[si+1];
+          S.canvas.data[di+2] = data[si+2]; S.canvas.data[di+3] = data[si+3];
+        }
+      }
+      renderEditor();
+      showToast('Pasted');
+    }
   } else if (S.tool === 'line') {
     S.lineStart = pos;
     pushUndo();
@@ -1702,7 +2576,7 @@ document.getElementById('editorCanvas').addEventListener('mousemove', e => {
   const pos = getCanvasPos(e);
   document.getElementById('cursorPos').textContent = `${pos.x}, ${pos.y}`;
 
-  if (!S.isDrawing) return;
+  if (S.spaceHeld || !S.isDrawing) return;
 
   if (S.tool === 'pencil') {
     setPixel(pos.x, pos.y, S.color);
@@ -1755,7 +2629,12 @@ function drawRect(x0, y0, x1, y1, color) {
 
 function updateSelection() {
   const overlay = document.getElementById('selectionOverlay');
-  if (!S.selStart || !S.selEnd) { overlay.style.display = 'none'; return; }
+  const actions = document.getElementById('selectionActions');
+  if (!S.selStart || !S.selEnd) {
+    overlay.style.display = 'none';
+    if (actions) actions.style.display = 'none';
+    return;
+  }
   const minX = Math.min(S.selStart.x, S.selEnd.x);
   const minY = Math.min(S.selStart.y, S.selEnd.y);
   const maxX = Math.max(S.selStart.x, S.selEnd.x);
@@ -1765,6 +2644,13 @@ function updateSelection() {
   overlay.style.top = (minY * S.zoom) + 'px';
   overlay.style.width = ((maxX - minX + 1) * S.zoom) + 'px';
   overlay.style.height = ((maxY - minY + 1) * S.zoom) + 'px';
+
+  // 显示操作栏
+  if (actions) {
+    actions.style.display = 'flex';
+    actions.style.left = (minX * S.zoom) + 'px';
+    actions.style.top = ((minY * S.zoom) - 36) + 'px';
+  }
 }
 
 // Keyboard shortcuts
@@ -1773,6 +2659,9 @@ document.addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
   if (e.ctrlKey && e.key === 'z') { e.preventDefault(); editorUndo(); }
   else if (e.ctrlKey && e.key === 'y') { e.preventDefault(); editorRedo(); }
+  else if (e.ctrlKey && e.key === 'c') { e.preventDefault(); copySelection(); }
+  else if (e.ctrlKey && e.key === 'v') { e.preventDefault(); pasteSelection(); }
+  else if (e.ctrlKey && e.key === 'a') { e.preventDefault(); selectAll(); }
   else if (e.key === 'b') selectTool('pencil');
   else if (e.key === 'e') selectTool('eraser');
   else if (e.key === 'g') selectTool('fill');
@@ -1781,6 +2670,7 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'v') selectTool('move');
   else if (e.key === 'l') selectTool('line');
   else if (e.key === 'r') selectTool('rect');
+  else if (e.key === 'Delete' || e.key === 'Backspace') deleteSelection();
   else if (e.key === '+' || e.key === '=') editorZoomIn();
   else if (e.key === '-') editorZoomOut();
 });
@@ -1851,12 +2741,24 @@ function initAnimPanel() {
     item.innerHTML = `
       <canvas class="anim-item-preview" width="40" height="40"></canvas>
       <div class="anim-item-info">
-        <div class="anim-item-name">${name}</div>
+        <div class="anim-item-name">${name.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
         <div class="anim-item-meta">${data.frames.length} frames · ${data.fps} fps</div>
       </div>
     `;
     item.onclick = () => selectAnim(name);
     list.appendChild(item);
+  }
+
+  // 初始化动画选择 checkboxes
+  const cbContainer = document.getElementById('animCheckboxes');
+  if (cbContainer) {
+    cbContainer.innerHTML = '';
+    for (const name of Object.keys(S.animations)) {
+      const label = document.createElement('label');
+      label.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);cursor:pointer';
+      label.innerHTML = `<input type="checkbox" checked data-anim="${name}" style="accent-color:var(--accent)"> ${name}`;
+      cbContainer.appendChild(label);
+    }
   }
 
   selectAnim(S.currentAnim);
@@ -1950,40 +2852,73 @@ function restartAnimPlay() {
 }
 
 async function generateAllAnimations() {
-  showLoading('Generating animation frames...', 'Creating all animation poses with AI');
+  // 读取勾选的动画
+  const checked = document.querySelectorAll('#animCheckboxes input[type="checkbox"]:checked');
+  const selectedAnims = Array.from(checked).map(cb => cb.dataset.anim);
+  if (selectedAnims.length === 0) {
+    showToast('Select at least one animation', true);
+    return;
+  }
+
+  const name = S.charName || 'character';
+  const hasParts = S.bodyParts && Object.keys(S.bodyParts).length > 0;
+
+  // 动画默认配置
+  const animDefaults = {
+    idle: { frames: 4, fps: 6, loop: true },
+    walk_down: { frames: 6, fps: 8, loop: true },
+    attack: { frames: 6, fps: 10, loop: false },
+    hurt: { frames: 3, fps: 8, loop: false }
+  };
+
+  // 只包含勾选的动画
+  const animations = {};
+  for (const anim of selectedAnims) {
+    animations[anim] = animDefaults[anim] || { frames: 4, fps: 6, loop: true };
+  }
+
+  // 读取勾选的 body parts
+  const checkedParts = document.querySelectorAll('#bodyPartsConfig input[type="checkbox"]:checked');
+  const enabledPartNames = new Set(Array.from(checkedParts).map(cb => cb.dataset.part));
+
+  let config;
+  if (hasParts && enabledPartNames.size > 0) {
+    config = { name, body_parts: {}, animations };
+    for (const [partName, part] of Object.entries(S.bodyParts)) {
+      if (enabledPartNames.has(partName)) {
+        config.body_parts[partName] = { rect: part.rect, color: part.color };
+      }
+    }
+  } else {
+    config = { name, animations };
+  }
+
+  showLoading('Generating animation frames...', 'Programmatic generation (no AI)');
   try {
-    const resp = await fetch('/api/generate?t=' + Date.now(), {
+    const resp = await fetch('/api/programmatic-generate?t=' + Date.now(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: S.charName,
-        width: S.width,
-        height: S.height,
-        animations: {
-          idle: { frames: 4, fps: 6 },
-          walk_down: { frames: 6, fps: 8 },
-          attack: { frames: 6, fps: 10 },
-          hurt: { frames: 3, fps: 8 }
-        }
-      })
+      body: JSON.stringify({ config, size: Math.max(S.width, S.height) })
     });
     const data = await resp.json();
+    hideLoading();
     if (data.error) {
       showToast(data.error, true);
       return;
     }
     S.animations = {};
     const ts = Date.now();
-    for (const [name, info] of Object.entries(data.animations)) {
-      S.animations[name] = {
+    for (const [animName, info] of Object.entries(data.animations)) {
+      S.animations[animName] = {
         fps: info.fps || 6,
         frames: info.frames.map(u => u + '?t=' + ts)
       };
     }
     initAnimPanel();
-    showToast('Animations generated');
+    showToast(hasParts ? 'Animations generated from body parts' : 'Animations generated with defaults (annotate body parts for custom look)');
   } catch (e) {
-    showToast('Server error', true);
+    hideLoading();
+    showToast('Generation failed: ' + e.message, true);
   } finally {
     hideLoading();
   }
@@ -1999,6 +2934,398 @@ function initExportPanel() {
     html += `${name}: ${data.frames.length} frames @ ${data.fps}fps\n`;
   }
   preview.textContent = html;
+}
+
+async function previewFromCanvas() {
+  const canvas = document.getElementById('editorCanvas');
+  const dataUrl = canvas.toDataURL('image/png');
+
+  showLoading('Generating preview...', 'Creating a preview of your character with AI');
+
+  try {
+    const resp = await fetch('/api/preview-from-canvas?t=' + Date.now(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        canvas_image: dataUrl,
+        strength: 0.4
+      })
+    });
+    const data = await resp.json();
+    hideLoading();
+
+    if (data.error) {
+      showToast(data.error, true);
+      return;
+    }
+
+    // 显示预览
+    showPreview(data.image);
+  } catch (e) {
+    hideLoading();
+    showToast('Preview failed: ' + e.message, true);
+  }
+}
+
+function previewResize() {
+  const w = parseInt(document.getElementById('previewW').value) || 32;
+  const h = parseInt(document.getElementById('previewH').value) || 32;
+  const algo = document.getElementById('previewAlgo').value;
+
+  // 算法映射
+  const algoMap = {
+    'nearest': 'pixelated',
+    'bilinear': 'auto',
+    'bicubic': 'auto',
+    'lanczos': 'auto'
+  };
+
+  // 创建预览弹窗
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9997;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px';
+
+  // 放大显示尺寸
+  const displayScale = Math.max(4, Math.floor(256 / Math.max(w, h)));
+  const displayW = w * displayScale;
+  const displayH = h * displayScale;
+
+  overlay.innerHTML = `
+    <div style="font-size:16px;font-weight:700;color:var(--white)">Preview: ${w}&times;${h}</div>
+    <div style="font-size:11px;color:var(--text3)">Algorithm: ${algo}</div>
+    <div style="display:flex;gap:24px;align-items:center">
+      <div style="text-align:center">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Original (${S.width}&times;${S.height})</div>
+        <canvas id="previewOrigCanvas" style="border:2px solid var(--border);background:repeating-conic-gradient(#222 0% 25%,#1a1a2a 0% 50%) 0 0/8px 8px"></canvas>
+      </div>
+      <div style="font-size:24px;color:var(--accent2)">&#9654;</div>
+      <div style="text-align:center">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Result (${w}&times;${h})</div>
+        <canvas id="previewResultCanvas" style="border:2px solid var(--accent2);background:repeating-conic-gradient(#222 0% 25%,#1a1a2a 0% 50%) 0 0/8px 8px"></canvas>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn btn-secondary" id="previewCloseBtn">Close</button>
+      <button class="btn btn-primary" id="previewApplyBtn">Apply Size</button>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  // 绘制原图（放大显示）
+  const origCanvas = document.getElementById('previewOrigCanvas');
+  origCanvas.width = displayW;
+  origCanvas.height = displayH;
+  origCanvas.style.width = displayW + 'px';
+  origCanvas.style.height = displayH + 'px';
+  const origCtx = origCanvas.getContext('2d');
+  origCtx.imageSmoothingEnabled = false;
+  origCtx.drawImage(document.getElementById('editorCanvas'), 0, 0, displayW, displayH);
+
+  // 缩放生成结果
+  const resultCanvas = document.getElementById('previewResultCanvas');
+  resultCanvas.width = displayW;
+  resultCanvas.height = displayH;
+  resultCanvas.style.width = displayW + 'px';
+  resultCanvas.style.height = displayH + 'px';
+
+  // 用离屏 canvas 做缩放
+  const offscreen = document.createElement('canvas');
+  offscreen.width = w;
+  offscreen.height = h;
+  const offCtx = offscreen.getContext('2d');
+
+  // 设置缩放算法
+  if (algo === 'nearest') {
+    offCtx.imageSmoothingEnabled = false;
+  } else {
+    offCtx.imageSmoothingEnabled = true;
+    offCtx.imageSmoothingQuality = algo === 'lanczos' ? 'high' : algo === 'bicubic' ? 'high' : 'medium';
+  }
+
+  offCtx.drawImage(document.getElementById('editorCanvas'), 0, 0, w, h);
+
+  // 放大显示结果
+  const resultCtx = resultCanvas.getContext('2d');
+  resultCtx.imageSmoothingEnabled = false;
+  resultCtx.drawImage(offscreen, 0, 0, displayW, displayH);
+
+  // 按钮事件
+  document.getElementById('previewCloseBtn').onclick = () => overlay.remove();
+  document.getElementById('previewApplyBtn').onclick = () => {
+    // 把缩放结果应用到画布
+    S.width = w;
+    S.height = h;
+    S.canvas = offCtx.getImageData(0, 0, w, h);
+    document.getElementById('editW').value = w;
+    document.getElementById('editH').value = h;
+    initEditor();
+    overlay.remove();
+    showToast(`Canvas resized to ${w}x${h} (${algo})`);
+  };
+}
+
+function showPreview(imageDataUrl) {
+  // 创建预览弹窗
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9997;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px';
+
+  overlay.innerHTML = `
+    <div style="font-size:16px;font-weight:700;color:var(--white)">Preview Result</div>
+    <div style="display:flex;gap:24px;align-items:center">
+      <div style="text-align:center">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Original</div>
+        <canvas id="previewOrig" style="border:2px solid var(--border);image-rendering:pixelated;background:repeating-conic-gradient(#222 0% 25%,#1a1a2a 0% 50%) 0 0/8px 8px"></canvas>
+      </div>
+      <div style="font-size:24px;color:var(--accent2)">&#9654;</div>
+      <div style="text-align:center">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:4px">AI Result</div>
+        <canvas id="previewResult" style="border:2px solid var(--accent2);image-rendering:pixelated;background:repeating-conic-gradient(#222 0% 25%,#1a1a2a 0% 50%) 0 0/8px 8px"></canvas>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn btn-secondary" id="previewClose">Close</button>
+      <button class="btn btn-primary" id="previewAccept">Use This</button>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  // 绘制原图
+  const origCanvas = document.getElementById('previewOrig');
+  const srcCanvas = document.getElementById('editorCanvas');
+  const displaySize = Math.max(128, S.width * 4);
+  origCanvas.width = displaySize;
+  origCanvas.height = displaySize;
+  origCanvas.style.width = displaySize + 'px';
+  origCanvas.style.height = displaySize + 'px';
+  const origCtx = origCanvas.getContext('2d');
+  origCtx.imageSmoothingEnabled = false;
+  origCtx.drawImage(srcCanvas, 0, 0, displaySize, displaySize);
+
+  // 绘制结果
+  const resultCanvas = document.getElementById('previewResult');
+  resultCanvas.width = displaySize;
+  resultCanvas.height = displaySize;
+  resultCanvas.style.width = displaySize + 'px';
+  resultCanvas.style.height = displaySize + 'px';
+  const img = new Image();
+  img.onload = () => {
+    const ctx = resultCanvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(img, 0, 0, displaySize, displaySize);
+  };
+  img.src = imageDataUrl;
+
+  // 按钮事件
+  document.getElementById('previewClose').onclick = () => overlay.remove();
+  document.getElementById('previewAccept').onclick = () => {
+    // 把预览结果加载到画布
+    const img2 = new Image();
+    img2.onload = () => {
+      const tmpCanvas = document.createElement('canvas');
+      tmpCanvas.width = S.width;
+      tmpCanvas.height = S.height;
+      tmpCanvas.getContext('2d').drawImage(img2, 0, 0, S.width, S.height);
+      S.canvas = tmpCanvas.getContext('2d').getImageData(0, 0, S.width, S.height);
+      pushUndo();
+      renderEditor();
+    };
+    img2.src = imageDataUrl;
+    overlay.remove();
+    showToast('Preview applied to canvas');
+  };
+}
+
+// === Programmatic Generation ===
+
+const PROG_DEFAULT_COLORS = {
+  head: '#dcb48c', torso: '#3250b4', left_arm: '#dcb48c', right_arm: '#dcb48c',
+  left_leg: '#3c3228', right_leg: '#3c3228', weapon: '#b4b4c8', cape: '#b42828'
+};
+
+function initProgCustomColors() {
+  const container = document.getElementById('progCustomColors');
+  if (!container) return;
+  container.innerHTML = '';
+  for (const [part, color] of Object.entries(PROG_DEFAULT_COLORS)) {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:4px';
+    row.innerHTML = `
+      <span style="font-size:10px;color:var(--text2);min-width:60px">${part}</span>
+      <input type="color" value="${color}" id="progColor_${part}" style="width:28px;height:24px;border:1px solid var(--border);border-radius:2px;background:var(--bg);cursor:pointer">
+    `;
+    container.appendChild(row);
+  }
+}
+
+function updateProgMode() {
+  const mode = document.getElementById('progMode').value;
+  document.getElementById('progPresetSection').style.display = mode === 'preset' ? 'block' : 'none';
+  document.getElementById('progImportSection').style.display = mode === 'import' ? 'block' : 'none';
+  document.getElementById('progCustomSection').style.display = mode === 'custom' ? 'block' : 'none';
+}
+
+function loadProgConfig() {
+  try {
+    const json = document.getElementById('progImportJson').value;
+    const config = JSON.parse(json);
+    showToast('Config loaded: ' + (config.name || 'unnamed'));
+  } catch (e) {
+    showToast('Invalid JSON: ' + e.message, true);
+  }
+}
+
+function getProgConfig() {
+  const mode = document.getElementById('progMode').value;
+  const size = parseInt(document.getElementById('progSize').value) || 32;
+
+  if (mode === 'preset') {
+    const presetName = document.getElementById('progPreset').value;
+    return { preset: presetName, size };
+  } else if (mode === 'import') {
+    const json = document.getElementById('progImportJson').value;
+    return { config: JSON.parse(json), size };
+  } else {
+    // Custom colors
+    const name = document.getElementById('progCustomName').value || 'custom';
+    const bodyParts = {};
+    for (const part of Object.keys(PROG_DEFAULT_COLORS)) {
+      const colorInput = document.getElementById('progColor_' + part);
+      bodyParts[part] = {
+        rect: getDefaultRect(part),
+        color: colorInput ? colorInput.value : PROG_DEFAULT_COLORS[part]
+      };
+    }
+    return {
+      config: {
+        name,
+        body_parts: bodyParts,
+        animations: {
+          idle: { frames: 4, fps: 6, loop: true },
+          walk_down: { frames: 6, fps: 8, loop: true },
+          attack: { frames: 6, fps: 10, loop: false },
+          hurt: { frames: 3, fps: 8, loop: false }
+        }
+      },
+      size
+    };
+  }
+}
+
+function getDefaultRect(part) {
+  const rects = {
+    head: [11, 2, 21, 10], torso: [10, 10, 22, 22],
+    left_arm: [6, 10, 10, 20], right_arm: [22, 10, 26, 20],
+    left_leg: [11, 22, 15, 30], right_leg: [17, 22, 21, 30],
+    weapon: [24, 14, 27, 30], cape: [8, 10, 24, 20]
+  };
+  return rects[part] || [0, 0, 4, 4];
+}
+
+async function startProgrammatic() {
+  let reqData;
+  try {
+    reqData = getProgConfig();
+  } catch (e) {
+    showToast('Config error: ' + e.message, true);
+    return;
+  }
+
+  showLoading('Generating animations...', 'Programmatic generation (no AI)');
+
+  try {
+    const resp = await fetch('/api/programmatic-generate?t=' + Date.now(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(reqData)
+    });
+    const data = await resp.json();
+    hideLoading();
+
+    if (data.error) {
+      showToast(data.error, true);
+      return;
+    }
+
+    // 加载动画帧
+    S.animations = {};
+    S.frames = {};
+    S.charName = data.name || 'character';
+    const ts = Date.now();
+    for (const [name, info] of Object.entries(data.animations)) {
+      S.animations[name] = {
+        fps: info.fps || 6,
+        frames: info.frames.map(u => u + '?t=' + ts)
+      };
+    }
+
+    // 加载第一帧到编辑器
+    const firstAnim = Object.keys(S.animations)[0];
+    if (firstAnim && S.animations[firstAnim].frames.length > 0) {
+      S.width = reqData.size || 32;
+      S.height = reqData.size || 32;
+      await loadCanvasFromUrl(S.animations[firstAnim].frames[0]);
+    }
+
+    document.getElementById('charNameDisplay').textContent = S.charName;
+    goStep(2);
+    showToast('Animations generated!');
+  } catch (e) {
+    hideLoading();
+    showToast('Generation failed: ' + e.message, true);
+  }
+}
+
+async function animateFromCanvas() {
+  if (!confirm('AI Animation is experimental and requires significant GPU memory (8GB+). It may fail or produce inconsistent results. Continue?')) return;
+
+  const canvas = document.getElementById('editorCanvas');
+  const dataUrl = canvas.toDataURL('image/png');
+
+  showLoading('Generating animations...', 'Creating animation frames from your edited image');
+
+  try {
+    const resp = await fetch('/api/animate-from-canvas?t=' + Date.now(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: S.charName,
+        canvas_image: dataUrl,
+        pixel_width: S.width,
+        pixel_height: S.height,
+        animations: {
+          idle: { frames: 4, fps: 6 },
+          walk_down: { frames: 6, fps: 8 },
+          attack: { frames: 6, fps: 10 },
+          hurt: { frames: 3, fps: 8 }
+        }
+      })
+    });
+    const data = await resp.json();
+    hideLoading();
+
+    if (data.error) {
+      showToast(data.error, true);
+      return;
+    }
+
+    // 加载动画帧
+    S.animations = {};
+    const ts = Date.now();
+    for (const [name, info] of Object.entries(data.animations)) {
+      S.animations[name] = {
+        fps: info.fps || 6,
+        frames: info.frames.map(u => u + '?t=' + ts)
+      };
+    }
+
+    goStep(3);
+    showToast('Animations generated from your edit!');
+  } catch (e) {
+    hideLoading();
+    console.error('[AnimateCanvas] Error:', e);
+    showToast('Animation generation failed', true);
+  }
 }
 
 async function doExport() {

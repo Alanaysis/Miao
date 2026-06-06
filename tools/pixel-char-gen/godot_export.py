@@ -4,13 +4,14 @@ Godot 资源导出模块
 """
 
 import os
+import hashlib
 
 
 def generate_import_file(source_png_relative: str) -> str:
     """生成 Godot .import 文件内容（让 Godot 正确导入 PNG 为 Texture2D）"""
-    # 计算文件名的 hash 用于 Godot 内部标识
+    # 计算文件名的 hash 用于 Godot 内部标识（使用确定性哈希）
     filename = os.path.basename(source_png_relative)
-    file_hash = hash(filename) & 0xFFFFFFFFFFFFFFFF
+    file_hash = int(hashlib.md5(filename.encode()).hexdigest()[:16], 16)
 
     return f"""[remap]
 

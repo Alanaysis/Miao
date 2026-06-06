@@ -20,162 +20,173 @@ except ImportError:
 # Prompt 模板 — 像素角色生成专用
 # ============================================================
 
-# 风格修饰词（根据 style 配置自动匹配）
+# 风格修饰词（精简，控制 token 数）
 STYLE_MODIFIERS = {
-    "chibi-fantasy": "chibi style, cute proportions, big head, fantasy RPG character",
-    "retro-8bit": "8-bit pixel art, NES style, limited palette, chunky pixels",
-    "modern-pixel": "modern pixel art, clean edges, detailed shading, indie game style",
-    "dark-souls": "dark fantasy, gothic style, gritty pixel art, muted colors",
-    "cute-chibi": "super deformed, kawaii style, round shapes, pastel colors",
+    "chibi-fantasy": "chibi RPG, big head, small body",
+    "retro-8bit": "8-bit NES, chunky pixels",
+    "modern-pixel": "modern pixel art, clean edges",
+    "dark-souls": "dark fantasy, gothic, muted colors",
+    "cute-chibi": "kawaii chibi, round, pastel",
 }
 
-# 基础 Prompt — 控制角色外观一致性
-BASE_PROMPT = (
-    "pixel art game sprite, single character, solo, one character only, "
-    "centered in frame, full body shot, standing on ground, "
-    "clean solid white background, isolated character, no background elements, "
-    "high contrast, crisp pixel edges, sharp outlines, "
-    "{style}, {clothing}, {weapon}, {accessories}, {skin_tone}"
+# 基础 Prompt — 精简版，两段分别给两个 CLIP 编码器
+# 每段控制在 77 token 以内，无同义词重复
+BASE_PROMPT_PART1 = (
+    "pixel art sprite, single character, solo, white background, "
+    "centered, full body, front view, standing, "
+    "{style}, {clothing}, {weapon}, {accessories}, {skin_tone} skin"
 )
+BASE_PROMPT_PART2 = (
+    "sharp edges, black outlines, flat colors, 16-bit, game sprite"
+)
+BASE_PROMPT = BASE_PROMPT_PART1 + ", " + BASE_PROMPT_PART2
 
-# 动画 Pose Prompt — 控制每个动画的姿态
-ANIMATION_PROMPTS = {
-    "idle": (
-        "standing still, front-facing, idle pose, relaxed stance, "
-        "arms at sides, feet together, looking forward"
-    ),
-    "walk_down": (
-        "walking forward, front view, left foot stepping forward, "
-        "arms swinging, mid-stride pose, moving towards viewer"
-    ),
-    "walk_up": (
-        "walking away, back view, seen from behind, "
-        "arms swinging, mid-stride pose, moving away from viewer"
-    ),
-    "walk_left": (
-        "walking left, side view, profile pose, "
-        "left arm forward, right arm back, mid-stride"
-    ),
-    "walk_right": (
-        "walking right, side view, profile pose, "
-        "right arm forward, left arm back, mid-stride"
-    ),
-    "attack": (
-        "attacking, action pose, weapon raised, "
-        "dynamic strike motion, aggressive stance, mid-swing"
-    ),
-    "hurt": (
-        "recoiling from damage, flinching, knocked back, "
-        "pain expression, defensive posture, staggering"
-    ),
-    "death": (
-        "collapsing, falling down, defeated, "
-        "falling to ground, losing balance, downed"
-    ),
+# img2img 动画 Prompt — 基于参考图，描述姿态变化
+# 这些 prompt 更短，因为参考图已经提供了角色外观
+IMG2IMG_PROMPTS = {
+    "idle": "pixel art character, same character, idle standing pose, front view, relaxed",
+    "walk_down": "pixel art character, same character, walking forward, front view, mid-stride, legs moving",
+    "walk_up": "pixel art character, same character, walking away, back view, mid-stride",
+    "walk_left": "pixel art character, same character, walking left, side view, profile, mid-stride",
+    "walk_right": "pixel art character, same character, walking right, side view, profile, mid-stride",
+    "attack": "pixel art character, same character, attacking, weapon strike, action pose, dynamic motion",
+    "hurt": "pixel art character, same character, hurt, recoiling, knocked back, pain expression",
+    "death": "pixel art character, same character, falling down, collapsing, defeated, dying",
 }
 
-# 帧间微变化 — 让同一动画的不同帧有区别
-FRAME_VARIANTS = {
+# 帧间微变化 — 用于 img2img 的额外描述
+IMG2IMG_VARIANTS = {
     "idle": [
-        "breathing, slight sway",
-        "looking slightly left",
-        "looking slightly right",
-        "breathing, slight sway",
+        "breathing, slight body sway, relaxed",
+        "looking slightly left, idle",
+        "looking slightly right, idle",
+        "breathing, slight body sway, relaxed",
     ],
     "walk_down": [
-        "left foot forward, right foot back",
-        "feet together, passing position",
-        "right foot forward, left foot back",
-        "feet together, passing position",
-        "left foot forward, right foot back",
-        "feet together, passing position",
+        "left foot forward, right foot back, walking",
+        "feet passing, mid-step, walking",
+        "right foot forward, left foot back, walking",
+        "feet passing, mid-step, walking",
+        "left foot forward, right foot back, walking",
+        "feet passing, mid-step, walking",
     ],
     "walk_up": [
         "left foot forward, right foot back",
-        "feet together, passing position",
+        "feet passing, mid-step",
         "right foot forward, left foot back",
-        "feet together, passing position",
-        "left foot forward, right foot back",
-        "feet together, passing position",
+        "feet passing, mid-step",
     ],
     "walk_left": [
-        "left leg extended forward",
-        "legs passing, mid-step",
-        "right leg extended forward",
-        "legs passing, mid-step",
+        "left leg extended forward, walking left",
+        "legs passing, mid-step, walking left",
+        "right leg extended forward, walking left",
+        "legs passing, mid-step, walking left",
     ],
     "walk_right": [
-        "right leg extended forward",
-        "legs passing, mid-step",
-        "left leg extended forward",
-        "legs passing, mid-step",
+        "right leg extended forward, walking right",
+        "legs passing, mid-step, walking right",
+        "left leg extended forward, walking right",
+        "legs passing, mid-step, walking right",
     ],
     "attack": [
-        "winding up, weapon raised high",
-        "weapon overhead, ready to strike",
-        "mid-swing, weapon coming down",
-        "weapon extended forward, follow through",
-        "recovery pose, weapon returning",
-        "back to neutral stance",
+        "winding up, weapon raised overhead, preparing to strike",
+        "weapon overhead, ready to strike, aggressive",
+        "mid-swing, weapon coming down, attacking",
+        "weapon extended forward, follow through, striking",
+        "recovery pose, weapon returning, after strike",
+        "back to neutral stance, ready",
     ],
     "hurt": [
-        "just got hit, flinching",
-        "knocked back, arms raised defensively",
-        "recovering, returning to stance",
+        "just got hit, flinching, pain",
+        "knocked back, arms raised defensively, hurt",
+        "recovering, returning to stance, wincing",
     ],
     "death": [
-        "staggering, losing balance",
-        "falling backward",
-        "halfway to ground",
-        "crumpling to ground",
-        "lying on ground",
-        "lying still on ground",
+        "staggering, losing balance, falling",
+        "falling backward, collapsing",
+        "crumpling to ground, defeated",
+        "lying on ground, motionless",
     ],
 }
 
-# 负面 Prompt — 排除不需要的元素
+# img2img 强度 — 控制每帧与基准图的相似度
+# 越低越像原图，越高变化越大
+IMG2IMG_STRENGTH = {
+    "idle": 0.3,        # idle 几乎不变
+    "walk_down": 0.4,   # walk 中等变化
+    "walk_up": 0.4,
+    "walk_left": 0.4,
+    "walk_right": 0.4,
+    "attack": 0.5,      # attack 变化较大
+    "hurt": 0.45,
+    "death": 0.5,
+}
+
+# 负面 Prompt（强化多人和背景排除）
 NEGATIVE_PROMPT = (
-    "multiple characters, two characters, group, crowd, "
-    "background, scenery, landscape, environment, room, indoor, outdoor, "
-    "realistic, photograph, 3d render, 3d model, cgi, "
-    "blurry, low quality, low resolution, jpeg artifacts, compression, "
-    "watermark, text, signature, logo, label, ui, "
-    "deformed, disfigured, mutated, extra limbs, extra arms, extra legs, "
-    "fused fingers, too many fingers, missing limbs, "
-    "bad anatomy, bad proportions, gross proportions, "
-    "cropped, out of frame, cut off, "
-    "anime, cartoon, illustration, drawing, painting, sketch, "
+    # 多人排除（加强）
+    "multiple characters, multiple people, group, crowd, duo, two people, three people, "
+    "many people, several people, gathering, army, mob, "
+    "second person, other characters, background characters, "
+    # 背景排除
+    "background, scenery, landscape, environment, room, indoor, outdoor, forest, city, sky, "
+    "floor, ground, platform, pedestal, "
+    # 质量排除
+    "realistic, photograph, 3d render, 3d model, cgi, photo, "
+    "blurry, low quality, jpeg artifacts, watermark, text, signature, logo, "
+    # 解剖排除
+    "deformed, disfigured, extra limbs, extra arms, extra fingers, missing limbs, bad anatomy, "
+    "mutated, fused, merged, "
+    # 构图排除
+    "cropped, out of frame, cut off, partial, "
+    # 风格排除
+    "anime, cartoon, illustration, painting, drawing, sketch, "
     "monochrome, grayscale, black and white"
 )
 
 
-def build_prompt(character_config: dict, anim_name: str, frame_index: int = 0) -> str:
-    """构建单帧的完整 prompt
+def build_prompt(character_config: dict, anim_name: str = "idle", frame_index: int = 0) -> tuple[str, str]:
+    """构建 txt2img 的 prompt，返回 (prompt_1, prompt_2)
 
-    结构：基础角色描述 + 风格修饰 + 动画姿态 + 帧间变化
-    确保：单角色、白色背景、像素风格、姿态一致
+    所有关键词均匀分配到两个编码器，避免单侧超 77 token 被截断
     """
     style = character_config.get("style", "modern-pixel")
 
-    # 基础角色描述
-    base = BASE_PROMPT.format(
-        style=STYLE_MODIFIERS.get(style, f"{style} pixel art"),
-        clothing=character_config.get("clothing", ""),
-        weapon=character_config.get("weapon", ""),
-        accessories=character_config.get("accessories", ""),
-        skin_tone=character_config.get("skin_tone", "")
-    )
+    # 收集所有非空关键词（精简，控制总 token ≤ 154）
+    all_parts = [
+        "pixel art", "single character", "white background",
+        "centered", "full body", "standing"
+    ]
 
-    # 动画姿态
-    anim_desc = ANIMATION_PROMPTS.get(anim_name, ANIMATION_PROMPTS["idle"])
+    style_desc = STYLE_MODIFIERS.get(style, "pixel art")
+    if style_desc:
+        all_parts.append(style_desc)
 
-    # 帧间变化
-    variants = FRAME_VARIANTS.get(anim_name, FRAME_VARIANTS["idle"])
+    for key in ["clothing", "weapon", "accessories"]:
+        val = character_config.get(key, "").strip()
+        if val and val.lower() != "none":
+            all_parts.append(val)
+
+    skin = character_config.get("skin_tone", "").strip()
+    if skin:
+        all_parts.append(f"{skin} skin")
+
+    # 像素风关键词
+    all_parts.extend(["sharp edges", "black outlines", "flat colors", "16-bit", "game sprite"])
+
+    # 均匀分配：奇数位给 P1，偶数位给 P2
+    p1_parts = all_parts[::2]
+    p2_parts = all_parts[1::2]
+
+    return ", ".join(p1_parts), ", ".join(p2_parts)
+
+
+def build_img2img_prompt(anim_name: str, frame_index: int = 0) -> str:
+    """构建 img2img 的 prompt（基于基准图生成动画帧）"""
+    base = IMG2IMG_PROMPTS.get(anim_name, IMG2IMG_PROMPTS["idle"])
+    variants = IMG2IMG_VARIANTS.get(anim_name, IMG2IMG_VARIANTS["idle"])
     variant = variants[frame_index % len(variants)]
-
-    # 组合
-    parts = [base, anim_desc, variant]
-    return ", ".join(p for p in parts if p)
+    return f"{base}, {variant}"
 
 
 # ============================================================
@@ -211,7 +222,9 @@ class LocalSDBackend(AIBackend):
     """本地 Stable Diffusion（diffusers 库）"""
 
     def __init__(self, config: dict):
-        self.model_id = config.get("model", "stabilityai/sd-turbo")
+        self.model_id = config.get("model", "stabilityai/sdxl-base-1.0")
+        self.lora_path = config.get("lora", "")
+        self.lora_weight = config.get("lora_weight", 0.8)
         self.device = config.get("device", "auto")
         self._pipe = None
 
@@ -233,28 +246,53 @@ class LocalSDBackend(AIBackend):
         if self._pipe is not None:
             return
         import torch
-        from diffusers import AutoPipelineForText2Image
+        from diffusers import StableDiffusionXLPipeline
 
         device = "cuda" if self.device == "auto" and torch.cuda.is_available() else "cpu"
         dtype = torch.float16 if device == "cuda" else torch.float32
 
-        # 优先从 ModelScope 下载（国内快）
+        # 从 ModelScope 下载或使用本地路径
         local_path = self._download_from_modelscope()
         model_id = local_path if local_path else self.model_id
 
-        print(f"[LocalSD] Loading model from: {model_id}")
-        self._pipe = AutoPipelineForText2Image.from_pretrained(
+        print(f"[LocalSD] Loading SDXL from: {model_id}")
+        self._pipe = StableDiffusionXLPipeline.from_pretrained(
             model_id,
             torch_dtype=dtype,
-            safety_checker=None
+            use_safetensors=True,
+            variant="fp16" if dtype == torch.float16 else None
         ).to(device)
 
+        # 启用内存优化
+        if device == "cuda":
+            self._pipe.enable_model_cpu_offload()
+
+        # 加载 LoRA
+        if self.lora_path:
+            lora_file = self.lora_path
+            # 支持相对路径
+            if not os.path.isabs(lora_file):
+                lora_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), lora_file)
+
+            if os.path.isfile(lora_file):
+                print(f"[LocalSD] Loading LoRA: {lora_file}")
+                try:
+                    self._pipe.load_lora_weights(
+                        os.path.dirname(lora_file),
+                        weight_name=os.path.basename(lora_file)
+                    )
+                    print(f"[LocalSD] LoRA loaded (weight={self.lora_weight})")
+                except Exception as e:
+                    print(f"[LocalSD] LoRA failed: {e}")
+            else:
+                print(f"[LocalSD] LoRA not found: {lora_file}")
+
     def _download_from_modelscope(self) -> str:
-        """从 ModelScope 下载模型，返回本地路径，失败返回空字符串"""
+        """从 ModelScope 下载 SDXL 模型"""
         try:
             from modelscope import snapshot_download
-            # ModelScope 上的 SD Turbo 模型 ID
             model_map = {
+                "stabilityai/sdxl-base-1.0": "AI-ModelScope/stable-diffusion-xl-base-1.0",
                 "stabilityai/sd-turbo": "AI-ModelScope/sd-turbo",
             }
             ms_id = model_map.get(self.model_id, self.model_id)
@@ -267,19 +305,77 @@ class LocalSDBackend(AIBackend):
             return ""
 
     def generate(self, prompt: str, negative_prompt: str,
-                 width: int, height: int) -> Image.Image:
+                 width: int, height: int, prompt_2: str = "") -> Image.Image:
+        """txt2img 生成（SDXL 原生 1024x1024，双 CLIP 编码器）"""
         self._load_pipeline()
-        # SD 需要 8 的倍数
-        w = max(64, (width // 8) * 8)
-        h = max(64, (height // 8) * 8)
+        import torch, random
 
+        w, h = 1024, 1024
+
+        # 如果没有单独的 prompt_2，自动分段
+        if not prompt_2:
+            parts = [p.strip() for p in prompt.split(",") if p.strip()]
+            mid = len(parts) // 2
+            p1 = ", ".join(parts[:mid])
+            p2 = ", ".join(parts[mid:])
+        else:
+            p1 = prompt
+            p2 = prompt_2
+
+        device = self._pipe.device
         result = self._pipe(
-            prompt=prompt,
+            prompt=p1,
+            prompt_2=p2,
             negative_prompt=negative_prompt,
+            negative_prompt_2=negative_prompt,
             width=w,
             height=h,
-            num_inference_steps=4,  # SD Turbo 只需 4 步
-            guidance_scale=0.0
+            num_inference_steps=25,
+            guidance_scale=7.5,
+            generator=torch.Generator(device).manual_seed(random.randint(0, 2**32))
+        )
+        return result.images[0]
+
+    def img2img(self, prompt: str, negative_prompt: str,
+                reference: Image.Image, strength: float = 0.4) -> Image.Image:
+        """img2img 基于参考图生成变体"""
+        self._load_pipeline()
+        import torch, random
+        from diffusers import StableDiffusionXLImg2ImgPipeline
+
+        # 复用 txt2img pipeline 的组件创建 img2img pipeline
+        if not hasattr(self, '_img2img_pipe'):
+            self._img2img_pipe = StableDiffusionXLImg2ImgPipeline(
+                vae=self._pipe.vae,
+                text_encoder=self._pipe.text_encoder,
+                text_encoder_2=self._pipe.text_encoder_2,
+                tokenizer=self._pipe.tokenizer,
+                tokenizer_2=self._pipe.tokenizer_2,
+                unet=self._pipe.unet,
+                scheduler=self._pipe.scheduler,
+            )
+            if hasattr(self._pipe, 'device'):
+                self._img2img_pipe = self._img2img_pipe.to(self._pipe.device)
+
+        device = self._pipe.device
+        ref_img = reference.resize((1024, 1024))
+
+        # 分段 prompt
+        prompt_parts = [p.strip() for p in prompt.split(",") if p.strip()]
+        mid = len(prompt_parts) // 2
+        prompt_1 = ", ".join(prompt_parts[:mid])
+        prompt_2 = ", ".join(prompt_parts[mid:])
+
+        result = self._img2img_pipe(
+            prompt=prompt_1,
+            prompt_2=prompt_2,
+            negative_prompt=negative_prompt,
+            negative_prompt_2=negative_prompt,
+            image=ref_img,
+            strength=strength,
+            num_inference_steps=20,
+            guidance_scale=7.5,
+            generator=torch.Generator(device).manual_seed(random.randint(0, 2**32))
         )
         return result.images[0]
 
@@ -577,6 +673,97 @@ class OpenAIBackend(AIBackend):
 
 
 # ============================================================
+# Qwen-VL 视觉语言模型（图片分析，非生成）
+# ============================================================
+
+class QwenVLAnalyzer:
+    """通义千问 VL — 分析图片中的身体部件位置和颜色"""
+
+    def __init__(self, api_key: str = ""):
+        self.api_key = api_key or os.environ.get("DASHSCOPE_API_KEY", "")
+
+    def is_available(self) -> bool:
+        return bool(self.api_key)
+
+    def analyze_body_parts(self, image: Image.Image) -> dict:
+        """分析图片，返回 body parts 配置
+
+        Returns:
+            {"head": {"rect": [x1,y1,x2,y2], "color": "#hex"}, ...}
+        """
+        if not self.is_available():
+            raise RuntimeError("Qwen-VL API key not set (DASHSCOPE_API_KEY)")
+
+        # 图片转 base64
+        buf = io.BytesIO()
+        image.save(buf, format="PNG")
+        img_b64 = base64.b64encode(buf.getvalue()).decode()
+
+        prompt = """分析这张像素角色图片。识别以下身体部件的位置（边界框坐标）和主色调。
+
+部件列表：head, torso, left_arm, right_arm, left_leg, right_leg, weapon, cape
+
+严格按以下 JSON 格式返回，不要有任何其他文字：
+{
+  "head": {"rect": [x1, y1, x2, y2], "color": "#RRGGBB"},
+  "torso": {"rect": [x1, y1, x2, y2], "color": "#RRGGBB"},
+  "left_arm": {"rect": [x1, y1, x2, y2], "color": "#RRGGBB"},
+  "right_arm": {"rect": [x1, y1, x2, y2], "color": "#RRGGBB"},
+  "left_leg": {"rect": [x1, y1, x2, y2], "color": "#RRGGBB"},
+  "right_leg": {"rect": [x1, y1, x2, y2], "color": "#RRGGBB"}
+}
+
+规则：
+- 坐标基于图片实际像素尺寸（宽{w}，高{h}）
+- 颜色取该区域的主色调，格式 #RRGGBB
+- 如果某个部件不存在（比如没有武器、没有披风），不要包含它
+- 如果有武器，加入 "weapon"；如果有披风/斗篷，加入 "cape"
+- rect 格式为 [左上x, 左上y, 右下x, 右下y]""".format(w=image.width, h=image.height)
+
+        try:
+            import requests
+            resp = requests.post(
+                "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "model": "qwen-vl-max",
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": [
+                                {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{img_b64}"}},
+                                {"type": "text", "text": prompt}
+                            ]
+                        }
+                    ],
+                    "max_tokens": 1024,
+                    "temperature": 0.1
+                },
+                timeout=30
+            )
+            resp.raise_for_status()
+            result = resp.json()
+            content = result["choices"][0]["message"]["content"]
+
+            # 从回复中提取 JSON
+            import re
+            json_match = re.search(r'\{[^{}]*\{[^{}]*\}[^{}]*\}', content, re.DOTALL)
+            if json_match:
+                body_parts = json.loads(json_match.group())
+                return body_parts
+            else:
+                print(f"[QwenVL] Failed to parse JSON from: {content[:200]}")
+                return {}
+
+        except Exception as e:
+            print(f"[QwenVL] Analysis failed: {e}")
+            return {}
+
+
+# ============================================================
 # 后端工厂
 # ============================================================
 
@@ -653,12 +840,15 @@ def generate_character_frames(character_config: dict,
 
         for i in range(frame_count):
             current += 1
-            prompt = build_prompt(character_config, anim_name, i)
+            prompt_1, prompt_2 = build_prompt(character_config, anim_name, i)
             print(f"  [{current}/{total_frames}] {anim_name}_{i:02d} ...",
                   end=" ", flush=True)
 
             try:
-                img = backend.generate(prompt, NEGATIVE_PROMPT, gen_w, gen_h)
+                gen_kwargs = {}
+                if hasattr(backend.generate, '__code__') and 'prompt_2' in backend.generate.__code__.co_varnames:
+                    gen_kwargs['prompt_2'] = prompt_2
+                img = backend.generate(prompt_1, NEGATIVE_PROMPT, gen_w, gen_h, **gen_kwargs)
                 frames.append(img)
                 print("OK")
             except Exception as e:
