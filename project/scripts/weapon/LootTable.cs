@@ -48,7 +48,8 @@ public static class LootTable
 
     public static WeaponType RollWeaponType()
     {
-        return (WeaponType)GD.RandRange(0, 2);
+        var values = System.Enum.GetValues<WeaponType>();
+        return values[GD.RandRange(0, values.Length - 1)];
     }
 
     public static WeaponData GenerateWeapon(int roomIndex, bool isBoss)

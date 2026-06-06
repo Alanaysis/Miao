@@ -178,9 +178,11 @@ public partial class Enemy : CharacterBody2D
             _ => Colors.White
         };
 
-        var sprite = new Sprite2D();
-        sprite.Modulate = color;
-        drop.AddChild(sprite);
+        var visual = new ColorRect();
+        visual.Size = new Vector2(12, 12);
+        visual.Position = new Vector2(-6, -6);
+        visual.Color = color;
+        drop.AddChild(visual);
 
         drop.GlobalPosition = GlobalPosition + new Vector2(GD.RandRange(-20, 20), GD.RandRange(-20, 20));
 
