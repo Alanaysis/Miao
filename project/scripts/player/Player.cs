@@ -17,6 +17,7 @@ public partial class Player : CharacterBody2D
 
     private float _aimAngle;
     private Sprite2D _sprite;
+    private Node2D _weaponSlot;
 
     /// <summary>最大生命值</summary>
     [Export] public int MaxHealth = 100;
@@ -61,6 +62,7 @@ public partial class Player : CharacterBody2D
         CurrentHealth = MaxHealth;
         AddToGroup("player");
         _sprite = GetNode<Sprite2D>("Sprite2D");
+        _weaponSlot = GetNode<Node2D>("WeaponSlot");
 
         // 注册到GameManager
         if (GameManager.Instance != null)
@@ -85,7 +87,7 @@ public partial class Player : CharacterBody2D
         // 瞄准：武器独立朝向鼠标（角色本身不旋转）
         var mousePos = GetGlobalMousePosition();
         _aimAngle = (mousePos - GlobalPosition).Angle();
-        GetNode<Node2D>("WeaponSlot").Rotation = _aimAngle;
+        _weaponSlot.Rotation = _aimAngle;
     }
 
     public override void _UnhandledInput(InputEvent @event)
