@@ -15,7 +15,7 @@ public partial class HUD : CanvasLayer
     private Label _skill1Label;
     private Label _skill2Label;
     private Label _superLabel;
-    private Player _player;
+    private Player.Player _player;
 
     public override void _Ready()
     {
@@ -37,12 +37,12 @@ public partial class HUD : CanvasLayer
         if (_player == null)
         {
             var node = GetTree().GetFirstNodeInGroup("player");
-            if (node is Player p)
+            if (node is Player.Player p)
                 SetPlayer(p);
         }
     }
 
-    public void SetPlayer(Player player)
+    public void SetPlayer(Player.Player player)
     {
         _player = player;
         player.HealthChanged += OnHealthChanged;

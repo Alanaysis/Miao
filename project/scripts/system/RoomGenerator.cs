@@ -84,7 +84,7 @@ public partial class RoomGenerator : Node
         for (int i = 0; i < count; i++)
         {
             var scene = ChooseEnemyType();
-            var enemy = scene.Instantiate<Enemy>();
+            var enemy = scene.Instantiate<Enemy.Enemy>();
             enemy.GlobalPosition = GetSpawnPosition();
             enemy.RoomIndex = CurrentRoom;
 

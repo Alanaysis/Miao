@@ -1,4 +1,5 @@
 using Godot;
+using System;
 using System.Collections.Generic;
 using Miao.Weapon;
 
@@ -113,7 +114,7 @@ public partial class CollectionCodex : Node
         {
             foreach (var p in perks.Split(','))
             {
-                if (System.Enum.TryParse<PerkId>(p, out var perkId))
+                if (Enum.TryParse<PerkId>(p, out var perkId))
                     DiscoveredPerks.Add(perkId);
             }
         }

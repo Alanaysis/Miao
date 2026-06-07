@@ -26,16 +26,18 @@ public static class PerkSystem
     };
 
     // MVP 中所有武器 Perk 池内容相同
-    public static readonly Dictionary<PerkId, WeaponType[]> PerkWeaponRestriction = new()
+    public static readonly Dictionary<WeaponType, PerkId[]> WeaponPerkPools = new()
     {
-        { PerkId.KillClip, new[] { WeaponType.AutoRifle, WeaponType.Shotgun, WeaponType.HandCannon } },
-        { PerkId.CriticalMaster, new[] { WeaponType.AutoRifle, WeaponType.Shotgun, WeaponType.HandCannon } },
-        { PerkId.ShotgunSpread, new[] { WeaponType.AutoRifle, WeaponType.Shotgun, WeaponType.HandCannon } },
-        { PerkId.Penetration, new[] { WeaponType.AutoRifle, WeaponType.Shotgun, WeaponType.HandCannon } },
-        { PerkId.KillReturn, new[] { WeaponType.AutoRifle, WeaponType.Shotgun, WeaponType.HandCannon } },
-        { PerkId.RapidFire, new[] { WeaponType.AutoRifle, WeaponType.Shotgun, WeaponType.HandCannon } },
-        { PerkId.StableGrip, new[] { WeaponType.AutoRifle, WeaponType.Shotgun, WeaponType.HandCannon } },
-        { PerkId.HeadHunter, new[] { WeaponType.AutoRifle, WeaponType.Shotgun, WeaponType.HandCannon } }
+        { WeaponType.AutoRifle, new[] {
+            PerkId.KillClip, PerkId.CriticalMaster, PerkId.Penetration, PerkId.RapidFire,
+            PerkId.StableGrip, PerkId.HeadHunter, }
+        }, { WeaponType.Shotgun, new[] {
+            PerkId.KillClip, PerkId.CriticalMaster, PerkId.ShotgunSpread, PerkId.Penetration,
+            PerkId.RapidFire, PerkId.StableGrip, PerkId.HeadHunter }
+        }, { WeaponType.HandCannon, new[] {
+            PerkId.KillClip, PerkId.CriticalMaster, PerkId.Penetration, PerkId.RapidFire,
+            PerkId.StableGrip, PerkId.HeadHunter }
+        }
     };
 
     public static bool HasPerk(WeaponData data, PerkId perk)
@@ -92,13 +94,10 @@ public static class PerkSystem
     public static PerkId RollRandomPerk(WeaponType weaponType, List<PerkId> exclude = null)
     {
         var available = new List<PerkId>();
-        foreach (var kvp in PerkWeaponRestriction)
+        foreach (var perk in WeaponPerkPools[weaponType])
         {
-            if (kvp.Value.Contains(weaponType))
-            {
-                if (exclude == null || !exclude.Contains(kvp.Key))
-                    available.Add(kvp.Key);
-            }
+            if (exclude == null || !exclude.Contains(perk))
+                available.Add(perk);
         }
 
         if (available.Count == 0)

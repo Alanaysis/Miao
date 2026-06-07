@@ -1,4 +1,4 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=2 format=3 uid="uid://mslwwrrhydnu"]
 
 [ext_resource type="Script" path="res://scripts/weapon/Bullet.cs" id="1"]
 

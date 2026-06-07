@@ -5,15 +5,15 @@ namespace Miao.System;
 
 public partial class Main : Node2D
 {
-    public override void _Ready()
-    {
-        var player = GetNode<Hunter>("Hunter");
-        GameManager.Instance.RegisterPlayer(player);
+	public override void _Ready()
+	{
+		var player = GetNode<Hunter>("Hunter");
+		GameManager.Instance.RegisterPlayer(player);
 
-        var hud = GetNode<UI.HUD>("HUD");
-        hud.SetPlayer(player);
+		var hud = GetNode<UI.HUD>("HUD");
+		hud.SetPlayer(player);
 
-        var roomGen = GetNode<RoomGenerator>("RoomGenerator");
-        GameManager.Instance.RegisterRoomGenerator(roomGen);
-    }
+		var roomGen = GetNode<RoomGenerator>("RoomGenerator");
+		GameManager.Instance.RegisterRoomGenerator(roomGen);
+	}
 }

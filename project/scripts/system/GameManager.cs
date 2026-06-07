@@ -10,7 +10,7 @@ public partial class GameManager : Node
     public enum GameState { MainMenu, Playing, RoomTransition, Boss, Settlement, GameOver }
     public GameState CurrentState { get; private set; }
 
-    private Player _player;
+    private Player.Player _player;
     private RoomGenerator _roomGenerator;
     private float _gameTime;
     private int _killCount;
@@ -54,7 +54,7 @@ public partial class GameManager : Node
         GetTree().ChangeSceneToFile("res://scenes/main.tscn");
     }
 
-    public void RegisterPlayer(Player player)
+    public void RegisterPlayer(Player.Player player)
     {
         _player = player;
         player.PlayerDied += OnPlayerDied;

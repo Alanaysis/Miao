@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=10 format=3 uid="uid://cliamuw0wxf6u"]
 
 [ext_resource type="Script" path="res://scripts/system/Main.cs" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/player/Hunter.tscn" id="2"]

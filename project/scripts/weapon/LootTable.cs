@@ -1,5 +1,7 @@
 using Godot;
+using System;
 using System.Collections.Generic;
+using Miao.System;
 
 namespace Miao.Weapon;
 
@@ -48,7 +50,7 @@ public static class LootTable
 
     public static WeaponType RollWeaponType()
     {
-        var values = System.Enum.GetValues<WeaponType>();
+        var values = Enum.GetValues<WeaponType>();
         return values[GD.RandRange(0, values.Length - 1)];
     }
 
@@ -62,7 +64,7 @@ public static class LootTable
             Type = type,
             Rarity = rarity,
             DisplayName = GenerateName(type, rarity),
-            Perks = new System.Collections.Generic.List<PerkId>()
+            Perks = new List<PerkId>()
         };
 
         switch (type)
