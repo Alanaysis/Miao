@@ -1,5 +1,5 @@
 using Godot;
-using Miao.Player;
+using Miao.Weapon;
 
 namespace Miao.System;
 
@@ -112,5 +112,63 @@ public partial class GameManager : Node
         GetTree().Paused = false;
         CurrentState = GameState.MainMenu;
         GetTree().ChangeSceneToFile("res://scenes/ui/MainMenu.tscn");
+    }
+
+    public void SpawnWeaponDrop(Vector2 position, WeaponData data)
+    {
+        var drop = new Area2D
+        {
+            CollisionLayer = 4,
+            CollisionMask = 1,
+        };
+
+        var shape = new CircleShape2D
+        {
+            Radius = 16,
+        };
+        var collision = new CollisionShape2D
+        {
+            Shape = shape,
+        };
+        drop.AddChild(collision);
+
+        var color = data.Rarity switch
+        {
+            Rarity.Common => new Color(0.7f, 0.7f, 0.7f),
+            Rarity.Uncommon => new Color(0.2f, 0.8f, 0.2f),
+            Rarity.Rare => new Color(0.2f, 0.4f, 1.0f),
+            Rarity.Epic => new Color(0.6f, 0.2f, 0.8f),
+            Rarity.Legendary => new Color(1.0f, 0.8f, 0.0f),
+            _ => Colors.White
+        };
+
+        var visual = new ColorRect
+        {
+            Size = new Vector2(12, 12),
+            Position = new Vector2(-6, -6),
+            Color = color,
+        };
+        drop.AddChild(visual);
+
+        drop.GlobalPosition = position + new Vector2(GD.RandRange(-20, 20), GD.RandRange(-20, 20));
+
+        drop.SetMeta("weapon_data", data);
+
+        drop.BodyEntered += (body) =>
+        {
+            if (body is Player.Player player)
+            {
+                player.SetNearbyWeapon(data, drop);
+            }
+        };
+        drop.BodyExited += (body) =>
+        {
+            if (body is Player.Player player)
+            {
+                player.ClearNearbyWeapon();
+            }
+        };
+
+        GetTree().CurrentScene.AddChild(drop);
     }
 }

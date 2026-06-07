@@ -1,4 +1,5 @@
 using Godot;
+using Miao.System;
 using Miao.Weapon;
 
 namespace Miao.Enemy;
@@ -169,7 +170,7 @@ public partial class Enemy : CharacterBody2D
         if (GD.Randf() < LootTable.BaseDropChance)
         {
             var weaponData = LootTable.GenerateWeapon(RoomIndex, IsElite);
-            SpawnWeaponDrop(weaponData);
+            GameManager.Instance.SpawnWeaponDrop(GlobalPosition, weaponData);
         }
 
         // 掉落微光（通过击杀和完成游戏获得）
@@ -180,55 +181,5 @@ public partial class Enemy : CharacterBody2D
         eliteMod?.OnDeath();
 
         QueueFree();
-    }
-
-    private void SpawnWeaponDrop(WeaponData data)
-    {
-        var drop = new Area2D();
-        drop.CollisionLayer = 4;
-        drop.CollisionMask = 1;
-
-        var shape = new CircleShape2D();
-        shape.Radius = 16;
-        var collision = new CollisionShape2D();
-        collision.Shape = shape;
-        drop.AddChild(collision);
-
-        var color = data.Rarity switch
-        {
-            Rarity.Common => new Color(0.7f, 0.7f, 0.7f),
-            Rarity.Uncommon => new Color(0.2f, 0.8f, 0.2f),
-            Rarity.Rare => new Color(0.2f, 0.4f, 1.0f),
-            Rarity.Epic => new Color(0.6f, 0.2f, 0.8f),
-            Rarity.Legendary => new Color(1.0f, 0.8f, 0.0f),
-            _ => Colors.White
-        };
-
-        var visual = new ColorRect();
-        visual.Size = new Vector2(12, 12);
-        visual.Position = new Vector2(-6, -6);
-        visual.Color = color;
-        drop.AddChild(visual);
-
-        drop.GlobalPosition = GlobalPosition + new Vector2(GD.RandRange(-20, 20), GD.RandRange(-20, 20));
-
-        drop.SetMeta("weapon_data", data);
-
-        drop.BodyEntered += (body) =>
-        {
-            if (body is Miao.Player.Player player)
-            {
-                player.SetNearbyWeapon(data, drop);
-            }
-        };
-        drop.BodyExited += (body) =>
-        {
-            if (body is Miao.Player.Player player)
-            {
-                player.ClearNearbyWeapon();
-            }
-        };
-
-        GetTree().CurrentScene.AddChild(drop);
     }
 }
