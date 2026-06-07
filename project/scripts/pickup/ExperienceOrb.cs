@@ -6,7 +6,7 @@ namespace Miao.Pickup;
 /// 经验球
 /// 被玩家靠近后自动吸附并增加经验值
 /// </summary>
-public partial class ExperienceOrb : Area2D
+public partial class ExperienceOrb : Area2D, IPickable
 {
     /// <summary>经验值</summary>
     [Export] public int Experience = 5;
@@ -25,7 +25,7 @@ public partial class ExperienceOrb : Area2D
         _player = GetTree().GetFirstNodeInGroup("player") as Node2D;
     }
 
-    public override void _Process(double delta)
+    public override void _PhysicsProcess(double delta)
     {
         if (_player == null) return;
 
@@ -45,18 +45,18 @@ public partial class ExperienceOrb : Area2D
             // 到达玩家位置时拾取
             if (distance < 10f)
             {
-                Collect();
+                PickUp(_player as Player.Player);
             }
         }
     }
 
-    private void Collect()
+    public void PickUp(Player.Player player)
     {
         // 通知玩家获得经验
-        if (_player is Player.Player player)
+        if (player is not null)
         {
             player.AddExperience(Experience);
+            QueueFree();
         }
-        QueueFree();
     }
 }
