@@ -1,4 +1,5 @@
 using Godot;
+using System;
 
 namespace Miao.Enemy;
 
@@ -15,11 +16,13 @@ public partial class EliteModifier : Node
     public EliteModType Type { get; private set; }
     private Enemy _enemy;
     private float _regenTimer;
+    private Action<Enemy> _onSpawnEnemy;
 
-    public void Init(Enemy enemy, EliteModType type)
+    public void Init(Enemy enemy, EliteModType type, Action<Enemy> onSpawnEnemy = null)
     {
         _enemy = enemy;
         Type = type;
+        _onSpawnEnemy = onSpawnEnemy;
         Apply();
     }
 
@@ -62,6 +65,7 @@ public partial class EliteModifier : Node
                 var smallBug = GD.Load<PackedScene>("res://scenes/enemy/SmallBug.tscn").Instantiate<Enemy>();
                 smallBug.GlobalPosition = _enemy.GlobalPosition + new Vector2(GD.RandRange(-30, 30), GD.RandRange(-30, 30));
                 smallBug.MaxHealth = _enemy.MaxHealth / 3;
+                _onSpawnEnemy?.Invoke(smallBug);
                 GetTree().CurrentScene.AddChild(smallBug);
             }
         }

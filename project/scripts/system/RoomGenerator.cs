@@ -58,6 +58,12 @@ public partial class RoomGenerator : Node
         _currentWave = 0;
         _enemiesRemaining = 0;
         GD.Print($"进入房间 {CurrentRoom + 1}/{TotalRooms}");
+
+        // 切换地图主题
+        var scene = GetTree().CurrentScene;
+        scene.GetNodeOrNull<MapBackground>("MapBackground")?.SetRoomTheme(CurrentRoom);
+        scene.GetNodeOrNull<MapBoundary>("MapBoundary")?.SetRoomTheme(CurrentRoom);
+
         SpawnWave();
     }
 
@@ -88,20 +94,26 @@ public partial class RoomGenerator : Node
             enemy.GlobalPosition = GetSpawnPosition();
             enemy.RoomIndex = CurrentRoom;
 
+            enemy.EnemyDied += OnEnemyDied;
+
             if (hasElite && i == 0)
             {
                 enemy.IsElite = true;
                 var mod = new EliteModifier();
-                mod.Init(enemy, (EliteModType)GD.RandRange(0, 3));
+                mod.Init(enemy, (EliteModType)GD.RandRange(0, 3), OnSplitEnemySpawned);
                 enemy.AddChild(mod);
             }
-
-            enemy.EnemyDied += OnEnemyDied;
             _enemyContainer.AddChild(enemy);
             _enemiesRemaining++;
         }
 
         _currentWave++;
+    }
+
+    private void OnSplitEnemySpawned(Enemy.Enemy enemy)
+    {
+        enemy.EnemyDied += OnEnemyDied;
+        _enemiesRemaining++;
     }
 
     private void OnEnemyDied(int experience)
@@ -110,7 +122,20 @@ public partial class RoomGenerator : Node
         if (_enemiesRemaining < 0) _enemiesRemaining = 0;
         if (_enemiesRemaining <= 0)
         {
-            GetTree().CreateTimer(2.0).Timeout += SpawnWave;
+            // 双重检查：确保场景树中真的没有敌人了
+            if (_enemyContainer.GetChildCount() <= 0)
+            {
+                GetTree().CreateTimer(2.0).Timeout += SpawnWave;
+            }
+            else
+            {
+                // 还有敌人（可能是计数偏差），等一帧再检查
+                GetTree().CreateTimer(0.5).Timeout += () =>
+                {
+                    if (_enemyContainer.GetChildCount() <= 0)
+                        SpawnWave();
+                };
+            }
         }
     }
 
@@ -166,7 +191,24 @@ public partial class RoomGenerator : Node
         }
         else
         {
+            CleanupRoom();
             StartRoom();
+        }
+    }
+
+    private void CleanupRoom()
+    {
+        // 清理所有敌人
+        foreach (var child in _enemyContainer.GetChildren())
+        {
+            child.QueueFree();
+        }
+        _enemiesRemaining = 0;
+
+        // 清理所有武器掉落
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.CleanupWeaponDrops();
         }
     }
 }

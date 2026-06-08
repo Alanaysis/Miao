@@ -16,8 +16,9 @@ public partial class Weapon : Node2D
     {
         get
         {
-            float bonus = CollectionCodex.Instance?.CollectionDamageBonus ?? 1.0f;
-            return Mathf.RoundToInt(Data.BaseDamage * PerkSystem.GetDamageMultiplier(Data) * bonus);
+            float codexBonus = CollectionCodex.Instance?.CollectionDamageBonus ?? 1.0f;
+            float metaBonus = MetaProgression.Instance?.GetBonusDamage() ?? 1.0f;
+            return Mathf.RoundToInt(Data.BaseDamage * PerkSystem.GetDamageMultiplier(Data) * codexBonus * metaBonus);
         }
     }
     public float EffectiveKnockback => Data.KnockbackForce * PerkSystem.GetKnockbackMultiplier(Data);
@@ -43,7 +44,9 @@ public partial class Weapon : Node2D
 
         _cooldownTimer = 1.0f / EffectiveFireRate;
 
-        var fireDirection = GlobalTransform.X.Normalized();
+        // 用从武器指向鼠标的方向，比 GlobalTransform.X 更准确
+        var mousePos = GetGlobalMousePosition();
+        var fireDirection = (mousePos - GlobalPosition).Normalized();
 
         if (Data.BulletCount <= 1)
         {
@@ -76,5 +79,25 @@ public partial class Weapon : Node2D
         bullet.Knockback = EffectiveKnockback;
         bullet.CanPenetrate = PerkSystem.HasPerk(Data, PerkId.Penetration);
         GetTree().CurrentScene.AddChild(bullet);
+
+        // 枪口闪光特效
+        SpawnMuzzleFlash(direction);
+    }
+
+    private void SpawnMuzzleFlash(Vector2 direction)
+    {
+        var flash = new ColorRect();
+        flash.Size = new Vector2(12, 6);
+        flash.Position = GlobalPosition + direction * 16 - new Vector2(6, 3);
+        flash.Color = new Color(1.0f, 0.8f, 0.2f, 0.9f);
+        flash.Rotation = direction.Angle();
+        flash.ZIndex = 10;
+        GetTree().CurrentScene.AddChild(flash);
+
+        // 0.06秒后消失
+        GetTree().CreateTimer(0.06).Timeout += () =>
+        {
+            if (IsInstanceValid(flash)) flash.QueueFree();
+        };
     }
 }

@@ -46,6 +46,11 @@ public partial class Enemy : CharacterBody2D
     private float _markTimer = 0;
     private float _shield;
 
+    // 视觉
+    private ColorRect _hpBarBg;
+    private ColorRect _hpBarFill;
+    private float _hpBarWidth = 30;
+
     [Signal]
     public delegate void EnemyDiedEventHandler(int experienceValue);
 
@@ -54,6 +59,55 @@ public partial class Enemy : CharacterBody2D
         CurrentHealth = MaxHealth;
         _player = GetTree().GetFirstNodeInGroup("player") as Node2D;
         AddToGroup("enemy");
+
+        SetupVisuals();
+    }
+
+    private void SetupVisuals()
+    {
+        // 根据敌人类型设置颜色
+        var sprite = GetNodeOrNull<Sprite2D>("Sprite2D");
+        if (sprite != null)
+        {
+            if (this is FastBug) sprite.Modulate = new Color(0.6f, 0.8f, 1.2f); // 蓝色调
+            else if (this is TankBug) sprite.Modulate = new Color(1.2f, 0.7f, 0.6f); // 红色调
+            else if (this is SmallBug) sprite.Modulate = new Color(0.8f, 1.1f, 0.7f); // 绿色调
+        }
+
+        // 精英光环
+        if (IsElite)
+        {
+            var glow = new ColorRect();
+            glow.Size = new Vector2(40, 40);
+            glow.Position = new Vector2(-20, -20);
+            glow.Color = new Color(1, 0.9f, 0.2f, 0.25f);
+            glow.ZIndex = -1;
+            AddChild(glow);
+        }
+
+        // 血条（头顶）
+        _hpBarBg = new ColorRect();
+        _hpBarBg.Size = new Vector2(_hpBarWidth, 3);
+        _hpBarBg.Position = new Vector2(-_hpBarWidth / 2, -24);
+        _hpBarBg.Color = new Color(0.2f, 0.2f, 0.2f, 0.7f);
+        AddChild(_hpBarBg);
+
+        _hpBarFill = new ColorRect();
+        _hpBarFill.Size = new Vector2(_hpBarWidth, 3);
+        _hpBarFill.Position = new Vector2(-_hpBarWidth / 2, -24);
+        _hpBarFill.Color = new Color(0.2f, 0.8f, 0.2f);
+        AddChild(_hpBarFill);
+    }
+
+    private void UpdateHpBar()
+    {
+        if (_hpBarFill == null) return;
+        float ratio = MaxHealth > 0 ? (float)CurrentHealth / MaxHealth : 0;
+        _hpBarFill.Size = new Vector2(_hpBarWidth * ratio, 3);
+
+        if (ratio > 0.6f) _hpBarFill.Color = new Color(0.2f, 0.8f, 0.2f);
+        else if (ratio > 0.3f) _hpBarFill.Color = new Color(0.9f, 0.8f, 0.1f);
+        else _hpBarFill.Color = new Color(0.9f, 0.2f, 0.1f);
     }
 
     public override void _PhysicsProcess(double delta)
@@ -140,6 +194,7 @@ public partial class Enemy : CharacterBody2D
 
         CurrentHealth -= damage;
         CurrentHealth = Mathf.Max(CurrentHealth, 0);
+        UpdateHpBar();
 
         if (CurrentHealth <= 0)
         {

@@ -95,6 +95,13 @@ public partial class Player : CharacterBody2D
 
     public override void _Ready()
     {
+        // 应用 MetaProgression 加成
+        if (MetaProgression.Instance != null)
+        {
+            MaxHealth += MetaProgression.Instance.GetBonusHealth();
+            MoveSpeed *= MetaProgression.Instance.GetBonusMoveSpeed();
+        }
+
         CurrentHealth = MaxHealth;
         AddToGroup("player");
         _sprite = GetNode<Sprite2D>("Sprite2D");
@@ -121,24 +128,23 @@ public partial class Player : CharacterBody2D
         Velocity = inputDir * MoveSpeed;
         MoveAndSlide();
 
-        // 精灵翻转：根据移动方向（非瞄准方向）
-        if (inputDir.X != 0)
-        {
-            _sprite.FlipH = inputDir.X < 0;
-        }
-
         // 瞄准：武器独立朝向鼠标（角色本身不旋转）
         var mousePos = GetGlobalMousePosition();
         _aimAngle = (mousePos - GlobalPosition).Angle();
         _weaponSlot.Rotation = _aimAngle;
+
+        // 精灵翻转：朝向鼠标
+        _sprite.FlipH = mousePos.X < GlobalPosition.X;
+
+        // 按住左键持续射击
+        if (Input.IsActionPressed("shoot"))
+        {
+            EmitSignal(SignalName.Shoot);
+        }
     }
 
     public override void _UnhandledInput(InputEvent @event)
     {
-        if (@event.IsActionPressed("shoot"))
-        {
-            EmitSignal(SignalName.Shoot);
-        }
         if (@event.IsActionPressed("skill_1") && Skill1Timer <= 0)
         {
             UseSkill1();
@@ -151,9 +157,9 @@ public partial class Player : CharacterBody2D
         {
             UseSuper();
         }
-        if (@event.IsActionPressed("interact") && _nearbyWeaponData != null)
+        if (@event.IsActionPressed("interact"))
         {
-            HandleWeaponPickup();
+            GameManager.Instance?.TryInteract();
         }
     }
 

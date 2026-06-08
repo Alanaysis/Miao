@@ -1,8 +1,10 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/player/Hunter.cs" id="1"]
 [ext_resource type="Texture2D" path="res://assets/sprites/player.png" id="2"]
 [ext_resource type="PackedScene" path="res://scenes/weapon/Bullet.tscn" id="3_bullet"]
+[ext_resource type="Script" path="res://scripts/weapon/EquipmentSlot.cs" id="4"]
+[ext_resource type="PackedScene" path="res://scenes/weapon/Weapon.tscn" id="5_weapon"]
 
 [sub_resource type="RectangleShape2D" id="1"]
 size = Vector2(24, 28)
@@ -24,3 +26,7 @@ zoom = Vector2(1.5, 1.5)
 
 [node name="WeaponSlot" type="Marker2D" parent="."]
 position = Vector2(20, 0)
+
+[node name="EquipmentSlot" type="Node2D" parent="WeaponSlot"]
+script = ExtResource("4")
+WeaponScene = ExtResource("5_weapon")

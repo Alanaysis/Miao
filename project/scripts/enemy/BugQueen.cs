@@ -16,17 +16,97 @@ public partial class BugQueen : Enemy
     private bool _isTransitioning;
     private List<Node2D> _poisonPools = new();
 
+    // Boss 血条
+    private CanvasLayer _bossHudLayer;
+    private ProgressBar _bossHpBar;
+    private Label _bossNameLabel;
+    private Label _bossPhaseLabel;
+
     public override void _Ready()
     {
         MaxHealth = 500;
         MoveSpeed = 60;
         ContactDamage = 25;
         base._Ready();
+        SetupBossHUD();
+    }
+
+    private void SetupBossHUD()
+    {
+        _bossHudLayer = new CanvasLayer();
+        _bossHudLayer.Layer = 5;
+        GetTree().CurrentScene.AddChild(_bossHudLayer);
+
+        // Boss 名称
+        _bossNameLabel = new Label();
+        _bossNameLabel.Text = "虫 后";
+        _bossNameLabel.Position = new Vector2(540, 10);
+        _bossNameLabel.AddThemeFontSizeOverride("font_size", 18);
+        _bossNameLabel.AddThemeColorOverride("font_color", new Color(1, 0.4f, 0.4f));
+        _bossHudLayer.AddChild(_bossNameLabel);
+
+        // Boss 血条
+        _bossHpBar = new ProgressBar();
+        _bossHpBar.Position = new Vector2(340, 38);
+        _bossHpBar.Size = new Vector2(600, 16);
+        _bossHpBar.MaxValue = MaxHealth;
+        _bossHpBar.Value = CurrentHealth;
+        _bossHpBar.ShowPercentage = false;
+
+        var bg = new StyleBoxFlat();
+        bg.BgColor = new Color(0.15f, 0.1f, 0.1f, 0.9f);
+        bg.CornerRadiusTopLeft = 4; bg.CornerRadiusTopRight = 4;
+        bg.CornerRadiusBottomLeft = 4; bg.CornerRadiusBottomRight = 4;
+        _bossHpBar.AddThemeStyleboxOverride("background", bg);
+
+        var fill = new StyleBoxFlat();
+        fill.BgColor = new Color(0.8f, 0.15f, 0.15f);
+        fill.CornerRadiusTopLeft = 4; fill.CornerRadiusTopRight = 4;
+        fill.CornerRadiusBottomLeft = 4; fill.CornerRadiusBottomRight = 4;
+        _bossHpBar.AddThemeStyleboxOverride("fill", fill);
+
+        _bossHudLayer.AddChild(_bossHpBar);
+
+        // 阶段提示
+        _bossPhaseLabel = new Label();
+        _bossPhaseLabel.Position = new Vector2(540, 58);
+        _bossPhaseLabel.AddThemeFontSizeOverride("font_size", 12);
+        _bossPhaseLabel.AddThemeColorOverride("font_color", new Color(0.7f, 0.7f, 0.5f));
+        _bossHudLayer.AddChild(_bossPhaseLabel);
+    }
+
+    private void UpdateBossHUD()
+    {
+        if (_bossHpBar == null) return;
+        _bossHpBar.Value = CurrentHealth;
+
+        string phase = _currentPhase switch
+        {
+            BossPhase.Phase1 => "阶段 1 — 召唤",
+            BossPhase.Phase2 => "阶段 2 — 冲锋",
+            BossPhase.Phase3 => "阶段 3 — 狂暴",
+            _ => ""
+        };
+        _bossPhaseLabel.Text = phase;
+
+        // 血条颜色随阶段变化
+        var fill = new StyleBoxFlat();
+        fill.BgColor = _currentPhase switch
+        {
+            BossPhase.Phase1 => new Color(0.8f, 0.15f, 0.15f),
+            BossPhase.Phase2 => new Color(0.9f, 0.5f, 0.1f),
+            BossPhase.Phase3 => new Color(0.6f, 0.1f, 0.6f),
+            _ => new Color(0.8f, 0.15f, 0.15f)
+        };
+        fill.CornerRadiusTopLeft = 4; fill.CornerRadiusTopRight = 4;
+        fill.CornerRadiusBottomLeft = 4; fill.CornerRadiusBottomRight = 4;
+        _bossHpBar.AddThemeStyleboxOverride("fill", fill);
     }
 
     public override void _Process(double delta)
     {
         base._Process(delta);
+        UpdateBossHUD();
 
         if (_isTransitioning)
         {
@@ -174,11 +254,18 @@ public partial class BugQueen : Enemy
 
         pool.GlobalPosition = ((Node2D)players[0]).GlobalPosition;
 
+        // 冷却机制：记录最近受过伤的玩家，防止快速重入反复触发
+        var damagedBodies = new HashSet<Node>();
+        float cooldown = 1.0f;
+
         pool.BodyEntered += (body) =>
         {
-            if (body is Miao.Player.Player player)
+            if (body is Miao.Player.Player p && !damagedBodies.Contains(body))
             {
-                player.TakeDamage(5);
+                p.TakeDamage(5);
+                damagedBodies.Add(body);
+                // 冷却后移除，允许再次受伤
+                GetTree().CreateTimer(cooldown).Timeout += () => damagedBodies.Remove(body);
             }
         };
 
@@ -202,5 +289,11 @@ public partial class BugQueen : Enemy
 
         var tween = CreateTween();
         tween.TweenProperty(this, "global_position", GlobalPosition + direction * 300, 0.5f);
+    }
+
+    public override void _ExitTree()
+    {
+        if (_bossHudLayer != null && IsInstanceValid(_bossHudLayer))
+            _bossHudLayer.QueueFree();
     }
 }

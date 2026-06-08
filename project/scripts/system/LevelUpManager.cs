@@ -69,12 +69,10 @@ public partial class LevelUpManager : Node
         {
             case "attack_speed":
                 // 攻击速度 +20%（修改 WeaponData 的 FireRate）
-                foreach (var child in _player.GetChildren())
+                var weapon = _player.Equipment?.CurrentWeapon;
+                if (weapon?.Data != null)
                 {
-                    if (child is Weapon.Weapon weapon && weapon.Data != null)
-                    {
-                        weapon.Data.FireRate *= 1.2f;
-                    }
+                    weapon.Data.FireRate *= 1.2f;
                 }
                 GD.Print("升级效果：攻击速度 +20%");
                 break;
@@ -104,44 +102,25 @@ public partial class LevelUpManager : Node
 
     private void AddNewWeapon()
     {
-        // 如果没有远程武器，添加一个
-        bool hasProjectile = false;
-        foreach (var child in _player.GetChildren())
-        {
-            if (child is Weapon.Projectile)
-            {
-                hasProjectile = true;
-                break;
-            }
-        }
+        var currentWeapon = _player.Equipment?.CurrentWeapon;
 
-        if (!hasProjectile)
+        if (currentWeapon == null)
         {
-            // 创建默认 WeaponData 并分配给新武器
+            // 没有武器，通过 EquipmentSlot 装备一个默认武器
             var data = new Weapon.WeaponData();
             data.Type = Weapon.WeaponType.AutoRifle;
             data.Rarity = Weapon.Rarity.Common;
             data.DisplayName = "Auto Rifle";
             data.BaseDamage = 12;
-            data.FireRate = 1.25f;       // 0.8s cooldown -> 1.25 shots/sec
+            data.FireRate = 1.25f;
             data.BulletSpeed = 400f;
             data.KnockbackForce = 50f;
-
-            var projectile = new Weapon.Projectile();
-            projectile.BulletScene = GD.Load<PackedScene>("res://scenes/weapon/Bullet.tscn");
-            projectile.SetWeaponData(data);
-            _player.AddChild(projectile);
+            _player.Equipment.EquipWeapon(data);
         }
         else
         {
-            // 已有远程武器，增加基础伤害
-            foreach (var child in _player.GetChildren())
-            {
-                if (child is Weapon.Weapon weapon && weapon.Data != null)
-                {
-                    weapon.Data.BaseDamage += 5;
-                }
-            }
+            // 已有武器，增加基础伤害
+            currentWeapon.Data.BaseDamage += 5;
         }
     }
 }

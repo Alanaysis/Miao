@@ -11,14 +11,25 @@ public partial class EquipmentSlot : Node2D
 
     public void EquipWeapon(WeaponData data)
     {
+        // 断开旧武器的射击信号
         if (CurrentWeapon != null)
         {
+            if (GetParent()?.GetParent() is Miao.Player.Player oldPlayer)
+            {
+                oldPlayer.Shoot -= CurrentWeapon.TryFire;
+            }
             CurrentWeapon.QueueFree();
         }
 
         CurrentWeapon = WeaponScene.Instantiate<Weapon>();
         CurrentWeapon.SetWeaponData(data);
         AddChild(CurrentWeapon);
+
+        // 连接玩家的射击信号到新武器
+        if (GetParent()?.GetParent() is Miao.Player.Player player)
+        {
+            player.Shoot += CurrentWeapon.TryFire;
+        }
 
         CollectionCodex.Instance?.RegisterWeapon(data);
     }

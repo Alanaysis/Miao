@@ -57,6 +57,16 @@ public static class LootTable
     public static WeaponData GenerateWeapon(int roomIndex, bool isBoss)
     {
         var rarity = RollRarity(roomIndex, isBoss);
+
+        // 应用 MetaProgression 掉率加成：有概率提升一个稀有度
+        if (MetaProgression.Instance != null && rarity < Rarity.Legendary)
+        {
+            float dropBonus = MetaProgression.Instance.GetBonusDropRate();
+            if (GD.Randf() < (dropBonus - 1.0f))
+            {
+                rarity = rarity + 1; // 提升一级稀有度
+            }
+        }
         var type = RollWeaponType();
 
         var data = new WeaponData

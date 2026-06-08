@@ -8,67 +8,75 @@ namespace Miao.System;
 /// </summary>
 public partial class MapBoundary : Node2D
 {
-    /// <summary>地图宽度</summary>
     [Export] public float MapWidth = 2000f;
-
-    /// <summary>地图高度</summary>
     [Export] public float MapHeight = 2000f;
-
-    /// <summary>边界厚度</summary>
     [Export] public float BoundaryThickness = 50f;
+
+    private ColorRect[] _wallVisuals;
+
+    private static readonly Color[] WallColors = new Color[]
+    {
+        new Color(0.15f, 0.25f, 0.12f, 0.7f), // 草地
+        new Color(0.28f, 0.22f, 0.12f, 0.7f), // 荒地
+        new Color(0.12f, 0.12f, 0.22f, 0.7f), // 洞穴
+        new Color(0.28f, 0.1f, 0.15f, 0.7f),  // 虫巢
+        new Color(0.15f, 0.1f, 0.28f, 0.7f),  // 深渊
+    };
 
     public override void _Ready()
     {
+        _wallVisuals = new ColorRect[4];
         CreateBoundaries();
+    }
+
+    public void SetRoomTheme(int roomIndex)
+    {
+        int idx = Mathf.Clamp(roomIndex, 0, WallColors.Length - 1);
+        var color = WallColors[idx];
+        foreach (var v in _wallVisuals)
+        {
+            if (v != null) v.Color = color;
+        }
     }
 
     private void CreateBoundaries()
     {
-        // 上边界
-        CreateBoundaryWall(
+        var positions = new Vector2[]
+        {
             new Vector2(MapWidth / 2, -BoundaryThickness / 2),
-            new Vector2(MapWidth + BoundaryThickness * 2, BoundaryThickness)
-        );
-
-        // 下边界
-        CreateBoundaryWall(
             new Vector2(MapWidth / 2, MapHeight + BoundaryThickness / 2),
-            new Vector2(MapWidth + BoundaryThickness * 2, BoundaryThickness)
-        );
-
-        // 左边界
-        CreateBoundaryWall(
             new Vector2(-BoundaryThickness / 2, MapHeight / 2),
-            new Vector2(BoundaryThickness, MapHeight)
-        );
-
-        // 右边界
-        CreateBoundaryWall(
             new Vector2(MapWidth + BoundaryThickness / 2, MapHeight / 2),
-            new Vector2(BoundaryThickness, MapHeight)
-        );
-    }
+        };
+        var sizes = new Vector2[]
+        {
+            new Vector2(MapWidth + BoundaryThickness * 2, BoundaryThickness),
+            new Vector2(MapWidth + BoundaryThickness * 2, BoundaryThickness),
+            new Vector2(BoundaryThickness, MapHeight),
+            new Vector2(BoundaryThickness, MapHeight),
+        };
 
-    private void CreateBoundaryWall(Vector2 position, Vector2 size)
-    {
-        var wall = new StaticBody2D();
-        wall.Position = position;
-        wall.CollisionLayer = 8; // 边界层
+        for (int i = 0; i < 4; i++)
+        {
+            var wall = new StaticBody2D();
+            wall.Position = positions[i];
+            wall.CollisionLayer = 8;
 
-        var shape = new RectangleShape2D();
-        shape.Size = size;
+            var shape = new RectangleShape2D();
+            shape.Size = sizes[i];
 
-        var collision = new CollisionShape2D();
-        collision.Shape = shape;
-        wall.AddChild(collision);
+            var collision = new CollisionShape2D();
+            collision.Shape = shape;
+            wall.AddChild(collision);
 
-        // 可视化边界（灰色）
-        var visual = new ColorRect();
-        visual.Color = new Color(0.3f, 0.3f, 0.3f, 0.5f);
-        visual.Size = size;
-        visual.Position = -size / 2;
-        wall.AddChild(visual);
+            var visual = new ColorRect();
+            visual.Color = WallColors[0];
+            visual.Size = sizes[i];
+            visual.Position = -sizes[i] / 2;
+            wall.AddChild(visual);
 
-        AddChild(wall);
+            _wallVisuals[i] = visual;
+            AddChild(wall);
+        }
     }
 }

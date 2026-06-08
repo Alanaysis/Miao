@@ -18,7 +18,8 @@ public partial class Main : Node2D
 		var roomGen = GetNode<RoomGenerator>("RoomGenerator");
 		GameManager.Instance.RegisterRoomGenerator(roomGen);
 
+		// 开局直接装备武器（而非掉落拾取，避免重叠导致拾取失败）
 		var weaponData = LootTable.GenerateWeapon(0, false);
-		GameManager.Instance.SpawnWeaponDrop(player.GlobalPosition, weaponData);
+		player.Equipment.EquipWeapon(weaponData);
 	}
 }

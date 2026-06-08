@@ -1,8 +1,9 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Texture2D" path="res://assets/sprites/player.png" id="1"]
 [ext_resource type="Script" path="res://scripts/player/Player.cs" id="2"]
 [ext_resource type="Script" path="res://scripts/weapon/EquipmentSlot.cs" id="3"]
+[ext_resource type="PackedScene" path="res://scenes/weapon/Weapon.tscn" id="4_weapon"]
 
 [sub_resource type="RectangleShape2D" id="1"]
 size = Vector2(24, 28)
@@ -26,3 +27,4 @@ position = Vector2(20, 0)
 
 [node name="EquipmentSlot" type="Node2D" parent="WeaponSlot"]
 script = ExtResource("3")
+WeaponScene = ExtResource("4_weapon")

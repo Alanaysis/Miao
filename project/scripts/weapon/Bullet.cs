@@ -27,6 +27,16 @@ public partial class Bullet : Area2D
 		collision.Shape = shape;
 		AddChild(collision);
 
+		// 子弹视觉：小矩形 + 发光色
+		var visual = new ColorRect();
+		visual.Size = new Vector2(12, 4);
+		visual.Position = new Vector2(-6, -2);
+		visual.Color = new Color(1.0f, 0.9f, 0.3f); // 亮黄色
+		AddChild(visual);
+
+		// 旋转子弹朝向飞行方向
+		Rotation = Velocity.Angle();
+
 		BodyEntered += OnBodyEntered;
 	}
 
@@ -45,10 +55,40 @@ public partial class Bullet : Area2D
 			enemy.TakeDamage(Damage);
 			enemy.ApplyKnockback(Velocity.Normalized() * Knockback);
 
+			// 命中特效：小爆炸
+			SpawnHitEffect(GlobalPosition);
+
 			if (!CanPenetrate)
 			{
 				QueueFree();
 			}
+		}
+	}
+
+	private void SpawnHitEffect(Vector2 pos)
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			var particle = new ColorRect();
+			particle.Size = new Vector2(3, 3);
+			particle.Position = pos - new Vector2(1.5f, 1.5f);
+			particle.Color = new Color(1.0f, 0.5f, 0.1f);
+			particle.ZIndex = 10;
+			GetTree().CurrentScene.AddChild(particle);
+
+			// 随机方向散开
+			float angle = GD.Randf() * Mathf.Tau;
+			float speed = 40 + GD.Randf() * 60;
+			var vel = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * speed;
+
+			// 用 Tween 做散开+消失动画
+			var tween = GetTree().CreateTween();
+			tween.TweenProperty(particle, "position", particle.Position + vel, 0.2);
+			tween.Parallel().TweenProperty(particle, "modulate:a", 0.0f, 0.2);
+			tween.TweenCallback(Callable.From(() =>
+			{
+				if (IsInstanceValid(particle)) particle.QueueFree();
+			}));
 		}
 	}
 }
