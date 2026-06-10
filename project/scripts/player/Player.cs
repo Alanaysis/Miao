@@ -67,6 +67,7 @@ public partial class Player : CharacterBody2D
 
     public EquipmentSlot Equipment { get; private set; }
     public SubclassManager Subclass { get; private set; }
+    public FragmentManager Fragments { get; private set; }
 
     // 技能系统
     [Export] public float Skill1Cooldown = 8.0f;
@@ -112,6 +113,13 @@ public partial class Player : CharacterBody2D
         // 初始化子职业管理器
         Subclass = new SubclassManager();
         AddChild(Subclass);
+
+        // 初始化碎片管理器
+        Fragments = new FragmentManager();
+        AddChild(Fragments);
+
+        // 加载当前子职业的碎片池
+        LoadFragmentsForCurrentSubclass();
 
         // 注册到GameManager
         if (GameManager.Instance != null)
@@ -276,5 +284,17 @@ public partial class Player : CharacterBody2D
         {
             EmitSignal(SignalName.WeaponPickupChoice, _nearbyWeaponData);
         }
+    }
+
+    /// <summary>
+    /// 为当前子职业加载碎片池
+    /// </summary>
+    private void LoadFragmentsForCurrentSubclass()
+    {
+        if (Subclass == null || Fragments == null) return;
+
+        string className = "hunter"; // 默认职业
+        string subclassKey = Subclass.ActiveSubclass.ToString().ToLower();
+        Fragments.LoadFragmentsForSubclass(className, subclassKey);
     }
 }
