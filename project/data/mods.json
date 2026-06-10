@@ -19,6 +19,23 @@
       "cost": 800
     },
     {
+      "id": "mod_weapon_range",
+      "name": "射程扩展",
+      "type": "weapon_boost",
+      "description": "射程+20%",
+      "effects": [{ "stat": "range", "value": 0.2, "type": "percent" }],
+      "acquisition": "meta_shop",
+      "cost": 600
+    },
+    {
+      "id": "mod_weapon_stability",
+      "name": "稳定瞄准",
+      "type": "weapon_boost",
+      "description": "稳定性+15%",
+      "effects": [{ "stat": "stability", "value": 0.15, "type": "percent" }],
+      "acquisition": "drop"
+    },
+    {
       "id": "mod_survival_health",
       "name": "生命强化",
       "type": "survival",
@@ -45,6 +62,23 @@
       "acquisition": "drop"
     },
     {
+      "id": "mod_survival_resist",
+      "name": "元素抗性",
+      "type": "survival",
+      "description": "元素伤害减免10%",
+      "effects": [{ "stat": "element_resist", "value": 0.1, "type": "percent" }],
+      "acquisition": "meta_shop",
+      "cost": 700
+    },
+    {
+      "id": "mod_survival_regen",
+      "name": "生命再生",
+      "type": "survival",
+      "description": "每秒回复2血量",
+      "effects": [{ "stat": "health_regen", "value": 2, "type": "flat" }],
+      "acquisition": "drop"
+    },
+    {
       "id": "mod_skill_cooldown",
       "name": "技能加速",
       "type": "skill",
@@ -61,6 +95,23 @@
       "effects": [{ "stat": "super_charge", "value": 0.2, "type": "percent" }],
       "acquisition": "meta_shop",
       "cost": 900
+    },
+    {
+      "id": "mod_skill_grenade_damage",
+      "name": "手雷增幅",
+      "type": "skill",
+      "description": "手雷伤害+25%",
+      "effects": [{ "stat": "grenade_damage", "value": 0.25, "type": "percent" }],
+      "acquisition": "meta_shop",
+      "cost": 800
+    },
+    {
+      "id": "mod_skill_melee_damage",
+      "name": "近战增幅",
+      "type": "skill",
+      "description": "近战伤害+20%",
+      "effects": [{ "stat": "melee_damage", "value": 0.2, "type": "percent" }],
+      "acquisition": "drop"
     },
     {
       "id": "mod_element_fire",
@@ -103,6 +154,24 @@
       "effects": [{ "stat": "drop_rate", "value": 0.1, "type": "percent" }],
       "acquisition": "meta_shop",
       "cost": 500
+    },
+    {
+      "id": "mod_economy_xp_bonus",
+      "name": "经验加成",
+      "type": "economy",
+      "description": "经验获取+15%",
+      "effects": [{ "stat": "xp_bonus", "value": 0.15, "type": "percent" }],
+      "acquisition": "meta_shop",
+      "cost": 450
+    },
+    {
+      "id": "mod_special_ammo_finder",
+      "name": "弹药搜寻",
+      "type": "special",
+      "description": "特殊弹药获取+15%",
+      "effects": [{ "stat": "ammo_finder", "value": 0.15, "type": "percent" }],
+      "acquisition": "meta_shop",
+      "cost": 750
     },
     {
       "id": "mod_special_finisher_heal",

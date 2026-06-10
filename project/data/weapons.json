@@ -16,13 +16,97 @@
     "uncommon": 1.1,
     "rare": 1.25,
     "epic": 1.4,
-    "legendary": 1.6
+    "legendary": 1.6,
+    "exotic": 1.8
   },
   "perk_slots": {
     "common": 0,
     "uncommon": 1,
     "rare": 2,
     "epic": 2,
-    "legendary": 2
+    "legendary": 2,
+    "exotic": 3
+  },
+  "named_weapons": {
+    "auto_rifle": [
+      { "id": "ar_hallmark", "name": "标志", "rarity": "common", "base_damage": 8, "fire_rate": 6.0, "description": "基础自动步枪" },
+      { "id": "ar_suros_regime", "name": "苏罗斯政权", "rarity": "uncommon", "base_damage": 9, "fire_rate": 6.0, "description": "精准射击提升伤害" },
+      { "id": "ar_origin_story", "name": "起源故事", "rarity": "rare", "base_damage": 10, "fire_rate": 6.0, "description": "稳定的输出型步枪" },
+      { "id": "ar_ghost_angel", "name": "幽灵天使", "rarity": "epic", "base_damage": 11, "fire_rate": 6.5, "description": "击杀后短暂提升射速" },
+      { "id": "ar_sweet_business", "name": "甜蜜事业", "rarity": "legendary", "base_damage": 6, "fire_rate": 12.0, "description": "超高射速弹幕武器" },
+      { "id": "ar_hazard_of_the_cast", "name": "铸造之危", "rarity": "exotic", "base_damage": 14, "fire_rate": 7.0, "description": "暴击时额外发射追踪弹" }
+    ],
+    "pulse_rifle": [
+      { "id": "pr_battle_scar", "name": "战斗伤痕", "rarity": "common", "base_damage": 12, "fire_rate": 2.0, "description": "基础战斗步枪" },
+      { "id": "pr_inaugural_address", "name": "就职演说", "rarity": "uncommon", "base_damage": 13, "fire_rate": 2.0, "description": "精准三连发" },
+      { "id": "pr_chattering_bone", "name": "喋喋不休", "rarity": "rare", "base_damage": 14, "fire_rate": 2.2, "description": "轻量化高速射击" },
+      { "id": "pr_bygones", "name": "往昔", "rarity": "epic", "base_damage": 15, "fire_rate": 2.2, "description": "低血量时伤害提升" },
+      { "id": "pr_outbreak_perfected", "name": "完美爆发", "rarity": "legendary", "base_damage": 16, "fire_rate": 2.4, "description": "暴击生成纳米虫群" },
+      { "id": "pr_graviton_lance", "name": "引力枪", "rarity": "exotic", "base_damage": 20, "fire_rate": 2.0, "description": "第二发子弹造成虚空爆炸" }
+    ],
+    "scout_rifle": [
+      { "id": "sr_vision_of_confluence", "name": "汇流之视", "rarity": "common", "base_damage": 20, "fire_rate": 2.5, "description": "基础斥候步枪" },
+      { "id": "sr_nameless_midnight", "name": "无名午夜", "rarity": "uncommon", "base_damage": 22, "fire_rate": 2.5, "description": "精准射击提升稳定性" },
+      { "id": "sr_manannan_sr4", "name": "马纳南SR4", "rarity": "rare", "base_damage": 24, "fire_rate": 2.5, "description": "爆炸弹药" },
+      { "id": "sr_distant_relation", "name": "远亲", "rarity": "epic", "base_damage": 26, "fire_rate": 2.8, "description": "连续精准射击提升伤害" },
+      { "id": "sr_jade_rabbit", "name": "玉兔", "rarity": "legendary", "base_damage": 30, "fire_rate": 2.5, "description": "连续命中不消耗弹药" },
+      { "id": "sr_polymorphic_engine", "name": "多态引擎", "rarity": "exotic", "base_damage": 35, "fire_rate": 2.2, "description": "切换元素属性造成额外伤害" }
+    ],
+    "hand_cannon": [
+      { "id": "hc_better_devils", "name": "更好的恶魔", "rarity": "common", "base_damage": 25, "fire_rate": 2.5, "description": "基础手炮" },
+      { "id": "hc_old_fashioned", "name": "老派", "rarity": "uncommon", "base_damage": 27, "fire_rate": 2.5, "description": "经典可靠" },
+      { "id": "hc_midnight_coup", "name": "午夜政变", "rarity": "rare", "base_damage": 28, "fire_rate": 2.8, "description": "精准快速射击" },
+      { "id": "hc_kindled_orchid", "name": "点燃兰花", "rarity": "epic", "base_damage": 30, "fire_rate": 2.5, "description": "双重伤害增益叠加" },
+      { "id": "hc_ace_of_spades", "name": "黑桃A", "rarity": "legendary", "base_damage": 35, "fire_rate": 2.0, "description": "击杀后装填并提升伤害" },
+      { "id": "hc_last_word", "name": "遗言", "rarity": "exotic", "base_damage": 30, "fire_rate": 4.0, "description": "速射型手炮，腰射精准" }
+    ],
+    "smg": [
+      { "id": "smg_rattler", "name": "响尾蛇", "rarity": "common", "base_damage": 5, "fire_rate": 10.0, "description": "基础冲锋枪" },
+      { "id": "smg_foggy_notion", "name": "模糊概念", "rarity": "uncommon", "base_damage": 5.5, "fire_rate": 10.0, "description": "近距稳定输出" },
+      { "id": "smg_hero_burden", "name": "英雄负担", "rarity": "rare", "base_damage": 6, "fire_rate": 10.5, "description": "近战后伤害提升" },
+      { "id": "smg_calus_mini_tool", "name": "卡鲁斯迷你工具", "rarity": "epic", "base_damage": 6.5, "fire_rate": 11.0, "description": "高射速近距利器" },
+      { "id": "smg_recluse", "name": "隐匿者", "rarity": "legendary", "base_damage": 7, "fire_rate": 11.0, "description": "击杀后伤害大幅提升" },
+      { "id": "smg_riskrunner", "name": "风险跑者", "rarity": "exotic", "base_damage": 6, "fire_rate": 12.0, "description": "受电弧伤害后连锁闪电" }
+    ],
+    "shotgun": [
+      { "id": "sg_badlander", "name": "恶土", "rarity": "common", "base_damage": 15, "fire_rate": 1.5, "description": "基础霰弹枪" },
+      { "id": "sg_baligant", "name": "巴利甘特", "rarity": "uncommon", "base_damage": 16, "fire_rate": 1.5, "description": "高冲击力" },
+      { "id": "sg_good_morning", "name": "早安", "rarity": "rare", "base_damage": 18, "fire_rate": 1.6, "description": "半自动速射" },
+      { "id": "sg_threat_level", "name": "威胁等级", "rarity": "epic", "base_damage": 20, "fire_rate": 1.8, "description": "近距全自动霰弹" },
+      { "id": "sg_ikelos_sg", "name": "伊刻洛斯SG", "rarity": "legendary", "base_damage": 22, "fire_rate": 1.5, "description": "射击附带烈日灼烧" },
+      { "id": "sg_tractor_cannon", "name": "拖拉机炮", "rarity": "exotic", "base_damage": 25, "fire_rate": 1.0, "description": "击退并使敌人易伤" }
+    ],
+    "sniper_rifle": [
+      { "id": "sn_allegro_34", "name": "快板34", "rarity": "common", "base_damage": 50, "fire_rate": 0.8, "description": "基础狙击步枪" },
+      { "id": "sn_show_of_force", "name": "武力展示", "rarity": "uncommon", "base_damage": 55, "fire_rate": 0.8, "description": "重型弹药" },
+      { "id": "sn_twilight_oath", "name": "暮光誓言", "rarity": "rare", "base_damage": 60, "fire_rate": 0.9, "description": "快速瞄准" },
+      { "id": "sn_dreaded_venture", "name": "恐惧冒险", "rarity": "epic", "base_damage": 70, "fire_rate": 0.7, "description": "穿透敌人" },
+      { "id": "sn_whisper_of_the_worm", "name": "虫之低语", "rarity": "legendary", "base_damage": 80, "fire_rate": 0.6, "description": "连续精准射击不消耗弹药" },
+      { "id": "sn_borealis", "name": "极光", "rarity": "exotic", "base_damage": 75, "fire_rate": 0.8, "description": "切换元素属性，匹配护盾造成额外伤害" }
+    ],
+    "fusion_rifle": [
+      { "id": "fr_main_ingredient", "name": "主要成分", "rarity": "common", "base_damage": 30, "fire_rate": 1.0, "description": "基础融合步枪", "charge_time": 0.8 },
+      { "id": "fr_emperor_doubt", "name": "帝王之疑", "rarity": "uncommon", "base_damage": 33, "fire_rate": 1.0, "description": "稳定充能", "charge_time": 0.75 },
+      { "id": "fr_elatha_fr4", "name": "伊拉莎FR4", "rarity": "rare", "base_damage": 36, "fire_rate": 1.1, "description": "快速充能型", "charge_time": 0.7 },
+      { "id": "fr_jotunn", "name": "约顿", "rarity": "epic", "base_damage": 40, "fire_rate": 0.8, "description": "发射追踪火球", "charge_time": 0.9 },
+      { "id": "fr_telesto", "name": "泰莱斯托", "rarity": "legendary", "base_damage": 45, "fire_rate": 1.0, "description": "弹药附着后爆炸", "charge_time": 0.8 },
+      { "id": "fr_1000_voices", "name": "千语", "rarity": "exotic", "base_damage": 55, "fire_rate": 0.6, "description": "持续光束照射造成毁灭伤害", "charge_time": 1.2 }
+    ],
+    "rocket_launcher": [
+      { "id": "rl_bad_odyssey", "name": "坏旅程", "rarity": "common", "base_damage": 80, "fire_rate": 0.5, "description": "基础火箭筒", "aoe_radius": 80 },
+      { "id": "rl_curtain_call", "name": "谢幕", "rarity": "uncommon", "base_damage": 88, "fire_rate": 0.5, "description": "集束弹头", "aoe_radius": 85 },
+      { "id": "rl_sleepless", "name": "失眠", "rarity": "rare", "base_damage": 96, "fire_rate": 0.5, "description": "大范围爆破", "aoe_radius": 100 },
+      { "id": "rl_bad_omen", "name": "凶兆", "rarity": "epic", "base_damage": 105, "fire_rate": 0.55, "description": "追踪弹头", "aoe_radius": 90 },
+      { "id": "rl_gjallarhorn", "name": "加拉尔号角", "rarity": "legendary", "base_damage": 120, "fire_rate": 0.5, "description": "发射狼群弹幕", "aoe_radius": 110 },
+      { "id": "rl_two_tailed_fox", "name": "双尾狐", "rarity": "exotic", "base_damage": 110, "fire_rate": 0.6, "description": "同时发射烈日和虚空导弹", "aoe_radius": 95 }
+    ],
+    "sword": [
+      { "id": "sw_complex_solution", "name": "复杂解答", "rarity": "common", "base_damage": 20, "fire_rate": 4.0, "description": "基础刀剑", "melee_range": 60 },
+      { "id": "sw_it_stared_back", "name": "它回望", "rarity": "uncommon", "base_damage": 22, "fire_rate": 4.0, "description": "沉重斩击", "melee_range": 60 },
+      { "id": "sw_death_adder", "name": "死亡蝰蛇", "rarity": "rare", "base_damage": 25, "fire_rate": 4.5, "description": "快速连击", "melee_range": 55 },
+      { "id": "sw_falling_guillotine", "name": "坠落断头台", "rarity": "epic", "base_damage": 30, "fire_rate": 3.5, "description": "旋风斩", "melee_range": 70 },
+      { "id": "sw_lament", "name": "哀歌", "rarity": "legendary", "base_damage": 35, "fire_rate": 4.0, "description": "充能连击提升伤害", "melee_range": 65 },
+      { "id": "sw_worldline_zero", "name": "世界线零", "rarity": "exotic", "base_damage": 40, "fire_rate": 3.5, "description": "冲刺时瞬移斩击", "melee_range": 80 }
+    ]
   }
 }

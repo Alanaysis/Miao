@@ -74,6 +74,219 @@
       "stats": { "health": 8, "armor": 5, "move_speed": 0.05 },
       "mod_slots": 1,
       "class_restriction": "warlock"
+    },
+    {
+      "id": "hunter_void_helm_epic",
+      "name": "虚空行者之冠",
+      "slot": "head",
+      "light_level": 35,
+      "rarity": "epic",
+      "stats": { "health": 15, "armor": 10, "move_speed": 0.02 },
+      "mod_slots": 2,
+      "class_restriction": "hunter",
+      "set_id": "hunter_void_set"
+    },
+    {
+      "id": "hunter_void_chest_epic",
+      "name": "虚空行者胸甲",
+      "slot": "chest",
+      "light_level": 35,
+      "rarity": "epic",
+      "stats": { "health": 25, "armor": 18, "move_speed": 0 },
+      "mod_slots": 2,
+      "class_restriction": "hunter",
+      "set_id": "hunter_void_set"
+    },
+    {
+      "id": "hunter_void_gloves_epic",
+      "name": "虚空行者手套",
+      "slot": "hands",
+      "light_level": 35,
+      "rarity": "epic",
+      "stats": { "health": 5, "armor": 5, "move_speed": 0.06 },
+      "mod_slots": 2,
+      "class_restriction": "hunter",
+      "set_id": "hunter_void_set"
+    },
+    {
+      "id": "hunter_void_legs_epic",
+      "name": "虚空行者护腿",
+      "slot": "legs",
+      "light_level": 35,
+      "rarity": "epic",
+      "stats": { "health": 10, "armor": 8, "move_speed": 0.04 },
+      "mod_slots": 2,
+      "class_restriction": "hunter",
+      "set_id": "hunter_void_set"
+    },
+    {
+      "id": "hunter_void_class_epic",
+      "name": "虚空行者斗篷",
+      "slot": "class_item",
+      "light_level": 35,
+      "rarity": "epic",
+      "stats": { "health": 5, "armor": 5, "move_speed": 0.03 },
+      "mod_slots": 2,
+      "class_restriction": "hunter",
+      "set_id": "hunter_void_set",
+      "set_bonus": "虚空伤害+10%，隐身持续时间+1秒"
+    },
+    {
+      "id": "titan_solar_helm_epic",
+      "name": "烈日守护之盔",
+      "slot": "head",
+      "light_level": 35,
+      "rarity": "epic",
+      "stats": { "health": 20, "armor": 12, "move_speed": -0.01 },
+      "mod_slots": 2,
+      "class_restriction": "titan",
+      "set_id": "titan_solar_set"
+    },
+    {
+      "id": "titan_solar_chest_epic",
+      "name": "烈日守护胸甲",
+      "slot": "chest",
+      "light_level": 35,
+      "rarity": "epic",
+      "stats": { "health": 30, "armor": 25, "move_speed": -0.04 },
+      "mod_slots": 2,
+      "class_restriction": "titan",
+      "set_id": "titan_solar_set"
+    },
+    {
+      "id": "titan_solar_gloves_epic",
+      "name": "烈日守护臂甲",
+      "slot": "hands",
+      "light_level": 35,
+      "rarity": "epic",
+      "stats": { "health": 8, "armor": 8, "move_speed": 0 },
+      "mod_slots": 2,
+      "class_restriction": "titan",
+      "set_id": "titan_solar_set"
+    },
+    {
+      "id": "titan_solar_legs_epic",
+      "name": "烈日守护腿甲",
+      "slot": "legs",
+      "light_level": 35,
+      "rarity": "epic",
+      "stats": { "health": 15, "armor": 12, "move_speed": -0.02 },
+      "mod_slots": 2,
+      "class_restriction": "titan",
+      "set_id": "titan_solar_set"
+    },
+    {
+      "id": "titan_solar_class_epic",
+      "name": "烈日守护印记",
+      "slot": "class_item",
+      "light_level": 35,
+      "rarity": "epic",
+      "stats": { "health": 8, "armor": 8, "move_speed": 0 },
+      "mod_slots": 2,
+      "class_restriction": "titan",
+      "set_id": "titan_solar_set",
+      "set_bonus": "烈日伤害+10%，技能击杀生成烈日区域"
+    },
+    {
+      "id": "warlock_arc_helm_epic",
+      "name": "雷云兜帽",
+      "slot": "head",
+      "light_level": 35,
+      "rarity": "epic",
+      "stats": { "health": 12, "armor": 6, "move_speed": 0.02 },
+      "mod_slots": 2,
+      "class_restriction": "warlock",
+      "set_id": "warlock_arc_set"
+    },
+    {
+      "id": "warlock_arc_chest_epic",
+      "name": "雷云长袍",
+      "slot": "chest",
+      "light_level": 35,
+      "rarity": "epic",
+      "stats": { "health": 20, "armor": 12, "move_speed": 0.01 },
+      "mod_slots": 2,
+      "class_restriction": "warlock",
+      "set_id": "warlock_arc_set"
+    },
+    {
+      "id": "warlock_arc_gloves_epic",
+      "name": "雷云手套",
+      "slot": "hands",
+      "light_level": 35,
+      "rarity": "epic",
+      "stats": { "health": 5, "armor": 4, "move_speed": 0.04 },
+      "mod_slots": 2,
+      "class_restriction": "warlock",
+      "set_id": "warlock_arc_set"
+    },
+    {
+      "id": "warlock_arc_legs_epic",
+      "name": "雷云靴",
+      "slot": "legs",
+      "light_level": 35,
+      "rarity": "epic",
+      "stats": { "health": 8, "armor": 5, "move_speed": 0.06 },
+      "mod_slots": 2,
+      "class_restriction": "warlock",
+      "set_id": "warlock_arc_set"
+    },
+    {
+      "id": "warlock_arc_class_epic",
+      "name": "雷云契约",
+      "slot": "class_item",
+      "light_level": 35,
+      "rarity": "epic",
+      "stats": { "health": 5, "armor": 4, "move_speed": 0.03 },
+      "mod_slots": 2,
+      "class_restriction": "warlock",
+      "set_id": "warlock_arc_set",
+      "set_bonus": "电弧伤害+10%，技能CD-10%"
+    },
+    {
+      "id": "universal_helm_legendary",
+      "name": "铁血头盔",
+      "slot": "head",
+      "light_level": 50,
+      "rarity": "legendary",
+      "stats": { "health": 20, "armor": 15, "move_speed": 0.02 },
+      "mod_slots": 3
+    },
+    {
+      "id": "universal_chest_legendary",
+      "name": "铁血胸甲",
+      "slot": "chest",
+      "light_level": 50,
+      "rarity": "legendary",
+      "stats": { "health": 35, "armor": 30, "move_speed": 0 },
+      "mod_slots": 3
+    },
+    {
+      "id": "universal_gloves_legendary",
+      "name": "铁血手套",
+      "slot": "hands",
+      "light_level": 50,
+      "rarity": "legendary",
+      "stats": { "health": 10, "armor": 8, "move_speed": 0.06 },
+      "mod_slots": 3
+    },
+    {
+      "id": "universal_legs_legendary",
+      "name": "铁血腿甲",
+      "slot": "legs",
+      "light_level": 50,
+      "rarity": "legendary",
+      "stats": { "health": 15, "armor": 12, "move_speed": 0.04 },
+      "mod_slots": 3
+    },
+    {
+      "id": "universal_class_legendary",
+      "name": "铁血标志",
+      "slot": "class_item",
+      "light_level": 50,
+      "rarity": "legendary",
+      "stats": { "health": 10, "armor": 10, "move_speed": 0.02 },
+      "mod_slots": 3
     }
   ]
 }
