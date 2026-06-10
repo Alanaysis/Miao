@@ -1,4 +1,5 @@
 using Godot;
+using Miao.Armor;
 using Miao.System;
 using Miao.Weapon;
 
@@ -68,6 +69,10 @@ public partial class Player : CharacterBody2D
     public EquipmentSlot Equipment { get; private set; }
     public SubclassManager Subclass { get; private set; }
     public FragmentManager Fragments { get; private set; }
+    public ArmorManager Armors { get; private set; }
+
+    private float _baseMoveSpeed;
+    private int _baseMaxHealth;
 
     // 技能系统
     [Export] public float Skill1Cooldown = 8.0f;
@@ -104,6 +109,10 @@ public partial class Player : CharacterBody2D
             MoveSpeed *= MetaProgression.Instance.GetBonusMoveSpeed();
         }
 
+        // 保存基础属性（用于护甲加成计算）
+        _baseMaxHealth = MaxHealth;
+        _baseMoveSpeed = MoveSpeed;
+
         CurrentHealth = MaxHealth;
         AddToGroup("player");
         _sprite = GetNode<Sprite2D>("Sprite2D");
@@ -120,6 +129,13 @@ public partial class Player : CharacterBody2D
 
         // 加载当前子职业的碎片池
         LoadFragmentsForCurrentSubclass();
+
+        // 初始化护甲管理器
+        Armors = new ArmorManager();
+        AddChild(Armors);
+
+        // 应用护甲加成
+        ApplyArmorBonuses();
 
         // 注册到GameManager
         if (GameManager.Instance != null)
@@ -296,5 +312,22 @@ public partial class Player : CharacterBody2D
         string className = "hunter"; // 默认职业
         string subclassKey = Subclass.ActiveSubclass.ToString().ToLower();
         Fragments.LoadFragmentsForSubclass(className, subclassKey);
+    }
+
+    /// <summary>
+    /// 应用护甲属性加成到玩家属性
+    /// </summary>
+    public void ApplyArmorBonuses()
+    {
+        if (Armors == null) return;
+
+        int oldMaxHealth = MaxHealth;
+        MaxHealth = _baseMaxHealth + Armors.GetTotalHealthBonus();
+        // 当前生命值按比例调整
+        if (oldMaxHealth > 0)
+        {
+            CurrentHealth = Mathf.RoundToInt(CurrentHealth * (float)MaxHealth / oldMaxHealth);
+        }
+        MoveSpeed = _baseMoveSpeed * (1f + Armors.GetTotalMoveSpeedBonus());
     }
 }

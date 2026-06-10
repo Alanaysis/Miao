@@ -1,0 +1,79 @@
+{
+  "armor_sets": [
+    {
+      "id": "starter_helm",
+      "name": "新手头盔",
+      "slot": "head",
+      "light_level": 10,
+      "rarity": "common",
+      "stats": { "health": 5, "armor": 0, "move_speed": 0 },
+      "mod_slots": 1
+    },
+    {
+      "id": "starter_chest",
+      "name": "新手胸甲",
+      "slot": "chest",
+      "light_level": 10,
+      "rarity": "common",
+      "stats": { "health": 10, "armor": 5, "move_speed": 0 },
+      "mod_slots": 1
+    },
+    {
+      "id": "starter_gloves",
+      "name": "新手手套",
+      "slot": "hands",
+      "light_level": 10,
+      "rarity": "common",
+      "stats": { "health": 0, "armor": 0, "move_speed": 0.05 },
+      "mod_slots": 1
+    },
+    {
+      "id": "starter_legs",
+      "name": "新手腿甲",
+      "slot": "legs",
+      "light_level": 10,
+      "rarity": "common",
+      "stats": { "health": 5, "armor": 0, "move_speed": 0.03 },
+      "mod_slots": 1
+    },
+    {
+      "id": "starter_class",
+      "name": "新手职业物品",
+      "slot": "class_item",
+      "light_level": 10,
+      "rarity": "common",
+      "stats": { "health": 0, "armor": 3, "move_speed": 0 },
+      "mod_slots": 1
+    },
+    {
+      "id": "hunter_helm_void",
+      "name": "虚空猎人头盔",
+      "slot": "head",
+      "light_level": 20,
+      "rarity": "rare",
+      "stats": { "health": 10, "armor": 5, "move_speed": 0 },
+      "mod_slots": 1,
+      "class_restriction": "hunter"
+    },
+    {
+      "id": "titan_chest_solar",
+      "name": "烈日泰坦胸甲",
+      "slot": "chest",
+      "light_level": 25,
+      "rarity": "rare",
+      "stats": { "health": 20, "armor": 15, "move_speed": -0.03 },
+      "mod_slots": 1,
+      "class_restriction": "titan"
+    },
+    {
+      "id": "warlock_legs_arc",
+      "name": "电弧术士腿甲",
+      "slot": "legs",
+      "light_level": 22,
+      "rarity": "rare",
+      "stats": { "health": 8, "armor": 5, "move_speed": 0.05 },
+      "mod_slots": 1,
+      "class_restriction": "warlock"
+    }
+  ]
+}
