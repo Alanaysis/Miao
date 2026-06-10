@@ -94,6 +94,28 @@ public partial class MetaProgression : Node
         return true;
     }
 
+    // ==================== Stat Bonuses (meta upgrades) ====================
+
+    public int GetBonusHealth()
+    {
+        return 0; // TODO: implement based on purchased upgrades
+    }
+
+    public float GetBonusMoveSpeed()
+    {
+        return 1.0f; // TODO: implement based on purchased upgrades
+    }
+
+    public float GetBonusDamage()
+    {
+        return 1.0f; // TODO: implement based on purchased upgrades
+    }
+
+    public float GetBonusDropRate()
+    {
+        return 1.0f; // TODO: implement based on purchased upgrades
+    }
+
     // ==================== Glimmer ====================
 
     public void AddGlimmer(int amount)

@@ -229,6 +229,21 @@ public partial class Enemy : CharacterBody2D
 
             // 应用模组的击杀回血效果
             ApplyHealOnKillMod(p);
+
+            // Apply KillClip/KillReturn perks
+            var weapon = p.Equipment?.CurrentWeapon;
+            if (weapon?.Data != null)
+            {
+                if (PerkSystem.HasPerk(weapon.Data, PerkId.KillClip))
+                {
+                    // KillClip: next magazine +30% damage (mark as active)
+                    weapon.ActivateKillClip();
+                }
+                if (PerkSystem.HasPerk(weapon.Data, PerkId.KillReturn))
+                {
+                    // KillReturn: simplified -- no ammo system yet, placeholder
+                }
+            }
         }
 
         // 掉落经验球
@@ -270,7 +285,7 @@ public partial class Enemy : CharacterBody2D
         if (player.Armors == null) return;
 
         // 获取所有已装备的模组
-        var mods = new System.Collections.Generic.List<ModData>();
+        var mods = new global::System.Collections.Generic.List<ModData>();
         foreach (var slot in player.Armors.Slots.Values)
         {
             if (slot.EquippedArmor?.EquippedMods != null)

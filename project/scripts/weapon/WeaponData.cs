@@ -34,7 +34,12 @@ public enum PerkId
 
 public enum LegendaryTraitId
 {
-    Default, // 占位，后续任务实现更多特性
+    Default,
+    Firefly,        // 击杀爆炸
+    Outlaw,         // 精准击杀大幅加速装填
+    Rampage,        // 击杀叠加伤害
+    Dragonfly,      // 精准击杀元素爆炸
+    KillClip        // 装填后伤害提升
 }
 
 public partial class WeaponData : Resource

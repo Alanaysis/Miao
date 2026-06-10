@@ -1,5 +1,6 @@
 using Godot;
-using System.Collections.Generic;
+using global::System.Collections.Generic;
+using Miao.System;
 
 namespace Miao.UI;
 
@@ -238,6 +239,6 @@ public partial class MetaShopUI : CanvasLayer
 
 public class ModsConfig
 {
-    [System.Text.Json.Serialization.JsonPropertyName("mods")]
+    [global::System.Text.Json.Serialization.JsonPropertyName("mods")]
     public List<Miao.Armor.ModData> Mods { get; set; }
 }

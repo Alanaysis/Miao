@@ -11,7 +11,7 @@ public partial class ArmorManager : Node
     public override void _Ready()
     {
         // Create all 5 slots
-        foreach (ArmorSlot slot in System.Enum.GetValues<ArmorSlot>())
+        foreach (ArmorSlot slot in global::System.Enum.GetValues<ArmorSlot>())
         {
             var slotManager = new ArmorSlotManager(slot);
             Slots[slot] = slotManager;

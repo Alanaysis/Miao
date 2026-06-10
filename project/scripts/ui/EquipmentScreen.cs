@@ -6,6 +6,7 @@ using Miao.Data;
 using Miao.Player;
 using Miao.System;
 using Miao.Weapon;
+using PlayerClass = Miao.Player.Player;
 
 namespace Miao.UI;
 
@@ -87,7 +88,7 @@ public partial class EquipmentScreen : Control
         leftVbox.AddChild(UIStyle.MakeLabel("子类:", 14, UIStyle.TextMuted));
         _subclassSelector = new HBoxContainer();
         _subclassSelector.AddThemeConstantOverride("separation", 6);
-        foreach (SubclassType type in System.Enum.GetValues<SubclassType>())
+        foreach (SubclassType type in global::System.Enum.GetValues<SubclassType>())
         {
             if (type == SubclassType.Stasis) continue; // Not implemented yet
             var btn = UIStyle.MakeButton(type switch
@@ -164,7 +165,7 @@ public partial class EquipmentScreen : Control
         rightVbox.AddChild(UIStyle.Separator(Vector2.Zero, 400));
 
         // Armor slots
-        foreach (ArmorSlot slot in System.Enum.GetValues<ArmorSlot>())
+        foreach (ArmorSlot slot in global::System.Enum.GetValues<ArmorSlot>())
         {
             var row = new HBoxContainer();
             row.AddThemeConstantOverride("separation", 10);
@@ -401,7 +402,7 @@ public partial class EquipmentScreen : Control
         }
 
         // Update armor slots from player
-        var player = GetTree().GetFirstNodeInGroup("player") as Player;
+        var player = GetTree().GetFirstNodeInGroup("player") as PlayerClass;
         if (player?.Armors != null)
         {
             foreach (var kvp in player.Armors.Slots)
@@ -428,9 +429,9 @@ public partial class EquipmentScreen : Control
 
             // Update stats
             int hp = player.MaxHealth + player.Armors.GetTotalHealthBonus();
-            int armor = player.Armors.GetTotalArmorBonus();
+            int armorStat = player.Armors.GetTotalArmorBonus();
             float speed = player.MoveSpeed + player.Armors.GetTotalMoveSpeedBonus();
-            _statsLabel.Text = $"血量: {hp} | 护甲: {armor} | 移速: {speed:F1}";
+            _statsLabel.Text = $"血量: {hp} | 护甲: {armorStat} | 移速: {speed:F1}";
 
             // Update mod list
             foreach (var child in _modList.GetChildren()) child.QueueFree();
@@ -492,7 +493,7 @@ public partial class EquipmentScreen : Control
         _currentSubclass = type;
 
         // Apply subclass change via SubclassManager if available
-        var player = GetTree().GetFirstNodeInGroup("player") as Player;
+        var player = GetTree().GetFirstNodeInGroup("player") as PlayerClass;
         if (player?.Subclass != null)
         {
             player.Subclass.SetSubclassForClass(_currentClass, type);
@@ -515,7 +516,7 @@ public partial class EquipmentScreen : Control
 
     private void OnAspectSlotClicked(int slot)
     {
-        var player = GetTree().GetFirstNodeInGroup("player") as Player;
+        var player = GetTree().GetFirstNodeInGroup("player") as PlayerClass;
         if (player?.Aspects == null || player?.Subclass == null) return;
 
         // If there's already an aspect in this slot, unequip it

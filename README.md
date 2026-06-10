@@ -97,6 +97,7 @@ AI助手请前往 [agent.md](./agent.md) 查看完整的行为规范。
 
 核心设计文档：
 - [MVP 设计文档](./docs/superpowers/specs/2026-06-06-destiny-looter-shooter-mvp-design.md) — 完整的武器/职业/地图/Meta 系统设计
+- [实现计划](./docs/superpowers/plans/2026-06-06-destiny-looter-shooter-mvp.md) — 14 个任务的详细实现步骤
 - [游戏设计总览](./docs/game_design.md) — 整体游戏设计方向
 
 ## 贡献指南

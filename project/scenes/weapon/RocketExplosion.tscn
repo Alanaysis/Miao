@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3 uid="uid://rocketexplosion001"]
+
+[ext_resource type="Script" path="res://scripts/weapon/RocketExplosion.cs" id="1"]
+
+[node name="RocketExplosion" type="Area2D"]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1")

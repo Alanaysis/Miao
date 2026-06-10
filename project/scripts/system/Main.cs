@@ -2,8 +2,8 @@ using Godot;
 using System.Collections.Generic;
 using Miao.System;
 using Miao.Weapon;
-using Miao.Player;
 using Miao.UI;
+using PlayerClass = Miao.Player.Player;
 
 namespace Miao.System;
 
@@ -29,7 +29,7 @@ public partial class Main : Node2D
 
 		// Instantiate the correct player scene
 		var playerScene = GD.Load<PackedScene>(scenePath);
-		var player = playerScene.Instantiate<Player>();
+		var player = playerScene.Instantiate<PlayerClass>();
 		player.Name = classId == "hunter" ? "Hunter" : "Titan";
 		player.Position = new Vector2(640, 360);
 		AddChild(player);

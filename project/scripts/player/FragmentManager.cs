@@ -40,7 +40,7 @@ public partial class FragmentManager : Node
         if (available.Count == 0) return new List<FragmentConfig>();
 
         var result = new List<FragmentConfig>();
-        var rng = new System.Random();
+        var rng = new global::System.Random();
 
         for (int i = 0; i < count && available.Count > 0; i++)
         {
@@ -89,7 +89,7 @@ public partial class FragmentManager : Node
                 break;
             case "max_health":
                 player.MaxHealth += Mathf.RoundToInt(effect.Value);
-                player.CurrentHealth += Mathf.RoundToInt(effect.Value);
+                player.Heal(Mathf.RoundToInt(effect.Value));
                 break;
             case "crit_chance":
                 // Handled in PerkSystem

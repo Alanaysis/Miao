@@ -58,6 +58,19 @@ public partial class Bullet : Area2D
 			// 命中特效：小爆炸
 			SpawnHitEffect(GlobalPosition);
 
+			if (HasMeta("is_rocket"))
+			{
+				// Spawn AOE explosion
+				var explosion = GD.Load<PackedScene>("res://scenes/weapon/RocketExplosion.tscn");
+				if (explosion != null)
+				{
+					var boom = explosion.Instantiate<RocketExplosion>();
+					boom.GlobalPosition = GlobalPosition;
+					boom.Init(Damage, 80f);
+					GetTree().CurrentScene.AddChild(boom);
+				}
+			}
+
 			if (!CanPenetrate)
 			{
 				QueueFree();

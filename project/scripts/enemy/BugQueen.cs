@@ -1,5 +1,6 @@
 using Godot;
 using System.Collections.Generic;
+using Miao.UI;
 
 namespace Miao.Enemy;
 
@@ -37,42 +38,26 @@ public partial class BugQueen : Enemy
         _bossHudLayer.Layer = 5;
         GetTree().CurrentScene.AddChild(_bossHudLayer);
 
-        // Boss 名称
-        _bossNameLabel = new Label();
-        _bossNameLabel.Text = "虫 后";
-        _bossNameLabel.Position = new Vector2(540, 10);
-        _bossNameLabel.AddThemeFontSizeOverride("font_size", 18);
-        _bossNameLabel.AddThemeColorOverride("font_color", new Color(1, 0.4f, 0.4f));
-        _bossHudLayer.AddChild(_bossNameLabel);
+        // 面板
+        var panel = UIStyle.Panel(new Vector2(600, 50), UIStyle.AccentRed);
+        panel.Position = new Vector2(340, 8);
+        _bossHudLayer.AddChild(panel);
 
-        // Boss 血条
-        _bossHpBar = new ProgressBar();
-        _bossHpBar.Position = new Vector2(340, 38);
-        _bossHpBar.Size = new Vector2(600, 16);
+        // 名称
+        _bossNameLabel = UIStyle.MakeLabel("虫 后", 16, UIStyle.AccentRed, true);
+        _bossNameLabel.Position = new Vector2(8, 4);
+        panel.AddChild(_bossNameLabel);
+
+        // 阶段
+        _bossPhaseLabel = UIStyle.MakeLabel("阶段 1", 12, UIStyle.TextMuted);
+        _bossPhaseLabel.Position = new Vector2(500, 4);
+        panel.AddChild(_bossPhaseLabel);
+
+        // 血条
+        _bossHpBar = UIStyle.Bar(new Vector2(8, 26), new Vector2(580, 14), UIStyle.AccentRed);
         _bossHpBar.MaxValue = MaxHealth;
         _bossHpBar.Value = CurrentHealth;
-        _bossHpBar.ShowPercentage = false;
-
-        var bg = new StyleBoxFlat();
-        bg.BgColor = new Color(0.15f, 0.1f, 0.1f, 0.9f);
-        bg.CornerRadiusTopLeft = 4; bg.CornerRadiusTopRight = 4;
-        bg.CornerRadiusBottomLeft = 4; bg.CornerRadiusBottomRight = 4;
-        _bossHpBar.AddThemeStyleboxOverride("background", bg);
-
-        var fill = new StyleBoxFlat();
-        fill.BgColor = new Color(0.8f, 0.15f, 0.15f);
-        fill.CornerRadiusTopLeft = 4; fill.CornerRadiusTopRight = 4;
-        fill.CornerRadiusBottomLeft = 4; fill.CornerRadiusBottomRight = 4;
-        _bossHpBar.AddThemeStyleboxOverride("fill", fill);
-
-        _bossHudLayer.AddChild(_bossHpBar);
-
-        // 阶段提示
-        _bossPhaseLabel = new Label();
-        _bossPhaseLabel.Position = new Vector2(540, 58);
-        _bossPhaseLabel.AddThemeFontSizeOverride("font_size", 12);
-        _bossPhaseLabel.AddThemeColorOverride("font_color", new Color(0.7f, 0.7f, 0.5f));
-        _bossHudLayer.AddChild(_bossPhaseLabel);
+        panel.AddChild(_bossHpBar);
     }
 
     private void UpdateBossHUD()

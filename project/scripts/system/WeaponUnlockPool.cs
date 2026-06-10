@@ -1,6 +1,6 @@
 using Godot;
-using System.Collections.Generic;
-using System.Linq;
+using global::System.Collections.Generic;
+using global::System.Linq;
 using Miao.Weapon;
 
 namespace Miao.System;
@@ -26,7 +26,7 @@ public partial class WeaponUnlockPool : Node
     private void LoadDefaultUnlocks()
     {
         // White/green/blue weapons are always unlocked
-        var allTypes = System.Enum.GetValues<WeaponType>();
+        var allTypes = global::System.Enum.GetValues<WeaponType>();
         foreach (var type in allTypes)
         {
             _unlockedWeapons.Add($"{type.ToString().ToLower()}_common");
@@ -86,7 +86,7 @@ public partial class WeaponUnlockPool : Node
     public List<WeaponType> GetUnlockedTypesForRarity(Rarity rarity)
     {
         var result = new List<WeaponType>();
-        foreach (var type in System.Enum.GetValues<WeaponType>())
+        foreach (var type in global::System.Enum.GetValues<WeaponType>())
         {
             if (IsWeaponUnlocked(type, rarity))
             {
@@ -124,30 +124,30 @@ public partial class WeaponUnlockPool : Node
 // JSON deserialization classes
 public class MapsConfig
 {
-    [System.Text.Json.Serialization.JsonPropertyName("maps")]
+    [global::System.Text.Json.Serialization.JsonPropertyName("maps")]
     public List<MapConfig> Maps { get; set; }
 }
 
 public class MapConfig
 {
-    [System.Text.Json.Serialization.JsonPropertyName("id")]
+    [global::System.Text.Json.Serialization.JsonPropertyName("id")]
     public string Id { get; set; }
 
-    [System.Text.Json.Serialization.JsonPropertyName("name")]
+    [global::System.Text.Json.Serialization.JsonPropertyName("name")]
     public string Name { get; set; }
 
-    [System.Text.Json.Serialization.JsonPropertyName("theme")]
+    [global::System.Text.Json.Serialization.JsonPropertyName("theme")]
     public string Theme { get; set; }
 
-    [System.Text.Json.Serialization.JsonPropertyName("difficulty")]
+    [global::System.Text.Json.Serialization.JsonPropertyName("difficulty")]
     public int Difficulty { get; set; }
 
-    [System.Text.Json.Serialization.JsonPropertyName("boss")]
+    [global::System.Text.Json.Serialization.JsonPropertyName("boss")]
     public string Boss { get; set; }
 
-    [System.Text.Json.Serialization.JsonPropertyName("weapon_pool")]
+    [global::System.Text.Json.Serialization.JsonPropertyName("weapon_pool")]
     public List<string> WeaponPool { get; set; }
 
-    [System.Text.Json.Serialization.JsonPropertyName("enemy_types")]
+    [global::System.Text.Json.Serialization.JsonPropertyName("enemy_types")]
     public List<string> EnemyTypes { get; set; }
 }

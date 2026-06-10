@@ -1,6 +1,7 @@
 using Godot;
-using System;
-using System.Collections.Generic;
+using global::System;
+using global::System.Collections.Generic;
+using global::System.Linq;
 using Miao.System;
 
 namespace Miao.Weapon;
@@ -202,7 +203,8 @@ public static class LootTable
         // 金武：分配独有特性
         if (rarity == Rarity.Legendary)
         {
-            data.LegendaryTrait = LegendaryTraitId.Default;
+            var traits = Enum.GetValues<LegendaryTraitId>();
+            data.LegendaryTrait = traits[GD.RandRange(1, traits.Length - 1)]; // skip Default
             data.LegendaryTraitLevel = 1;
         }
 

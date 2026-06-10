@@ -1,4 +1,5 @@
 using Godot;
+using global::System.Collections.Generic;
 using Miao.Armor;
 using Miao.System;
 
@@ -21,6 +22,10 @@ public partial class Weapon : Node2D
     private float _burstDelayTimer;
     private const float BurstDelay = 0.05f;
 
+    // KillClip state
+    private bool _killClipActive = false;
+    private float _killClipTimer = 0;
+
     // Perk 修饰后的实际属性
     public float EffectiveFireRate
     {
@@ -40,7 +45,8 @@ public partial class Weapon : Node2D
             float metaBonus = MetaProgression.Instance?.GetBonusDamage() ?? 1.0f;
             float modBonus = 1f + GetModDamageBonus();
             float lightMult = GetLightLevelMultiplier();
-            return Mathf.RoundToInt(Data.BaseDamage * PerkSystem.GetDamageMultiplier(Data) * codexBonus * metaBonus * modBonus * lightMult);
+            float killClipMult = _killClipActive ? 1.3f : 1.0f;
+            return Mathf.RoundToInt(Data.BaseDamage * PerkSystem.GetDamageMultiplier(Data) * codexBonus * metaBonus * modBonus * lightMult * killClipMult);
         }
     }
     public float EffectiveKnockback => Data.KnockbackForce * PerkSystem.GetKnockbackMultiplier(Data);
@@ -52,6 +58,12 @@ public partial class Weapon : Node2D
         _isCharging = false;
         _chargeTimer = 0;
         _burstRemaining = 0;
+    }
+
+    public void ActivateKillClip()
+    {
+        _killClipActive = true;
+        _killClipTimer = 5.0f; // 5 seconds
     }
 
     public override void _Process(double delta)
@@ -85,6 +97,13 @@ public partial class Weapon : Node2D
                 _isCharging = false;
                 FireFusionBolts();
             }
+        }
+
+        // KillClip timer
+        if (_killClipActive)
+        {
+            _killClipTimer -= dt;
+            if (_killClipTimer <= 0) _killClipActive = false;
         }
     }
 
@@ -340,7 +359,7 @@ public partial class Weapon : Node2D
     /// <summary>
     /// 获取玩家装备的所有模组
     /// </summary>
-    private System.Collections.Generic.List<ModData> GetPlayerMods()
+    private List<ModData> GetPlayerMods()
     {
         // 遍历父节点找到 Player
         var node = GetParent();
@@ -358,11 +377,11 @@ public partial class Weapon : Node2D
     /// <summary>
     /// 从 ArmorManager 获取所有已装备的模组数据
     /// </summary>
-    private System.Collections.Generic.List<ModData> GetEquippedMods(ArmorManager armorManager)
+    private List<ModData> GetEquippedMods(ArmorManager armorManager)
     {
         if (armorManager == null) return null;
 
-        var mods = new System.Collections.Generic.List<ModData>();
+        var mods = new List<ModData>();
         foreach (var slot in armorManager.Slots.Values)
         {
             if (slot.EquippedArmor?.EquippedMods != null)
