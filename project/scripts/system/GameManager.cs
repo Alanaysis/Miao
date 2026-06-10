@@ -137,6 +137,18 @@ public partial class GameManager : Node
     {
         CurrentState = GameState.Settlement;
         GD.Print("所有房间清空！进入结算");
+
+        // Unlock map-specific weapons
+        if (WeaponUnlockPool.Instance != null)
+        {
+            // Get current map ID from RoomGenerator
+            string mapId = _roomGenerator?.CurrentMapId;
+            if (!string.IsNullOrEmpty(mapId))
+            {
+                WeaponUnlockPool.Instance.UnlockWeaponsFromMap(mapId);
+            }
+        }
+
         ShowDecodeUI();
     }
 

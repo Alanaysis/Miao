@@ -31,6 +31,12 @@ public partial class CollectionCodex : Node
         if (DiscoveredWeapons.Add(key))
         {
             GD.Print($"图鉴解锁：{data.DisplayName}");
+
+            // Also unlock in weapon pool if epic/legendary
+            if (data.Rarity >= Rarity.Epic && WeaponUnlockPool.Instance != null)
+            {
+                WeaponUnlockPool.Instance.UnlockWeapon(data.Type, data.Rarity);
+            }
         }
 
         foreach (var perk in data.Perks)

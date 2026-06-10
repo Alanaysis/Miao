@@ -54,6 +54,39 @@ public static class LootTable
         return values[GD.RandRange(0, values.Length - 1)];
     }
 
+    private static WeaponType RollWeaponTypeWithUnlockCheck(Rarity rarity)
+    {
+        // Get unlocked weapon types for this rarity
+        var unlockedTypes = GetUnlockedWeaponTypes(rarity);
+
+        if (unlockedTypes.Count > 0)
+        {
+            // Pick random from unlocked types
+            return unlockedTypes[GD.RandRange(0, unlockedTypes.Count - 1)];
+        }
+
+        // If no weapons unlocked for this rarity, fallback to lower rarity
+        if (rarity > Rarity.Common)
+        {
+            GD.Print($"No weapons unlocked for {rarity}, falling back to {rarity - 1}");
+            return RollWeaponTypeWithUnlockCheck(rarity - 1);
+        }
+
+        // Should never reach here if defaults are loaded properly
+        GD.PushWarning("No unlocked weapons found, using random type");
+        return RollWeaponType();
+    }
+
+    public static List<WeaponType> GetUnlockedWeaponTypes(Rarity rarity)
+    {
+        if (WeaponUnlockPool.Instance != null)
+        {
+            return WeaponUnlockPool.Instance.GetUnlockedTypesForRarity(rarity);
+        }
+        // Fallback: return all types if unlock pool not initialized
+        return Enum.GetValues<WeaponType>().ToList();
+    }
+
     public static WeaponData GenerateWeapon(int roomIndex, bool isBoss)
     {
         var rarity = RollRarity(roomIndex, isBoss);
@@ -67,7 +100,9 @@ public static class LootTable
                 rarity = rarity + 1; // 提升一级稀有度
             }
         }
-        var type = RollWeaponType();
+
+        // Check if weapon type+rarity is unlocked, fallback to lower rarity if not
+        var type = RollWeaponTypeWithUnlockCheck(rarity);
 
         var data = new WeaponData
         {
