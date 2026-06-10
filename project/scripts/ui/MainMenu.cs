@@ -69,8 +69,7 @@ public partial class MainMenu : Control
 		vbox.AddChild(titanBtn);
 
 		var warlockBtn = UIStyle.MakeButton("术士（AOE法师）", new Vector2(280, 42));
-		warlockBtn.Disabled = true;
-		warlockBtn.AddThemeColorOverride("font_color", UIStyle.TextMuted);
+		warlockBtn.Pressed += () => StartWithClass("warlock");
 		vbox.AddChild(warlockBtn);
 
 		// 分隔
