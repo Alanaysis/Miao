@@ -1,0 +1,71 @@
+{
+  "hunter": {
+    "void": [
+      { "id": "void_echo_of_dilation", "name": "扩张", "rarity": "rare", "effects": [{ "type": "stat", "stat": "move_speed", "value": 0.1 }], "description": "移动速度+10%" },
+      { "id": "void_echo_of_persistence", "name": "持久", "rarity": "rare", "effects": [{ "type": "skill_duration", "skill": "skill2", "multiplier": 1.5 }], "description": "标记持续时间+50%" },
+      { "id": "void_echo_of_provision", "name": "供给", "rarity": "epic", "effects": [{ "type": "trigger", "trigger": "kill", "effect": "heal", "value": 10 }], "description": "击杀回复10血量" },
+      { "id": "void_echo_of_domineering", "name": "支配", "rarity": "epic", "effects": [{ "type": "trigger", "trigger": "kill", "effect": "reload_speed", "value": 0.3 }], "description": "击杀后装填速度+30%" },
+      { "id": "void_echo_of_obscurity", "name": "隐匿", "rarity": "legendary", "effects": [{ "type": "trigger", "trigger": "kill", "effect": "invisible", "duration": 2.0 }], "description": "击杀后隐身2秒" }
+    ],
+    "arc": [
+      { "id": "arc_spark_of_brilliance", "name": "光辉", "rarity": "rare", "effects": [{ "type": "stat", "stat": "crit_chance", "value": 0.1 }], "description": "暴击率+10%" },
+      { "id": "arc_spark_of_magnitude", "name": "量级", "rarity": "rare", "effects": [{ "type": "stat", "stat": "aoe_radius", "value": 0.2 }], "description": "AOE范围+20%" },
+      { "id": "arc_spark_of_feedback", "name": "反馈", "rarity": "epic", "effects": [{ "type": "trigger", "trigger": "melee_hit", "effect": "damage_boost", "value": 0.25, "duration": 5.0 }], "description": "近战命中后伤害+25%，5秒" },
+      { "id": "arc_spark_of_volts", "name": "伏特", "rarity": "epic", "effects": [{ "type": "stat", "stat": "reload_speed", "value": 0.2 }], "description": "装填速度+20%" },
+      { "id": "arc_spark_of_discharge", "name": "放电", "rarity": "legendary", "effects": [{ "type": "trigger", "trigger": "super_kill", "effect": "refund_super", "value": 0.2 }], "description": "超能击杀返还20%超能能量" }
+    ],
+    "solar": [
+      { "id": "solar_ember_of_torches", "name": "火炬", "rarity": "rare", "effects": [{ "type": "trigger", "trigger": "melee_hit", "effect": "radiant", "duration": 10.0 }], "description": "近战命中后获得光辉(伤害+15%)10秒" },
+      { "id": "solar_ember_of_beams", "name": "光束", "rarity": "rare", "effects": [{ "type": "stat", "stat": "bullet_speed", "value": 0.2 }], "description": "弹速+20%" },
+      { "id": "solar_ember_of_solace", "name": "慰藉", "rarity": "epic", "effects": [{ "type": "trigger", "trigger": "heal", "effect": "cure", "value": 20 }], "description": "治疗时额外回复20血量" },
+      { "id": "solar_ember_of_char", "name": "焦炭", "rarity": "epic", "effects": [{ "type": "trigger", "trigger": "kill", "effect": "ignite", "radius": 50 }], "description": "击杀时点燃周围敌人" },
+      { "id": "solar_ember_of_explosion", "name": "爆破", "rarity": "legendary", "effects": [{ "type": "stat", "stat": "crit_damage", "value": 0.5 }], "description": "暴击伤害+50%" }
+    ]
+  },
+  "titan": {
+    "solar": [
+      { "id": "solar_sol_invictus", "name": "无敌烈日", "rarity": "legendary", "effects": [{ "type": "trigger", "trigger": "ability_kill", "effect": "sunspot", "duration": 5.0 }], "description": "技能击杀生成烈日区域" },
+      { "id": "solar_roaring_flames", "name": "咆哮烈焰", "rarity": "epic", "effects": [{ "type": "stat", "stat": "ability_damage", "value": 0.2, "stacks": 3 }], "description": "技能伤害+20%，最多叠3层" },
+      { "id": "solar_torch_of_wisdom", "name": "智慧火炬", "rarity": "rare", "effects": [{ "type": "stat", "stat": "grenade_cooldown", "value": -0.2 }], "description": "手雷CD-20%" },
+      { "id": "solar_searing_strike", "name": "灼烧打击", "rarity": "epic", "effects": [{ "type": "stat", "stat": "melee_damage", "value": 0.3 }], "description": "近战伤害+30%" },
+      { "id": "solar_consecration", "name": "献祭", "rarity": "legendary", "effects": [{ "type": "trigger", "trigger": "slide_melee", "effect": "fire_wave" }], "description": "滑铲近战释放火焰波" }
+    ],
+    "arc": [
+      { "id": "arc_knockout", "name": "击倒", "rarity": "epic", "effects": [{ "type": "trigger", "trigger": "break_shield", "effect": "melee_damage_boost", "value": 0.3 }], "description": "破盾后近战伤害+30%" },
+      { "id": "arc_juggernaut", "name": "主宰", "rarity": "epic", "effects": [{ "type": "trigger", "trigger": "sprint", "effect": "shield", "value": 50 }], "description": "冲刺时获得50护盾" },
+      { "id": "arc_touch_of_thunder", "name": "雷霆之触", "rarity": "rare", "effects": [{ "type": "stat", "stat": "grenade_damage", "value": 0.25 }], "description": "手雷伤害+25%" },
+      { "id": "arc_amplified", "name": "增幅", "rarity": "rare", "effects": [{ "type": "stat", "stat": "move_speed", "value": 0.15 }], "description": "增幅状态下移速+15%" },
+      { "id": "arc_trample", "name": "践踏", "rarity": "legendary", "effects": [{ "type": "trigger", "trigger": "super_kill", "effect": "extend_super", "value": 2.0 }], "description": "超能击杀延长超能2秒" }
+    ],
+    "void": [
+      { "id": "void_controlled_demolition", "name": "受控爆破", "rarity": "epic", "effects": [{ "type": "trigger", "trigger": "void_ability_hit", "effect": "volatile", "duration": 5.0 }], "description": "虚空技能命中使敌人不稳定5秒" },
+      { "id": "void_bastion", "name": "堡垒", "rarity": "epic", "effects": [{ "type": "trigger", "trigger": "barricade", "effect": "overshield", "value": 40 }], "description": "放置屏障时获得40超量护盾" },
+      { "id": "void_echo_of_undermining", "name": "破坏", "rarity": "rare", "effects": [{ "type": "stat", "stat": "weaken_duration", "value": 0.2 }], "description": "虚弱持续时间+20%" },
+      { "id": "void_echo_of_starvation", "name": "饥饿", "rarity": "epic", "effects": [{ "type": "trigger", "trigger": "pick_up_orb", "effect": "devour", "duration": 10.0 }], "description": "拾取光球获得吞噬(击杀回血)10秒" },
+      { "id": "void_echo_of_persistence", "name": "持久", "rarity": "legendary", "effects": [{ "type": "stat", "stat": "void_buff_duration", "value": 0.5 }], "description": "虚空增益持续时间+50%" }
+    ]
+  },
+  "warlock": {
+    "arc": [
+      { "id": "arc_arc_soul", "name": "电弧灵魂", "rarity": "epic", "effects": [{ "type": "trigger", "trigger": "rift_cast", "effect": "arc_soul_turret" }], "description": "放置裂隙时生成电弧灵魂炮塔" },
+      { "id": "arc_lightning_surge", "name": "闪电涌动", "rarity": "epic", "effects": [{ "type": "trigger", "trigger": "melee_kill", "effect": "chain_lightning", "targets": 3 }], "description": "近战击杀连锁闪电3个目标" },
+      { "id": "arc_electrostatic_mind", "name": "静电心智", "rarity": "rare", "effects": [{ "type": "stat", "stat": "ability_cooldown", "value": -0.15 }], "description": "技能CD-15%" },
+      { "id": "arc_flux", "name": "通量", "rarity": "rare", "effects": [{ "type": "stat", "stat": "grenade_duration", "value": 0.5 }], "description": "手雷持续时间+50%" },
+      { "id": "arc_ionic_traces", "name": "离子轨迹", "rarity": "legendary", "effects": [{ "type": "trigger", "trigger": "ability_kill", "effect": "ionic_trace", "energy": 0.15 }], "description": "技能击杀生成离子轨迹，拾取回复15%技能能量" }
+    ],
+    "void": [
+      { "id": "void_chaos_accelerant", "name": "混沌加速", "rarity": "epic", "effects": [{ "type": "stat", "stat": "grenade_damage", "value": 0.25 }], "description": "手雷伤害+25%" },
+      { "id": "void_feed_the_void", "name": "虚空喂养", "rarity": "epic", "effects": [{ "type": "trigger", "trigger": "ability_kill", "effect": "devour_refresh" }], "description": "技能击杀刷新吞噬" },
+      { "id": "void_child_of_the_old_gods", "name": "旧神之子", "rarity": "legendary", "effects": [{ "type": "trigger", "trigger": "rift_cast", "effect": "void_soul" }], "description": "放置裂隙时生成虚空灵魂" },
+      { "id": "void_echo_of_instability", "name": "不稳定", "rarity": "rare", "effects": [{ "type": "trigger", "trigger": "grenade_kill", "effect": "volatile_rounds", "duration": 10.0 }], "description": "手雷击杀获得不稳定弹药10秒" },
+      { "id": "void_echo_of_remainging", "name": "残留", "rarity": "rare", "effects": [{ "type": "stat", "stat": "void_ability_range", "value": 0.2 }], "description": "虚空技能范围+20%" }
+    ],
+    "solar": [
+      { "id": "solar_heat_rises", "name": "热浪上升", "rarity": "epic", "effects": [{ "type": "trigger", "trigger": "airborne_kill", "effect": "grenade_energy", "value": 0.2 }], "description": "空中击杀回复20%手雷能量" },
+      { "id": "solar_touch_of_flame", "name": "烈焰之触", "rarity": "epic", "effects": [{ "type": "stat", "stat": "grenade_damage", "value": 0.3 }], "description": "手雷伤害+30%" },
+      { "id": "solar_icarus_dash", "name": "伊卡洛斯冲刺", "rarity": "rare", "effects": [{ "type": "ability", "ability": "air_dash" }], "description": "空中冲刺" },
+      { "id": "solar_benevolent_blessing", "name": "仁慈祝福", "rarity": "epic", "effects": [{ "type": "trigger", "trigger": "heal_ally", "effect": "ability_regan", "value": 0.2, "duration": 10.0 }], "description": "治疗队友时技能回复+20%，10秒" },
+      { "id": "solar_phoenix_dive", "name": "凤凰俯冲", "rarity": "legendary", "effects": [{ "type": "ability", "ability": "dive_heal" }], "description": "俯冲治疗自己和生成裂隙" }
+    ]
+  }
+}

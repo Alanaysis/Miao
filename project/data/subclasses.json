@@ -1,0 +1,98 @@
+{
+  "hunter": {
+    "void": {
+      "name": "虚空猎人",
+      "element": "void",
+      "color": "#8b5cf6",
+      "skills": {
+        "skill1": { "name": "闪现", "cooldown": 8, "description": "短距离瞬移，无敌帧0.3秒" },
+        "skill2": { "name": "标记", "cooldown": 15, "description": "标记敌人，受伤害+20%，持续10秒" }
+      },
+      "super": { "name": "虚空箭雨", "description": "扇形射出20支穿透箭矢" }
+    },
+    "arc": {
+      "name": "电弧猎人",
+      "element": "arc",
+      "color": "#3b82f6",
+      "skills": {
+        "skill1": { "name": "翻滚", "cooldown": 8, "description": "快速位移+短暂无敌" },
+        "skill2": { "name": "雷击", "cooldown": 15, "description": "连锁闪电伤害" }
+      },
+      "super": { "name": "电弧风暴", "description": "周围持续电弧伤害" }
+    },
+    "solar": {
+      "name": "烈日猎人",
+      "element": "solar",
+      "color": "#f97316",
+      "skills": {
+        "skill1": { "name": "火焰冲刺", "cooldown": 8, "description": "冲刺路径留下火焰" },
+        "skill2": { "name": "燃烧弹", "cooldown": 15, "description": "投掷造成持续灼烧" }
+      },
+      "super": { "name": "黄金枪", "description": "3发高伤害精准射击" }
+    }
+  },
+  "titan": {
+    "solar": {
+      "name": "烈日泰坦",
+      "element": "solar",
+      "color": "#f97316",
+      "skills": {
+        "skill1": { "name": "冲锋", "cooldown": 8, "description": "撞到敌人眩晕" },
+        "skill2": { "name": "护盾", "cooldown": 15, "description": "生成护盾吸收伤害" }
+      },
+      "super": { "name": "烈日锤击", "description": "跳起砸地AOE+击退" }
+    },
+    "arc": {
+      "name": "电弧泰坦",
+      "element": "arc",
+      "color": "#3b82f6",
+      "skills": {
+        "skill1": { "name": "雷霆冲锋", "cooldown": 8, "description": "高速冲刺+伤害" },
+        "skill2": { "name": "电弧屏障", "cooldown": 15, "description": "电弧护盾" }
+      },
+      "super": { "name": "雷神之怒", "description": "地面电弧波" }
+    },
+    "void": {
+      "name": "虚空泰坦",
+      "element": "void",
+      "color": "#8b5cf6",
+      "skills": {
+        "skill1": { "name": "虚空之拳", "cooldown": 8, "description": "近战AOE+减速" },
+        "skill2": { "name": "虚空屏障", "cooldown": 15, "description": "吸收+反弹" }
+      },
+      "super": { "name": "虚空守护者", "description": "团队护盾" }
+    }
+  },
+  "warlock": {
+    "arc": {
+      "name": "电弧术士",
+      "element": "arc",
+      "color": "#3b82f6",
+      "skills": {
+        "skill1": { "name": "治疗阵", "cooldown": 15, "description": "持续回血区域" },
+        "skill2": { "name": "增幅", "cooldown": 12, "description": "射速和伤害+50%" }
+      },
+      "super": { "name": "电弧新星", "description": "周围持续电弧" }
+    },
+    "void": {
+      "name": "虚空术士",
+      "element": "void",
+      "color": "#8b5cf6",
+      "skills": {
+        "skill1": { "name": "虚空手雷", "cooldown": 12, "description": "追踪+爆炸" },
+        "skill2": { "name": "虚空步", "cooldown": 10, "description": "短距传送+无敌" }
+      },
+      "super": { "name": "虚空坍缩", "description": "黑洞吸引+伤害" }
+    },
+    "solar": {
+      "name": "烈日术士",
+      "element": "solar",
+      "color": "#f97316",
+      "skills": {
+        "skill1": { "name": "火焰之触", "cooldown": 10, "description": "近战点燃" },
+        "skill2": { "name": "热浪", "cooldown": 15, "description": "向前推进火焰波" }
+      },
+      "super": { "name": "烈日之剑", "description": "召唤火焰剑攻击" }
+    }
+  }
+}

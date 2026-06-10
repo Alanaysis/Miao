@@ -1,0 +1,28 @@
+{
+  "weapon_types": {
+    "auto_rifle": { "name": "自动步枪", "base_damage": 8, "fire_rate": 6.0, "bullet_speed": 500, "bullet_count": 1, "spread_angle": 0, "knockback": 50 },
+    "pulse_rifle": { "name": "战斗步枪", "base_damage": 12, "fire_rate": 2.0, "bullet_speed": 500, "bullet_count": 3, "spread_angle": 0.1, "knockback": 40 },
+    "scout_rifle": { "name": "斥候步枪", "base_damage": 20, "fire_rate": 2.5, "bullet_speed": 600, "bullet_count": 1, "spread_angle": 0, "knockback": 60 },
+    "hand_cannon": { "name": "手炮", "base_damage": 25, "fire_rate": 2.5, "bullet_speed": 600, "bullet_count": 1, "spread_angle": 0, "knockback": 100 },
+    "smg": { "name": "冲锋枪", "base_damage": 5, "fire_rate": 10.0, "bullet_speed": 450, "bullet_count": 1, "spread_angle": 0.15, "knockback": 20 },
+    "shotgun": { "name": "霰弹枪", "base_damage": 15, "fire_rate": 1.5, "bullet_speed": 400, "bullet_count": 6, "spread_angle": 0.52, "knockback": 150 },
+    "sniper_rifle": { "name": "狙击步枪", "base_damage": 50, "fire_rate": 0.8, "bullet_speed": 800, "bullet_count": 1, "spread_angle": 0, "knockback": 80 },
+    "fusion_rifle": { "name": "融合步枪", "base_damage": 30, "fire_rate": 1.0, "bullet_speed": 500, "bullet_count": 5, "spread_angle": 0.2, "knockback": 60, "charge_time": 0.8 },
+    "rocket_launcher": { "name": "火箭筒", "base_damage": 80, "fire_rate": 0.5, "bullet_speed": 300, "bullet_count": 1, "spread_angle": 0, "knockback": 200, "aoe_radius": 80 },
+    "sword": { "name": "刀剑", "base_damage": 20, "fire_rate": 4.0, "bullet_speed": 0, "bullet_count": 1, "spread_angle": 0, "knockback": 50, "melee_range": 60 }
+  },
+  "rarity_multipliers": {
+    "common": 1.0,
+    "uncommon": 1.1,
+    "rare": 1.25,
+    "epic": 1.4,
+    "legendary": 1.6
+  },
+  "perk_slots": {
+    "common": 0,
+    "uncommon": 1,
+    "rare": 2,
+    "epic": 2,
+    "legendary": 2
+  }
+}
