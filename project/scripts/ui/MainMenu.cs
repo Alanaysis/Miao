@@ -8,6 +8,7 @@ public partial class MainMenu : Control
 {
 	private Control _currentOverlay;
 	private EquipmentScreen _equipmentScreen;
+	private MetaShopUI _metaShopUI;
 
 	public override void _Ready()
 	{
@@ -84,8 +85,8 @@ public partial class MainMenu : Control
 		vbox.AddChild(battleBtn);
 
 		// 功能按钮
-		var metaBtn = UIStyle.MakeButton("⚙  Meta 升级", new Vector2(280, 38));
-		metaBtn.Pressed += () => ShowMetaUpgradeUI();
+		var metaBtn = UIStyle.MakeButton("🏪  Meta 商店", new Vector2(280, 38));
+		metaBtn.Pressed += () => _metaShopUI.Open();
 		vbox.AddChild(metaBtn);
 
 		var codexBtn = UIStyle.MakeButton("📖  收藏图鉴", new Vector2(280, 38));
@@ -104,6 +105,10 @@ public partial class MainMenu : Control
 		// Equipment screen (hidden by default)
 		_equipmentScreen = new EquipmentScreen();
 		AddChild(_equipmentScreen);
+
+		// Meta shop UI (hidden by default)
+		_metaShopUI = new MetaShopUI();
+		AddChild(_metaShopUI);
 	}
 
 	private void StartWithClass(string classId)
@@ -125,110 +130,6 @@ public partial class MainMenu : Control
 			_currentOverlay.QueueFree();
 			_currentOverlay = null;
 		}
-	}
-
-	// ==================== Meta 升级 ====================
-	private void ShowMetaUpgradeUI()
-	{
-		CloseOverlay();
-		var meta = MetaProgression.Instance;
-		if (meta == null) return;
-
-		var root = new Control();
-		root.Size = new Vector2(1280, 720);
-		_currentOverlay = root;
-		AddChild(root);
-
-		root.AddChild(UIStyle.Overlay(0.92f));
-
-		// 标题
-		var title = UIStyle.MakeLabel("⚙ Meta 升级", 28, UIStyle.AccentGold, true);
-		title.Position = new Vector2(80, 30);
-		root.AddChild(title);
-
-		// 微光余额
-		var glimmerLabel = UIStyle.MakeLabel($"微光: {meta.Glimmer}", 18, UIStyle.AccentGold);
-		glimmerLabel.Position = new Vector2(80, 70);
-		root.AddChild(glimmerLabel);
-
-		// 升级列表
-		var upgrades = new (string id, string name, string desc, int current, int max)[]
-		{
-			("base_health", "基础生命", "每级 +10 最大生命", meta.BaseHealthLevel, 10),
-			("base_damage", "基础伤害", "每级 +5% 伤害", meta.BaseDamageLevel, 10),
-			("move_speed", "移动速度", "每级 +3% 移速", meta.MoveSpeedLevel, 10),
-			("drop_rate", "掉率提升", "每级 +5% 掉率", meta.DropRateLevel, 10),
-		};
-
-		int[] costs = { 100, 200, 400, 800, 1600, 3200, 6400, 12800, 25600, 51200 };
-
-		float startY = 120;
-		for (int i = 0; i < upgrades.Length; i++)
-		{
-			float y = startY + i * 100;
-			var u = upgrades[i];
-
-			// 面板
-			var panel = UIStyle.Panel(new Vector2(1120, 80));
-			panel.Position = new Vector2(80, y);
-			root.AddChild(panel);
-
-			// 名称
-			var nameLabel = UIStyle.MakeLabel(u.name, 18, UIStyle.TextPrimary, true);
-			nameLabel.Position = new Vector2(12, 6);
-			panel.AddChild(nameLabel);
-
-			// 描述
-			var descLabel = UIStyle.MakeLabel(u.desc, 13, UIStyle.TextMuted);
-			descLabel.Position = new Vector2(12, 32);
-			panel.AddChild(descLabel);
-
-			// 等级进度条
-			var levelBar = UIStyle.Bar(new Vector2(12, 54), new Vector2(200, 10), UIStyle.AccentBlue);
-			levelBar.MaxValue = u.max;
-			levelBar.Value = u.current;
-			panel.AddChild(levelBar);
-
-			var levelText = UIStyle.MakeLabel($"Lv.{u.current}/{u.max}", 13, UIStyle.TextSecondary);
-			levelText.Position = new Vector2(220, 50);
-			panel.AddChild(levelText);
-
-			// 费用和按钮
-			bool canAfford = u.current < u.max;
-			if (canAfford)
-			{
-				int cost = u.current < costs.Length ? costs[u.current] : 99999;
-				var costLabel = UIStyle.MakeLabel($"费用: {cost}", 14, UIStyle.AccentGold);
-				costLabel.Position = new Vector2(800, 12);
-				panel.AddChild(costLabel);
-
-				var btn = UIStyle.MakeButton("升级", new Vector2(100, 36));
-				btn.Position = new Vector2(960, 16);
-				btn.Disabled = meta.Glimmer < cost;
-				int idx = i;
-				btn.Pressed += () =>
-				{
-					if (MetaProgression.Instance.TryUpgrade(upgrades[idx].id, upgrades[idx].max))
-					{
-						CloseOverlay();
-						ShowMetaUpgradeUI();
-					}
-				};
-				panel.AddChild(btn);
-			}
-			else
-			{
-				var maxLabel = UIStyle.MakeLabel("MAX", 16, UIStyle.AccentGold, true);
-				maxLabel.Position = new Vector2(960, 12);
-				panel.AddChild(maxLabel);
-			}
-		}
-
-		// 返回
-		var backBtn = UIStyle.MakeButton("返回", new Vector2(120, 36));
-		backBtn.Position = new Vector2(80, startY + upgrades.Length * 100 + 20);
-		backBtn.Pressed += () => CloseOverlay();
-		root.AddChild(backBtn);
 	}
 
 	// ==================== 收藏图鉴 ====================

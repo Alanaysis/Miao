@@ -1,0 +1,44 @@
+{
+  "hunter": {
+    "void": [
+      { "id": "aspect_trappers_ambush", "name": "陷阱伏击", "description": "标记技能现在会致盲周围敌人", "fragments_slots": 2 },
+      { "id": "aspect_vanishing_step", "name": "消隐步", "description": "闪现后获得2秒隐身", "fragments_slots": 2 }
+    ],
+    "arc": [
+      { "id": "aspect_flow_state", "name": "流动状态", "description": "翻滚后获得增幅状态", "fragments_slots": 2 },
+      { "id": "aspect_combination_blow", "name": "组合打击", "description": "近战击杀延长雷击范围", "fragments_slots": 2 }
+    ],
+    "solar": [
+      { "id": "aspect_on_your_mark", "name": "瞄准就绪", "description": "精准击杀提升射速", "fragments_slots": 2 },
+      { "id": "aspect_knives_trick", "name": "飞刀戏法", "description": "燃烧弹现在投掷3枚", "fragments_slots": 2 }
+    ]
+  },
+  "titan": {
+    "solar": [
+      { "id": "aspect_sol_invictus", "name": "无敌烈日", "description": "技能击杀生成烈日区域", "fragments_slots": 2 },
+      { "id": "aspect_roaring_flames", "name": "咆哮烈焰", "description": "技能伤害可叠加", "fragments_slots": 2 }
+    ],
+    "arc": [
+      { "id": "aspect_knockout", "name": "击倒", "description": "破盾后近战增强", "fragments_slots": 2 },
+      { "id": "aspect_juggernaut", "name": "主宰", "description": "冲刺时获得护盾", "fragments_slots": 2 }
+    ],
+    "void": [
+      { "id": "aspect_controlled_demolition", "name": "受控爆破", "description": "虚空技能使敌人不稳定", "fragments_slots": 2 },
+      { "id": "aspect_bastion", "name": "堡垒", "description": "屏障提供超量护盾", "fragments_slots": 2 }
+    ]
+  },
+  "warlock": {
+    "arc": [
+      { "id": "aspect_arc_soul", "name": "电弧灵魂", "description": "裂隙生成电弧炮塔", "fragments_slots": 2 },
+      { "id": "aspect_lightning_surge", "name": "闪电涌动", "description": "近战击杀连锁闪电", "fragments_slots": 2 }
+    ],
+    "void": [
+      { "id": "aspect_chaos_accelerant", "name": "混沌加速", "description": "手雷伤害增强", "fragments_slots": 2 },
+      { "id": "aspect_feed_the_void", "name": "虚空喂养", "description": "技能击杀刷新吞噬", "fragments_slots": 2 }
+    ],
+    "solar": [
+      { "id": "aspect_heat_rises", "name": "热浪上升", "description": "空中击杀回手雷能量", "fragments_slots": 2 },
+      { "id": "aspect_touch_of_flame", "name": "烈焰之触", "description": "手雷伤害增强", "fragments_slots": 2 }
+    ]
+  }
+}

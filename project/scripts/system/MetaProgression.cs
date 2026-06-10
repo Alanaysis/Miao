@@ -1,4 +1,5 @@
 using Godot;
+using System.Collections.Generic;
 
 namespace Miao.System;
 
@@ -8,13 +9,11 @@ public partial class MetaProgression : Node
 
     // 持久化数据
     public int Glimmer { get; private set; }
-    public int BaseHealthLevel { get; private set; }
-    public int BaseDamageLevel { get; private set; }
-    public int MoveSpeedLevel { get; private set; }
-    public int DropRateLevel { get; private set; }
-    public int StartWeaponLevel { get; private set; }
 
-    private readonly int[] _upgradeCosts = { 100, 200, 400, 800, 1600, 3200, 6400, 12800, 25600, 51200 };
+    // Shop unlock tracking
+    private HashSet<string> _unlockedSubclasses = new();
+    private HashSet<string> _unlockedMods = new();
+    private int _lightModuleLevel;
 
     public override void _Ready()
     {
@@ -22,46 +21,61 @@ public partial class MetaProgression : Node
         Load();
     }
 
-    public int GetBonusHealth() => BaseHealthLevel * 10;
-    public float GetBonusDamage() => 1.0f + BaseDamageLevel * 0.05f;
-    public float GetBonusMoveSpeed() => 1.0f + MoveSpeedLevel * 0.03f;
-    public float GetBonusDropRate() => 1.0f + DropRateLevel * 0.05f;
+    // ==================== Subclass ====================
 
-    public bool CanAffordUpgrade(int currentLevel, int maxLevel)
+    public bool IsSubclassUnlocked(string className, string element)
     {
-        if (currentLevel >= maxLevel) return false;
-        return Glimmer >= _upgradeCosts[currentLevel];
+        return _unlockedSubclasses.Contains($"{className}_{element}");
     }
 
-    public bool TryUpgrade(string upgradeId, int maxLevel)
+    public bool TryUnlockSubclass(string className, string element, int cost)
     {
-        int currentLevel = upgradeId switch
-        {
-            "base_health" => BaseHealthLevel,
-            "base_damage" => BaseDamageLevel,
-            "move_speed" => MoveSpeedLevel,
-            "drop_rate" => DropRateLevel,
-            "start_weapon" => StartWeaponLevel,
-            _ => 0
-        };
+        var key = $"{className}_{element}";
+        if (_unlockedSubclasses.Contains(key)) return false;
+        if (Glimmer < cost) return false;
 
-        if (!CanAffordUpgrade(currentLevel, maxLevel)) return false;
-
-        int cost = _upgradeCosts[currentLevel];
         Glimmer -= cost;
-
-        switch (upgradeId)
-        {
-            case "base_health": BaseHealthLevel++; break;
-            case "base_damage": BaseDamageLevel++; break;
-            case "move_speed": MoveSpeedLevel++; break;
-            case "drop_rate": DropRateLevel++; break;
-            case "start_weapon": StartWeaponLevel++; break;
-        }
-
+        _unlockedSubclasses.Add(key);
         Save();
         return true;
     }
+
+    // ==================== Mod ====================
+
+    public bool IsModUnlocked(string modId)
+    {
+        return _unlockedMods.Contains(modId);
+    }
+
+    public bool TryUnlockMod(string modId, int cost)
+    {
+        if (_unlockedMods.Contains(modId)) return false;
+        if (Glimmer < cost) return false;
+
+        Glimmer -= cost;
+        _unlockedMods.Add(modId);
+        Save();
+        return true;
+    }
+
+    // ==================== Light Module ====================
+
+    public int GetLightModuleLevel()
+    {
+        return _lightModuleLevel;
+    }
+
+    public bool TryBuyLightModule(int cost)
+    {
+        if (Glimmer < cost) return false;
+
+        Glimmer -= cost;
+        _lightModuleLevel++;
+        Save();
+        return true;
+    }
+
+    // ==================== Glimmer ====================
 
     public void AddGlimmer(int amount)
     {
@@ -69,15 +83,24 @@ public partial class MetaProgression : Node
         Save();
     }
 
+    // ==================== Save / Load ====================
+
     public void Save()
     {
         var config = new ConfigFile();
         config.SetValue("meta", "glimmer", Glimmer);
-        config.SetValue("meta", "base_health_level", BaseHealthLevel);
-        config.SetValue("meta", "base_damage_level", BaseDamageLevel);
-        config.SetValue("meta", "move_speed_level", MoveSpeedLevel);
-        config.SetValue("meta", "drop_rate_level", DropRateLevel);
-        config.SetValue("meta", "start_weapon_level", StartWeaponLevel);
+        config.SetValue("meta", "light_module_level", _lightModuleLevel);
+
+        // Save unlocked subclasses
+        var subclassArr = new string[_unlockedSubclasses.Count];
+        _unlockedSubclasses.CopyTo(subclassArr);
+        config.SetValue("meta", "unlocked_subclasses", string.Join(",", subclassArr));
+
+        // Save unlocked mods
+        var modArr = new string[_unlockedMods.Count];
+        _unlockedMods.CopyTo(modArr);
+        config.SetValue("meta", "unlocked_mods", string.Join(",", modArr));
+
         config.Save("user://meta_progress.cfg");
     }
 
@@ -87,10 +110,30 @@ public partial class MetaProgression : Node
         if (config.Load("user://meta_progress.cfg") != Error.Ok) return;
 
         Glimmer = (int)config.GetValue("meta", "glimmer", 0);
-        BaseHealthLevel = (int)config.GetValue("meta", "base_health_level", 0);
-        BaseDamageLevel = (int)config.GetValue("meta", "base_damage_level", 0);
-        MoveSpeedLevel = (int)config.GetValue("meta", "move_speed_level", 0);
-        DropRateLevel = (int)config.GetValue("meta", "drop_rate_level", 0);
-        StartWeaponLevel = (int)config.GetValue("meta", "start_weapon_level", 0);
+        _lightModuleLevel = (int)config.GetValue("meta", "light_module_level", 0);
+
+        // Load unlocked subclasses
+        var subclassStr = (string)config.GetValue("meta", "unlocked_subclasses", "");
+        _unlockedSubclasses.Clear();
+        if (!string.IsNullOrEmpty(subclassStr))
+        {
+            foreach (var key in subclassStr.Split(','))
+            {
+                if (!string.IsNullOrWhiteSpace(key))
+                    _unlockedSubclasses.Add(key.Trim());
+            }
+        }
+
+        // Load unlocked mods
+        var modStr = (string)config.GetValue("meta", "unlocked_mods", "");
+        _unlockedMods.Clear();
+        if (!string.IsNullOrEmpty(modStr))
+        {
+            foreach (var key in modStr.Split(','))
+            {
+                if (!string.IsNullOrWhiteSpace(key))
+                    _unlockedMods.Add(key.Trim());
+            }
+        }
     }
 }
