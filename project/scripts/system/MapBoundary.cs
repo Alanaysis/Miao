@@ -23,6 +23,18 @@ public partial class MapBoundary : Node2D
         new Color(0.15f, 0.1f, 0.28f, 0.7f),  // 深渊
     };
 
+    // 地图主题边框颜色
+    private static readonly (string theme, Color color)[] MapWallColors = new[]
+    {
+        ("hive",      new Color(0.2f, 0.35f, 0.1f, 0.7f)),
+        ("wasteland",  new Color(0.35f, 0.3f, 0.2f, 0.7f)),
+        ("cave",       new Color(0.2f, 0.2f, 0.3f, 0.7f)),
+        ("void",       new Color(0.25f, 0.12f, 0.4f, 0.7f)),
+        ("solar",      new Color(0.5f, 0.2f, 0.08f, 0.7f)),
+    };
+
+    private string _currentMapTheme = "hive";
+
     public override void _Ready()
     {
         _wallVisuals = new ColorRect[4];
@@ -37,6 +49,28 @@ public partial class MapBoundary : Node2D
         {
             if (v != null) v.Color = color;
         }
+    }
+
+    /// <summary>
+    /// 设置地图主题边框颜色
+    /// </summary>
+    public void SetMapTheme(string themeId)
+    {
+        _currentMapTheme = themeId ?? "hive";
+        var color = GetMapWallColor();
+        foreach (var v in _wallVisuals)
+        {
+            if (v != null) v.Color = color;
+        }
+    }
+
+    private Color GetMapWallColor()
+    {
+        foreach (var (theme, color) in MapWallColors)
+        {
+            if (theme == _currentMapTheme) return color;
+        }
+        return MapWallColors[0].color; // Default hive
     }
 
     private void CreateBoundaries()

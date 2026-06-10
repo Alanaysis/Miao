@@ -13,6 +13,9 @@ public partial class GameManager : Node
     public enum GameState { MainMenu, Playing, RoomTransition, Boss, Settlement, GameOver }
     public GameState CurrentState { get; private set; }
 
+    /// <summary>当前选择的地图 ID（由 EquipmentScreen 设置）</summary>
+    public string SelectedMapId { get; set; } = "nest";
+
     private Player.Player _player;
     private RoomGenerator _roomGenerator;
     private float _gameTime;
@@ -65,6 +68,7 @@ public partial class GameManager : Node
     public void RegisterRoomGenerator(RoomGenerator rg)
     {
         _roomGenerator = rg;
+        rg.CurrentMapId = SelectedMapId;
         rg.RoomCleared += OnRoomCleared;
         rg.AllRoomsCleared += OnAllRoomsCleared;
         rg.StartRun(_player);
@@ -141,7 +145,6 @@ public partial class GameManager : Node
         // Unlock map-specific weapons
         if (WeaponUnlockPool.Instance != null)
         {
-            // Get current map ID from RoomGenerator
             string mapId = _roomGenerator?.CurrentMapId;
             if (!string.IsNullOrEmpty(mapId))
             {
@@ -149,84 +152,63 @@ public partial class GameManager : Node
             }
         }
 
-        ShowDecodeUI();
-    }
+        // 胜利: 添加奖励紫色/金色记忆水晶
+        AddBonusEngrams();
 
-    private void ShowDecodeUI()
-    {
-        if (_engramDecoder.CollectedEngrams.Count == 0)
-        {
-            GD.Print("没有收集到记忆水晶，跳过解码");
-            return;
-        }
-
-        GetTree().Paused = true;
-
-        var decodeUI = new DecodeUI();
-        decodeUI.SetDecoder(_engramDecoder);
-        GetTree().CurrentScene.AddChild(decodeUI);
-        decodeUI.Show();
+        SettleRun(true);
     }
 
     private void OnPlayerDied()
     {
         CurrentState = GameState.GameOver;
-        GetTree().Paused = true;
-        ShowGameOverUI();
+        SettleRun(false);
     }
 
-    private void ShowGameOverUI()
+    /// <summary>
+    /// 统一结算流程 — 胜利和失败共用
+    /// 转移微光到 MetaProgression，显示结算 UI
+    /// </summary>
+    private void SettleRun(bool isVictory)
     {
-        var layer = new CanvasLayer();
-        layer.Layer = 20;
-        layer.ProcessMode = Node.ProcessModeEnum.Always;
-        GetTree().CurrentScene.AddChild(layer);
+        GetTree().Paused = true;
 
-        layer.AddChild(UIStyle.Overlay(0.85f));
+        // 转移微光到持久化存储
+        if (_glimmer > 0)
+        {
+            MetaProgression.Instance?.AddGlimmer(_glimmer);
+            GD.Print($"结算微光: {_glimmer} 已转入 MetaProgression");
+        }
 
-        // 中心面板
-        float pw = 480, ph = 300;
-        float px = (1280 - pw) / 2, py = (720 - ph) / 2;
-        var panel = UIStyle.Panel(new Vector2(pw, ph), UIStyle.AccentRed);
-        panel.Position = new Vector2(px, py);
-        layer.AddChild(panel);
+        // 获取通关武器名称
+        string weaponName = "无";
+        if (_player?.Equipment?.CurrentWeapon?.Data != null)
+        {
+            weaponName = _player.Equipment.CurrentWeapon.Data.DisplayName;
+        }
 
-        // 标题
-        var title = UIStyle.MakeLabel("任务失败", 32, UIStyle.AccentRed, true);
-        title.Position = new Vector2((pw - 120) / 2, 20);
-        panel.AddChild(title);
+        // 创建并显示结算 UI
+        var settlementUI = new SettlementUI();
+        GetTree().CurrentScene.AddChild(settlementUI);
+        settlementUI.SetData(isVictory, _killCount, _gameTime, _glimmer,
+            _engramDecoder, weaponName);
+    }
 
-        // 统计
-        int minutes = (int)(_gameTime / 60);
-        int seconds = (int)(_gameTime % 60);
-        var stats = UIStyle.MakeLabel($"击杀: {_killCount}  |  用时: {minutes}:{seconds:D2}  |  房间: {(_roomGenerator?.CurrentRoom ?? 0) + 1}", 16, UIStyle.TextSecondary);
-        stats.Position = new Vector2(60, 80);
-        panel.AddChild(stats);
-
-        // 微光
-        var glimmer = UIStyle.MakeLabel($"获得微光: {_glimmer}", 20, UIStyle.AccentGold, true);
-        glimmer.Position = new Vector2((pw - 140) / 2, 120);
-        panel.AddChild(glimmer);
-
-        // 分隔线
-        panel.AddChild(UIStyle.Separator(new Vector2(40, 170), pw - 80));
-
-        // 按钮（居中）
-        float btnW = 150, btnGap = 30, btnY = 190;
-        float btnStartX = (pw - btnW * 2 - btnGap) / 2;
-
-        var restartBtn = UIStyle.MakeButton("再来一局", new Vector2(btnW, 42));
-        restartBtn.Position = new Vector2(btnStartX, btnY);
-        restartBtn.ProcessMode = Node.ProcessModeEnum.Always;
-        panel.AddChild(restartBtn);
-
-        var menuBtn = UIStyle.MakeButton("返回大厅", new Vector2(btnW, 42));
-        menuBtn.Position = new Vector2(btnStartX + btnW + btnGap, btnY);
-        menuBtn.ProcessMode = Node.ProcessModeEnum.Always;
-        panel.AddChild(menuBtn);
-
-        restartBtn.Pressed += () => { layer.QueueFree(); StartGame(); };
-        menuBtn.Pressed += () => { layer.QueueFree(); ReturnToMainMenu(); };
+    /// <summary>
+    /// 胜利时添加奖励记忆水晶（紫色/金色）
+    /// </summary>
+    private void AddBonusEngrams()
+    {
+        // 1-2 个高稀有度奖励水晶
+        int bonusCount = GD.RandRange(1, 2);
+        for (int i = 0; i < bonusCount; i++)
+        {
+            var rarity = GD.Randf() < 0.3f ? Rarity.Epic : Rarity.Rare;
+            var weaponData = LootTable.GenerateWeapon(
+                _roomGenerator?.CurrentRoom ?? 4, true);
+            var engram = new EngramData(weaponData, rarity);
+            _engramDecoder.CollectedEngrams.Add(engram);
+        }
+        GD.Print($"胜利奖励: 添加 {bonusCount} 个高稀有度记忆水晶");
     }
 
     public void AddGlimmer(int amount)

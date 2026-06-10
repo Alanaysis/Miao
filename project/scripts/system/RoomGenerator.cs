@@ -1,5 +1,6 @@
 using Godot;
 using System.Collections.Generic;
+using Miao.Data;
 using Miao.Enemy;
 using Miao.Pickup;
 using Miao.Weapon;
@@ -15,6 +16,10 @@ public partial class RoomGenerator : Node
     public int CurrentRoom { get; private set; }
     public int TotalRooms => 5; // 4普通 + 1Boss
     public bool IsBossRoom => CurrentRoom == 4;
+    public string CurrentMapId { get; set; } = "nest"; // Default map
+
+    // 当前地图配置
+    private MapConfig _currentMapConfig;
 
     private readonly int[][] _waveCounts = new int[][]
     {
@@ -53,7 +58,43 @@ public partial class RoomGenerator : Node
     {
         _player = player;
         CurrentRoom = 0;
+
+        // 加载地图配置
+        LoadMapConfig();
+
+        // 应用地图主题
+        ApplyMapTheme();
+
         StartRoom();
+    }
+
+    private void LoadMapConfig()
+    {
+        var mapsData = DataLoader.Load<MapsConfig>("maps.json");
+        if (mapsData?.Maps != null)
+        {
+            foreach (var map in mapsData.Maps)
+            {
+                if (map.Id == CurrentMapId)
+                {
+                    _currentMapConfig = map;
+                    GD.Print($"加载地图配置: {map.Name} (难度 {map.Difficulty}, Boss: {map.Boss})");
+                    return;
+                }
+            }
+        }
+
+        // Fallback: use default nest config
+        GD.PushWarning($"未找到地图 {CurrentMapId}，使用默认配置");
+    }
+
+    private void ApplyMapTheme()
+    {
+        string theme = _currentMapConfig?.Theme ?? "hive";
+        var scene = GetTree().CurrentScene;
+
+        scene.GetNodeOrNull<MapBackground>("MapBackground")?.SetMapTheme(theme);
+        scene.GetNodeOrNull<MapBoundary>("MapBoundary")?.SetMapTheme(theme);
     }
 
     private void StartRoom()
@@ -62,7 +103,7 @@ public partial class RoomGenerator : Node
         _enemiesRemaining = 0;
         GD.Print($"进入房间 {CurrentRoom + 1}/{TotalRooms}");
 
-        // 切换地图主题
+        // 切换房间主题（地图主题下房间仍有细微变化）
         var scene = GetTree().CurrentScene;
         scene.GetNodeOrNull<MapBackground>("MapBackground")?.SetRoomTheme(CurrentRoom);
         scene.GetNodeOrNull<MapBoundary>("MapBoundary")?.SetRoomTheme(CurrentRoom);
@@ -146,7 +187,17 @@ public partial class RoomGenerator : Node
     {
         EmitSignal(SignalName.WaveStarted, -1);
 
-        var boss = GD.Load<PackedScene>("res://scenes/enemy/BugQueen.tscn").Instantiate<BugQueen>();
+        // 根据地图 boss 配置加载对应 boss 场景
+        string bossId = _currentMapConfig?.Boss ?? "bug_queen";
+        var bossScene = LoadBossScene(bossId);
+
+        if (bossScene == null)
+        {
+            GD.PushError($"未找到 Boss 场景: {bossId}，使用默认 BugQueen");
+            bossScene = GD.Load<PackedScene>("res://scenes/enemy/BugQueen.tscn");
+        }
+
+        var boss = bossScene.Instantiate<BugQueen>();
         boss.GlobalPosition = _player.GlobalPosition + new Vector2(0, -300);
         _bossPosition = boss.GlobalPosition;
         boss.SmallBugScene = SmallBugScene;
@@ -154,9 +205,34 @@ public partial class RoomGenerator : Node
         _enemyContainer.AddChild(boss);
     }
 
+    private PackedScene LoadBossScene(string bossId)
+    {
+        // 尝试加载对应 boss 场景，不存在则返回 null 使用默认
+        string path = $"res://scenes/enemy/{BossIdToSceneName(bossId)}.tscn";
+        if (ResourceLoader.Exists(path))
+        {
+            return GD.Load<PackedScene>(path);
+        }
+        return null;
+    }
+
+    private static string BossIdToSceneName(string bossId)
+    {
+        return bossId switch
+        {
+            "bug_queen" => "BugQueen",
+            "ruin_guardian" => "RuinGuardian",
+            "crystal_worm" => "CrystalWorm",
+            "void_lord" => "VoidLord",
+            "flame_emperor" => "FlameEmperor",
+            _ => "BugQueen"
+        };
+    }
+
     private void OnBossDied(int experience)
     {
-        GD.Print("虫后被击败！");
+        string bossName = _currentMapConfig?.Boss ?? "虫后";
+        GD.Print($"{bossName} 被击败！");
 
         // Boss 掉落 1-2 个史诗/传说记忆水晶
         int engramCount = GD.RandRange(1, 2);

@@ -147,4 +147,7 @@ public class MapConfig
 
     [System.Text.Json.Serialization.JsonPropertyName("weapon_pool")]
     public List<string> WeaponPool { get; set; }
+
+    [System.Text.Json.Serialization.JsonPropertyName("enemy_types")]
+    public List<string> EnemyTypes { get; set; }
 }

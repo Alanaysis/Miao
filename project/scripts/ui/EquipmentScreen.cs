@@ -2,6 +2,7 @@ using Godot;
 using System.Collections.Generic;
 using System.Linq;
 using Miao.Armor;
+using Miao.Data;
 using Miao.Player;
 using Miao.System;
 using Miao.Weapon;
@@ -29,6 +30,10 @@ public partial class EquipmentScreen : Control
 
     // Close button (in-game mode)
     private Button _closeBtn;
+
+    // Map selection
+    private string _selectedMapId = "nest";
+    private VBoxContainer _mapListContainer;
 
     // In-game state
     private bool _isInGameMode = false;
@@ -134,7 +139,7 @@ public partial class EquipmentScreen : Control
         mainHbox.AddChild(leftVbox);
         mainHbox.AddChild(new VSeparator());
 
-        // Right panel: equipment slots
+        // Right panel: equipment slots + map selection
         var rightVbox = new VBoxContainer();
         rightVbox.AddThemeConstantOverride("separation", 6);
 
@@ -178,6 +183,11 @@ public partial class EquipmentScreen : Control
 
         rightVbox.AddChild(UIStyle.Separator(Vector2.Zero, 400));
 
+        // Map selection section
+        AddMapSelection(rightVbox);
+
+        rightVbox.AddChild(UIStyle.Separator(Vector2.Zero, 400));
+
         // Action buttons
         var actionBox = new HBoxContainer();
         actionBox.Alignment = BoxContainer.AlignmentMode.Center;
@@ -203,6 +213,108 @@ public partial class EquipmentScreen : Control
         panel.AddChild(mainHbox);
 
         Hide();
+    }
+
+    /// <summary>
+    /// 添加地图选择区域
+    /// </summary>
+    private void AddMapSelection(VBoxContainer parent)
+    {
+        parent.AddChild(UIStyle.MakeLabel("选择地图", 16, UIStyle.AccentGold, true));
+        parent.AddChild(UIStyle.Separator(Vector2.Zero, 400));
+
+        _mapListContainer = new VBoxContainer();
+        _mapListContainer.AddThemeConstantOverride("separation", 4);
+
+        var mapsData = DataLoader.Load<MapsConfig>("maps.json");
+        if (mapsData?.Maps == null)
+        {
+            _mapListContainer.AddChild(UIStyle.MakeLabel("无可用地图", 12, UIStyle.TextMuted));
+            parent.AddChild(_mapListContainer);
+            return;
+        }
+
+        foreach (var map in mapsData.Maps)
+        {
+            var hbox = new HBoxContainer();
+            hbox.AddThemeConstantOverride("separation", 8);
+
+            var btn = new Button();
+            string stars = new string('★', map.Difficulty);
+            btn.Text = $"{map.Name} {stars}";
+            btn.CustomMinimumSize = new Vector2(250, 35);
+            string capturedId = map.Id;
+            btn.Pressed += () => OnMapSelected(capturedId);
+
+            // 样式
+            var style = new StyleBoxFlat();
+            style.BgColor = capturedId == _selectedMapId ? new Color("#1e3a5f") : new Color("#1e293b");
+            style.BorderColor = capturedId == _selectedMapId ? UIStyle.AccentCyan : new Color("#3b82f6", 0.5f);
+            style.BorderWidthLeft = 1; style.BorderWidthRight = 1;
+            style.BorderWidthTop = 1; style.BorderWidthBottom = 1;
+            style.CornerRadiusTopLeft = 4; style.CornerRadiusTopRight = 4;
+            style.CornerRadiusBottomLeft = 4; style.CornerRadiusBottomRight = 4;
+            style.ContentMarginLeft = 8; style.ContentMarginRight = 8;
+            style.ContentMarginTop = 4; style.ContentMarginBottom = 4;
+            btn.AddThemeStyleboxOverride("normal", style);
+
+            hbox.AddChild(btn);
+
+            // 难度标签
+            var diffLabel = UIStyle.MakeLabel($"难度 {map.Difficulty}", 11,
+                map.Difficulty <= 2 ? UIStyle.AccentGreen :
+                map.Difficulty <= 4 ? UIStyle.AccentGold : UIStyle.AccentRed);
+            hbox.AddChild(diffLabel);
+
+            _mapListContainer.AddChild(hbox);
+        }
+
+        parent.AddChild(_mapListContainer);
+    }
+
+    /// <summary>
+    /// 刷新地图选择按钮的高亮状态
+    /// </summary>
+    private void RefreshMapSelection()
+    {
+        if (_mapListContainer == null) return;
+
+        var mapsData = DataLoader.Load<MapsConfig>("maps.json");
+        if (mapsData?.Maps == null) return;
+
+        int index = 0;
+        foreach (var child in _mapListContainer.GetChildren())
+        {
+            if (child is HBoxContainer hbox && index < mapsData.Maps.Count)
+            {
+                var map = mapsData.Maps[index];
+                foreach (var hboxChild in hbox.GetChildren())
+                {
+                    if (hboxChild is Button btn)
+                    {
+                        bool isSelected = map.Id == _selectedMapId;
+                        var style = new StyleBoxFlat();
+                        style.BgColor = isSelected ? new Color("#1e3a5f") : new Color("#1e293b");
+                        style.BorderColor = isSelected ? UIStyle.AccentCyan : new Color("#3b82f6", 0.5f);
+                        style.BorderWidthLeft = 1; style.BorderWidthRight = 1;
+                        style.BorderWidthTop = 1; style.BorderWidthBottom = 1;
+                        style.CornerRadiusTopLeft = 4; style.CornerRadiusTopRight = 4;
+                        style.CornerRadiusBottomLeft = 4; style.CornerRadiusBottomRight = 4;
+                        style.ContentMarginLeft = 8; style.ContentMarginRight = 8;
+                        style.ContentMarginTop = 4; style.ContentMarginBottom = 4;
+                        btn.AddThemeStyleboxOverride("normal", style);
+                    }
+                }
+                index++;
+            }
+        }
+    }
+
+    private void OnMapSelected(string mapId)
+    {
+        _selectedMapId = mapId;
+        GD.Print($"选择地图: {mapId}");
+        RefreshMapSelection();
     }
 
     public void Open()
@@ -437,6 +549,7 @@ public partial class EquipmentScreen : Control
     private void OnStartGame()
     {
         Hide();
+        GameManager.Instance.SelectedMapId = _selectedMapId;
         GameManager.Instance.StartGame();
     }
 

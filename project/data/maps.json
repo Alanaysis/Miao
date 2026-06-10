@@ -1,9 +1,9 @@
 {
   "maps": [
-    { "id": "nest", "name": "虫巢", "theme": "hive", "difficulty": 1, "boss": "bug_queen", "weapon_pool": ["auto_rifle", "shotgun", "hand_cannon"] },
-    { "id": "ruins", "name": "废墟", "theme": "wasteland", "difficulty": 2, "boss": "ruin_guardian", "weapon_pool": ["pulse_rifle", "scout_rifle", "smg"] },
-    { "id": "cave", "name": "洞穴", "theme": "cave", "difficulty": 3, "boss": "crystal_worm", "weapon_pool": ["sniper_rifle", "fusion_rifle", "shotgun"] },
-    { "id": "abyss", "name": "深渊", "theme": "void", "difficulty": 4, "boss": "void_lord", "weapon_pool": ["rocket_launcher", "fusion_rifle", "scout_rifle"] },
-    { "id": "inferno", "name": "地狱", "theme": "solar", "difficulty": 5, "boss": "flame_emperor", "weapon_pool": ["sword", "rocket_launcher", "sniper_rifle"] }
+    { "id": "nest", "name": "虫巢", "theme": "hive", "difficulty": 1, "boss": "bug_queen", "weapon_pool": ["auto_rifle", "shotgun", "hand_cannon"], "enemy_types": ["small_bug", "fast_bug", "tank_bug"] },
+    { "id": "ruins", "name": "废墟", "theme": "wasteland", "difficulty": 2, "boss": "ruin_guardian", "weapon_pool": ["pulse_rifle", "scout_rifle", "smg"], "enemy_types": ["small_bug", "fast_bug", "tank_bug"] },
+    { "id": "cave", "name": "洞穴", "theme": "cave", "difficulty": 3, "boss": "crystal_worm", "weapon_pool": ["sniper_rifle", "fusion_rifle", "shotgun"], "enemy_types": ["small_bug", "fast_bug", "tank_bug"] },
+    { "id": "abyss", "name": "深渊", "theme": "void", "difficulty": 4, "boss": "void_lord", "weapon_pool": ["rocket_launcher", "fusion_rifle", "scout_rifle"], "enemy_types": ["small_bug", "fast_bug", "tank_bug"] },
+    { "id": "inferno", "name": "地狱", "theme": "solar", "difficulty": 5, "boss": "flame_emperor", "weapon_pool": ["sword", "rocket_launcher", "sniper_rifle"], "enemy_types": ["small_bug", "fast_bug", "tank_bug"] }
   ]
 }
