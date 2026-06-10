@@ -70,6 +70,7 @@ public partial class Player : CharacterBody2D
     public EquipmentSlot Equipment { get; private set; }
     public SubclassManager Subclass { get; private set; }
     public FragmentManager Fragments { get; private set; }
+    public AspectManager Aspects { get; private set; }
     public ArmorManager Armors { get; private set; }
 
     private float _baseMoveSpeed;
@@ -130,6 +131,10 @@ public partial class Player : CharacterBody2D
         // 初始化碎片管理器
         Fragments = new FragmentManager();
         AddChild(Fragments);
+
+        // 初始化星相管理器
+        Aspects = new AspectManager();
+        AddChild(Aspects);
 
         // 加载当前子职业的碎片池
         LoadFragmentsForCurrentSubclass();

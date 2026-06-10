@@ -82,4 +82,14 @@ public partial class SubclassManager : Node
     {
         return new List<SubclassType> { SubclassType.Void, SubclassType.Arc, SubclassType.Solar };
     }
+
+    /// <summary>
+    /// 获取当前职业名称（用于星相/碎片查询）
+    /// </summary>
+    public string GetClassName() => "hunter";
+
+    /// <summary>
+    /// 获取当前子职业键名（用于星相/碎片查询）
+    /// </summary>
+    public string GetSubclassKey() => ActiveSubclass.ToString().ToLower();
 }

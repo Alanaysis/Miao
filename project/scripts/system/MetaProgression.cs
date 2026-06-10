@@ -13,6 +13,7 @@ public partial class MetaProgression : Node
     // Shop unlock tracking
     private HashSet<string> _unlockedSubclasses = new();
     private HashSet<string> _unlockedMods = new();
+    private HashSet<string> _unlockedAspects = new();
     private int _lightModuleLevel;
 
     public override void _Ready()
@@ -54,6 +55,24 @@ public partial class MetaProgression : Node
 
         Glimmer -= cost;
         _unlockedMods.Add(modId);
+        Save();
+        return true;
+    }
+
+    // ==================== Aspect ====================
+
+    public bool IsAspectUnlocked(string aspectId)
+    {
+        return _unlockedAspects.Contains(aspectId);
+    }
+
+    public bool TryUnlockAspect(string aspectId, int cost)
+    {
+        if (_unlockedAspects.Contains(aspectId)) return false;
+        if (Glimmer < cost) return false;
+
+        Glimmer -= cost;
+        _unlockedAspects.Add(aspectId);
         Save();
         return true;
     }
@@ -101,6 +120,11 @@ public partial class MetaProgression : Node
         _unlockedMods.CopyTo(modArr);
         config.SetValue("meta", "unlocked_mods", string.Join(",", modArr));
 
+        // Save unlocked aspects
+        var aspectArr = new string[_unlockedAspects.Count];
+        _unlockedAspects.CopyTo(aspectArr);
+        config.SetValue("meta", "unlocked_aspects", string.Join(",", aspectArr));
+
         config.Save("user://meta_progress.cfg");
     }
 
@@ -133,6 +157,18 @@ public partial class MetaProgression : Node
             {
                 if (!string.IsNullOrWhiteSpace(key))
                     _unlockedMods.Add(key.Trim());
+            }
+        }
+
+        // Load unlocked aspects
+        var aspectStr = (string)config.GetValue("meta", "unlocked_aspects", "");
+        _unlockedAspects.Clear();
+        if (!string.IsNullOrEmpty(aspectStr))
+        {
+            foreach (var key in aspectStr.Split(','))
+            {
+                if (!string.IsNullOrWhiteSpace(key))
+                    _unlockedAspects.Add(key.Trim());
             }
         }
     }

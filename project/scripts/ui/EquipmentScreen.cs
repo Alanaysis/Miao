@@ -1,5 +1,6 @@
 using Godot;
 using System.Collections.Generic;
+using System.Linq;
 using Miao.Armor;
 using Miao.Player;
 using Miao.System;
@@ -13,6 +14,10 @@ public partial class EquipmentScreen : Control
     private Button _weaponSlotBtn;
     private Dictionary<ArmorSlot, Button> _armorSlotBtns = new();
     private Button _subclassBtn;
+
+    // Aspect slot buttons
+    private Button _aspectSlot1Btn;
+    private Button _aspectSlot2Btn;
 
     // Info display
     private Label _lightLevelLabel;
@@ -86,6 +91,27 @@ public partial class EquipmentScreen : Control
             _subclassSelector.AddChild(btn);
         }
         leftVbox.AddChild(_subclassSelector);
+
+        leftVbox.AddChild(UIStyle.Separator(Vector2.Zero, 220));
+
+        // Aspect slots
+        leftVbox.AddChild(UIStyle.MakeLabel("星相槽位:", 14, UIStyle.TextMuted));
+
+        var aspectRow1 = new HBoxContainer();
+        aspectRow1.AddThemeConstantOverride("separation", 6);
+        aspectRow1.AddChild(UIStyle.MakeLabel("槽位1:", 12, UIStyle.TextSecondary));
+        _aspectSlot1Btn = UIStyle.MakeButton("[空]", new Vector2(160, 30));
+        _aspectSlot1Btn.Pressed += () => OnAspectSlotClicked(1);
+        aspectRow1.AddChild(_aspectSlot1Btn);
+        leftVbox.AddChild(aspectRow1);
+
+        var aspectRow2 = new HBoxContainer();
+        aspectRow2.AddThemeConstantOverride("separation", 6);
+        aspectRow2.AddChild(UIStyle.MakeLabel("槽位2:", 12, UIStyle.TextSecondary));
+        _aspectSlot2Btn = UIStyle.MakeButton("[空]", new Vector2(160, 30));
+        _aspectSlot2Btn.Pressed += () => OnAspectSlotClicked(2);
+        aspectRow2.AddChild(_aspectSlot2Btn);
+        leftVbox.AddChild(aspectRow2);
 
         leftVbox.AddChild(UIStyle.Separator(Vector2.Zero, 220));
 
@@ -201,6 +227,8 @@ public partial class EquipmentScreen : Control
         {
             btn.Disabled = true;
         }
+        _aspectSlot1Btn.Disabled = true;
+        _aspectSlot2Btn.Disabled = true;
         _subclassSelector.Visible = false;
 
         // 隐藏主菜单按钮，显示关闭按钮
@@ -302,6 +330,15 @@ public partial class EquipmentScreen : Control
             }
         }
 
+        // Update aspect slot buttons
+        if (player?.Aspects != null)
+        {
+            var a1 = player.Aspects.EquippedAspect1;
+            var a2 = player.Aspects.EquippedAspect2;
+            _aspectSlot1Btn.Text = a1 != null ? a1.Name : "[空]";
+            _aspectSlot2Btn.Text = a2 != null ? a2.Name : "[空]";
+        }
+
         // Update subclass selector visual feedback
         foreach (var child in _subclassSelector.GetChildren())
         {
@@ -353,6 +390,48 @@ public partial class EquipmentScreen : Control
     {
         // TODO: show armor selection popup
         GD.Print($"护甲槽位点击: {slot} - 待实现护甲选择界面");
+    }
+
+    private void OnAspectSlotClicked(int slot)
+    {
+        var player = GetTree().GetFirstNodeInGroup("player") as Player;
+        if (player?.Aspects == null || player?.Subclass == null) return;
+
+        // If there's already an aspect in this slot, unequip it
+        var equipped = slot == 1 ? player.Aspects.EquippedAspect1 : player.Aspects.EquippedAspect2;
+        if (equipped != null)
+        {
+            player.Aspects.UnequipAspect(slot);
+            RefreshDisplay();
+            return;
+        }
+
+        // Otherwise, try to equip the first available unlocked aspect
+        string className = "hunter";
+        string subclassKey = player.Subclass.ActiveSubclass.ToString().ToLower();
+        var available = player.Aspects.GetAvailableAspects(className, subclassKey);
+
+        // Filter to unlocked aspects only
+        var meta = MetaProgression.Instance;
+        if (meta != null)
+        {
+            available = available.Where(a => meta.IsAspectUnlocked(a.Id)).ToList();
+        }
+
+        // Find one that isn't already equipped in the other slot
+        var otherSlot = slot == 1 ? player.Aspects.EquippedAspect2 : player.Aspects.EquippedAspect1;
+        var candidate = available.FirstOrDefault(a => otherSlot == null || a.Id != otherSlot.Id);
+
+        if (candidate != null)
+        {
+            player.Aspects.EquipAspect(candidate, slot);
+        }
+        else
+        {
+            GD.Print($"没有可用的星相 (槽位 {slot})");
+        }
+
+        RefreshDisplay();
     }
 
     private void OnStartGame()
