@@ -1,6 +1,7 @@
 using Godot;
 using Miao.Armor;
 using Miao.System;
+using Miao.UI;
 using Miao.Weapon;
 
 namespace Miao.Player;
@@ -73,6 +74,9 @@ public partial class Player : CharacterBody2D
 
     private float _baseMoveSpeed;
     private int _baseMaxHealth;
+
+    // 装备界面
+    private EquipmentScreen _equipScreen;
 
     // 技能系统
     [Export] public float Skill1Cooldown = 8.0f;
@@ -174,6 +178,11 @@ public partial class Player : CharacterBody2D
 
     public override void _UnhandledInput(InputEvent @event)
     {
+        if (@event.IsActionPressed("equipment"))
+        {
+            ToggleEquipmentScreen();
+            return;
+        }
         if (@event.IsActionPressed("skill_1") && Skill1Timer <= 0)
         {
             UseSkill1();
@@ -189,6 +198,28 @@ public partial class Player : CharacterBody2D
         if (@event.IsActionPressed("interact"))
         {
             GameManager.Instance?.TryInteract();
+        }
+    }
+
+    /// <summary>
+    /// 设置装备界面引用（由 Main 场景调用）
+    /// </summary>
+    public void SetEquipmentScreen(EquipmentScreen screen)
+    {
+        _equipScreen = screen;
+    }
+
+    private void ToggleEquipmentScreen()
+    {
+        if (_equipScreen == null) return;
+
+        if (_equipScreen.IsInGameMode())
+        {
+            _equipScreen.CloseInGame();
+        }
+        else
+        {
+            _equipScreen.OpenInGame();
         }
     }
 

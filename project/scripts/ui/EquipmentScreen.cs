@@ -22,6 +22,15 @@ public partial class EquipmentScreen : Control
     // Subclass selector
     private HBoxContainer _subclassSelector;
 
+    // Close button (in-game mode)
+    private Button _closeBtn;
+
+    // In-game state
+    private bool _isInGameMode = false;
+
+    /// <summary>是否处于游戏内只读模式</summary>
+    public bool IsInGameMode() => _isInGameMode;
+
     // Current state
     private WeaponData _currentWeapon;
     private string _currentClass = "hunter";
@@ -156,6 +165,11 @@ public partial class EquipmentScreen : Control
         backBtn.Pressed += OnBack;
         actionBox.AddChild(backBtn);
 
+        _closeBtn = UIStyle.MakeButton("关闭 (Tab/ESC)", new Vector2(160, 40));
+        _closeBtn.Pressed += CloseInGame;
+        _closeBtn.Visible = false;
+        actionBox.AddChild(_closeBtn);
+
         rightVbox.AddChild(actionBox);
 
         mainHbox.AddChild(rightVbox);
@@ -167,8 +181,64 @@ public partial class EquipmentScreen : Control
 
     public void Open()
     {
+        _isInGameMode = false;
         RefreshDisplay();
         Show();
+    }
+
+    /// <summary>
+    /// 以游戏内只读模式打开装备界面（Tab 键触发，暂停游戏）
+    /// </summary>
+    public void OpenInGame()
+    {
+        _isInGameMode = true;
+        GetTree().Paused = true;
+        RefreshDisplay();
+
+        // 禁用编辑按钮（只读模式）
+        _weaponSlotBtn.Disabled = true;
+        foreach (var btn in _armorSlotBtns.Values)
+        {
+            btn.Disabled = true;
+        }
+        _subclassSelector.Visible = false;
+
+        // 隐藏主菜单按钮，显示关闭按钮
+        // 遍历 actionBox 隐藏出发和返回按钮
+        var actionBox = _closeBtn.GetParent<HBoxContainer>();
+        foreach (var child in actionBox.GetChildren())
+        {
+            if (child is Button btn && btn != _closeBtn)
+            {
+                btn.Visible = false;
+            }
+        }
+        _closeBtn.Visible = true;
+
+        Show();
+    }
+
+    /// <summary>
+    /// 关闭游戏内装备界面，恢复游戏
+    /// </summary>
+    public void CloseInGame()
+    {
+        if (!_isInGameMode) return;
+
+        _isInGameMode = false;
+        GetTree().Paused = false;
+        Hide();
+    }
+
+    public override void _UnhandledInput(InputEvent @event)
+    {
+        if (!_isInGameMode) return;
+
+        if (@event.IsActionPressed("ui_cancel") || @event.IsActionPressed("equipment"))
+        {
+            CloseInGame();
+            GetViewport().SetInputAsHandled();
+        }
     }
 
     private void RefreshDisplay()
