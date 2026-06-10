@@ -66,6 +66,7 @@ public partial class Player : CharacterBody2D
     private Node2D _nearbyWeaponDrop;
 
     public EquipmentSlot Equipment { get; private set; }
+    public SubclassManager Subclass { get; private set; }
 
     // 技能系统
     [Export] public float Skill1Cooldown = 8.0f;
@@ -107,6 +108,10 @@ public partial class Player : CharacterBody2D
         _sprite = GetNode<Sprite2D>("Sprite2D");
         _weaponSlot = GetNode<Node2D>("WeaponSlot");
         Equipment = GetNode<EquipmentSlot>("WeaponSlot/EquipmentSlot");
+
+        // 初始化子职业管理器
+        Subclass = new SubclassManager();
+        AddChild(Subclass);
 
         // 注册到GameManager
         if (GameManager.Instance != null)
