@@ -85,6 +85,31 @@ public static class LootTable
                 data.BulletSpeed = 500;
                 data.KnockbackForce = 50;
                 break;
+            case WeaponType.PulseRifle:
+                data.BaseDamage = 12;
+                data.FireRate = 2.0f;
+                data.BulletSpeed = 500;
+                data.KnockbackForce = 40;
+                break;
+            case WeaponType.ScoutRifle:
+                data.BaseDamage = 20;
+                data.FireRate = 2.5f;
+                data.BulletSpeed = 600;
+                data.KnockbackForce = 60;
+                break;
+            case WeaponType.HandCannon:
+                data.BaseDamage = 25;
+                data.FireRate = 2.5f;
+                data.BulletSpeed = 600;
+                data.KnockbackForce = 100;
+                break;
+            case WeaponType.SMG:
+                data.BaseDamage = 5;
+                data.FireRate = 10.0f;
+                data.BulletSpeed = 450;
+                data.SpreadAngle = 0.15f;
+                data.KnockbackForce = 20;
+                break;
             case WeaponType.Shotgun:
                 data.BaseDamage = 15;
                 data.FireRate = 1.5f;
@@ -93,11 +118,30 @@ public static class LootTable
                 data.SpreadAngle = Mathf.DegToRad(30);
                 data.KnockbackForce = 150;
                 break;
-            case WeaponType.HandCannon:
-                data.BaseDamage = 25;
-                data.FireRate = 2.5f;
-                data.BulletSpeed = 600;
-                data.KnockbackForce = 100;
+            case WeaponType.SniperRifle:
+                data.BaseDamage = 50;
+                data.FireRate = 0.8f;
+                data.BulletSpeed = 800;
+                data.KnockbackForce = 80;
+                break;
+            case WeaponType.FusionRifle:
+                data.BaseDamage = 30;
+                data.FireRate = 1.0f;
+                data.BulletSpeed = 500;
+                data.SpreadAngle = 0.2f;
+                data.KnockbackForce = 60;
+                break;
+            case WeaponType.RocketLauncher:
+                data.BaseDamage = 80;
+                data.FireRate = 0.5f;
+                data.BulletSpeed = 300;
+                data.KnockbackForce = 200;
+                break;
+            case WeaponType.Sword:
+                data.BaseDamage = 20;
+                data.FireRate = 4.0f;
+                data.BulletSpeed = 0;
+                data.KnockbackForce = 50;
                 break;
         }
 
@@ -145,8 +189,15 @@ public static class LootTable
         string weapon = type switch
         {
             WeaponType.AutoRifle => "步枪",
-            WeaponType.Shotgun => "霰弹枪",
+            WeaponType.PulseRifle => "战斗步枪",
+            WeaponType.ScoutRifle => "斥候步枪",
             WeaponType.HandCannon => "手炮",
+            WeaponType.SMG => "冲锋枪",
+            WeaponType.Shotgun => "霰弹枪",
+            WeaponType.SniperRifle => "狙击步枪",
+            WeaponType.FusionRifle => "融合步枪",
+            WeaponType.RocketLauncher => "火箭筒",
+            WeaponType.Sword => "刀剑",
             _ => "武器"
         };
 

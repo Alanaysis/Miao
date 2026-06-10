@@ -5,9 +5,16 @@ namespace Miao.Weapon;
 
 public enum WeaponType
 {
-    AutoRifle,   // 自动步枪
-    Shotgun,     // 霰弹枪
-    HandCannon   // 手炮
+    AutoRifle,      // 自动步枪
+    PulseRifle,     // 战斗步枪（3连发）
+    ScoutRifle,     // 斥候步枪（慢速高伤精准）
+    HandCannon,     // 手炮
+    SMG,            // 冲锋枪（极快近距离）
+    Shotgun,        // 霰弹枪
+    SniperRifle,    // 狙击步枪（极慢极高伤精准）
+    FusionRifle,    // 融合步枪（蓄力后发射5发）
+    RocketLauncher, // 火箭筒（AOE爆炸）
+    Sword           // 刀剑（近战）
 }
 
 public enum Rarity

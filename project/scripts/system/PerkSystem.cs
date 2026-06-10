@@ -30,11 +30,32 @@ public static class PerkSystem
     {
         { WeaponType.AutoRifle, new[] {
             PerkId.KillClip, PerkId.CriticalMaster, PerkId.Penetration, PerkId.RapidFire,
-            PerkId.StableGrip, PerkId.HeadHunter, }
+            PerkId.StableGrip, PerkId.HeadHunter }
+        }, { WeaponType.PulseRifle, new[] {
+            PerkId.KillClip, PerkId.CriticalMaster, PerkId.Penetration, PerkId.RapidFire,
+            PerkId.StableGrip, PerkId.HeadHunter }
+        }, { WeaponType.ScoutRifle, new[] {
+            PerkId.KillClip, PerkId.CriticalMaster, PerkId.Penetration, PerkId.RapidFire,
+            PerkId.StableGrip, PerkId.HeadHunter }
+        }, { WeaponType.HandCannon, new[] {
+            PerkId.KillClip, PerkId.CriticalMaster, PerkId.Penetration, PerkId.RapidFire,
+            PerkId.StableGrip, PerkId.HeadHunter }
+        }, { WeaponType.SMG, new[] {
+            PerkId.KillClip, PerkId.CriticalMaster, PerkId.Penetration, PerkId.RapidFire,
+            PerkId.StableGrip, PerkId.HeadHunter }
         }, { WeaponType.Shotgun, new[] {
             PerkId.KillClip, PerkId.CriticalMaster, PerkId.ShotgunSpread, PerkId.Penetration,
             PerkId.RapidFire, PerkId.StableGrip, PerkId.HeadHunter }
-        }, { WeaponType.HandCannon, new[] {
+        }, { WeaponType.SniperRifle, new[] {
+            PerkId.KillClip, PerkId.CriticalMaster, PerkId.Penetration, PerkId.RapidFire,
+            PerkId.StableGrip, PerkId.HeadHunter }
+        }, { WeaponType.FusionRifle, new[] {
+            PerkId.KillClip, PerkId.CriticalMaster, PerkId.Penetration, PerkId.RapidFire,
+            PerkId.StableGrip, PerkId.HeadHunter }
+        }, { WeaponType.RocketLauncher, new[] {
+            PerkId.KillClip, PerkId.CriticalMaster, PerkId.Penetration, PerkId.RapidFire,
+            PerkId.StableGrip, PerkId.HeadHunter }
+        }, { WeaponType.Sword, new[] {
             PerkId.KillClip, PerkId.CriticalMaster, PerkId.Penetration, PerkId.RapidFire,
             PerkId.StableGrip, PerkId.HeadHunter }
         }
