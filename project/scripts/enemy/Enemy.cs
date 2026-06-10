@@ -1,4 +1,5 @@
 using Godot;
+using Miao.Pickup;
 using Miao.System;
 using Miao.Weapon;
 
@@ -221,8 +222,14 @@ public partial class Enemy : CharacterBody2D
             GetTree().CurrentScene.AddChild(orb);
         }
 
-        // 掉落武器
-        if (GD.Randf() < LootTable.BaseDropChance)
+        // 掉落武器或记忆水晶
+        float dropRoll = GD.Randf();
+        if (dropRoll < 0.05f) // 5% 掉落记忆水晶
+        {
+            var weaponData = LootTable.GenerateWeapon(RoomIndex, IsElite);
+            SpawnEngramDrop(weaponData, weaponData.Rarity);
+        }
+        else if (dropRoll < 0.05f + LootTable.BaseDropChance)
         {
             var weaponData = LootTable.GenerateWeapon(RoomIndex, IsElite);
             GameManager.Instance.SpawnWeaponDrop(GlobalPosition, weaponData);
@@ -236,5 +243,16 @@ public partial class Enemy : CharacterBody2D
         eliteMod?.OnDeath();
 
         QueueFree();
+    }
+
+    /// <summary>
+    /// 生成记忆水晶掉落物
+    /// </summary>
+    protected void SpawnEngramDrop(WeaponData weaponData, Rarity rarity)
+    {
+        var engram = new MemoryEngram();
+        engram.GlobalPosition = GlobalPosition + new Vector2(GD.RandRange(-20, 20), GD.RandRange(-20, 20));
+        engram.Init(weaponData, rarity);
+        GetTree().CurrentScene.AddChild(engram);
     }
 }

@@ -1,5 +1,7 @@
 using Godot;
 using System.Collections.Generic;
+using Miao.Pickup;
+using Miao.UI;
 using Miao.Weapon;
 
 namespace Miao.System;
@@ -16,6 +18,7 @@ public partial class GameManager : Node
     private float _gameTime;
     private int _killCount;
     private int _glimmer;
+    private EngramDecoder _engramDecoder;
 
     [Signal]
     public delegate void GlimmerChangedEventHandler(int amount);
@@ -29,6 +32,9 @@ public partial class GameManager : Node
         }
         Instance = this;
         InputConfig.Load();
+
+        _engramDecoder = new EngramDecoder();
+        AddChild(_engramDecoder);
     }
 
     public override void _ExitTree()
@@ -44,6 +50,8 @@ public partial class GameManager : Node
         CurrentState = GameState.Playing;
         _gameTime = 0;
         _killCount = 0;
+        _glimmer = 0;
+        _engramDecoder?.Clear();
         GetTree().ChangeSceneToFile("res://scenes/main.tscn");
     }
 
@@ -79,52 +87,34 @@ public partial class GameManager : Node
         _roomClearUI.ProcessMode = Node.ProcessModeEnum.Always;
         GetTree().CurrentScene.AddChild(_roomClearUI);
 
-        // 右下角小面板
-        float panelW = 260, panelH = 120;
-        float px = 1280 - panelW - 20;
-        float py = 720 - panelH - 20;
+        // 放在武器面板上方，不重叠
+        float panelW = 300, panelH = 100;
+        float px = 960;
+        float py = 530;
 
-        var bg = new ColorRect();
-        bg.Position = new Vector2(px, py);
-        bg.Size = new Vector2(panelW, panelH);
-        bg.Color = new Color(0.1f, 0.1f, 0.15f, 0.9f);
-        _roomClearUI.AddChild(bg);
+        var panel = UIStyle.Panel(new Vector2(panelW, panelH), UIStyle.AccentGreen);
+        panel.Position = new Vector2(px, py);
+        _roomClearUI.AddChild(panel);
 
-        var title = new Label();
-        title.Text = $"✓ 房间 {roomIndex + 1} 已清空！";
-        title.Position = new Vector2(px + 16, py + 12);
-        title.AddThemeFontSizeOverride("font_size", 16);
-        title.AddThemeColorOverride("font_color", new Color(0.4f, 1.0f, 0.4f));
-        _roomClearUI.AddChild(title);
+        var title = UIStyle.MakeLabel($"✓ 房间 {roomIndex + 1} 已清空！", 16, UIStyle.AccentGreen, true);
+        title.Position = new Vector2(12, 8);
+        panel.AddChild(title);
 
         bool isLastRoom = roomIndex + 1 >= _roomGenerator.TotalRooms;
         string btnText = isLastRoom ? "结算" : "进入下一房间";
 
-        var enterBtn = new Button();
-        enterBtn.Text = btnText;
-        enterBtn.Position = new Vector2(px + 16, py + 50);
-        enterBtn.Size = new Vector2(120, 36);
-        _roomClearUI.AddChild(enterBtn);
-
-        var waitBtn = new Button();
-        waitBtn.Text = "稍后";
-        waitBtn.Position = new Vector2(px + 146, py + 50);
-        waitBtn.Size = new Vector2(100, 36);
-        _roomClearUI.AddChild(waitBtn);
-
+        var enterBtn = UIStyle.MakeButton(btnText, new Vector2(120, 36));
+        enterBtn.Position = new Vector2(12, 44);
         enterBtn.ProcessMode = Node.ProcessModeEnum.Always;
+        panel.AddChild(enterBtn);
+
+        var waitBtn = UIStyle.MakeButton("稍后", new Vector2(100, 36));
+        waitBtn.Position = new Vector2(140, 44);
         waitBtn.ProcessMode = Node.ProcessModeEnum.Always;
+        panel.AddChild(waitBtn);
 
-        enterBtn.Pressed += () =>
-        {
-            HideRoomClearPrompt();
-            NextRoom();
-        };
-
-        waitBtn.Pressed += () =>
-        {
-            HideRoomClearPrompt();
-        };
+        enterBtn.Pressed += () => { HideRoomClearPrompt(); NextRoom(); };
+        waitBtn.Pressed += () => HideRoomClearPrompt();
     }
 
     private void HideRoomClearPrompt()
@@ -147,12 +137,84 @@ public partial class GameManager : Node
     {
         CurrentState = GameState.Settlement;
         GD.Print("所有房间清空！进入结算");
+        ShowDecodeUI();
+    }
+
+    private void ShowDecodeUI()
+    {
+        if (_engramDecoder.CollectedEngrams.Count == 0)
+        {
+            GD.Print("没有收集到记忆水晶，跳过解码");
+            return;
+        }
+
+        GetTree().Paused = true;
+
+        var decodeUI = new DecodeUI();
+        decodeUI.SetDecoder(_engramDecoder);
+        GetTree().CurrentScene.AddChild(decodeUI);
+        decodeUI.Show();
     }
 
     private void OnPlayerDied()
     {
         CurrentState = GameState.GameOver;
         GetTree().Paused = true;
+        ShowGameOverUI();
+    }
+
+    private void ShowGameOverUI()
+    {
+        var layer = new CanvasLayer();
+        layer.Layer = 20;
+        layer.ProcessMode = Node.ProcessModeEnum.Always;
+        GetTree().CurrentScene.AddChild(layer);
+
+        layer.AddChild(UIStyle.Overlay(0.85f));
+
+        // 中心面板
+        float pw = 480, ph = 300;
+        float px = (1280 - pw) / 2, py = (720 - ph) / 2;
+        var panel = UIStyle.Panel(new Vector2(pw, ph), UIStyle.AccentRed);
+        panel.Position = new Vector2(px, py);
+        layer.AddChild(panel);
+
+        // 标题
+        var title = UIStyle.MakeLabel("任务失败", 32, UIStyle.AccentRed, true);
+        title.Position = new Vector2((pw - 120) / 2, 20);
+        panel.AddChild(title);
+
+        // 统计
+        int minutes = (int)(_gameTime / 60);
+        int seconds = (int)(_gameTime % 60);
+        var stats = UIStyle.MakeLabel($"击杀: {_killCount}  |  用时: {minutes}:{seconds:D2}  |  房间: {(_roomGenerator?.CurrentRoom ?? 0) + 1}", 16, UIStyle.TextSecondary);
+        stats.Position = new Vector2(60, 80);
+        panel.AddChild(stats);
+
+        // 微光
+        var glimmer = UIStyle.MakeLabel($"获得微光: {_glimmer}", 20, UIStyle.AccentGold, true);
+        glimmer.Position = new Vector2((pw - 140) / 2, 120);
+        panel.AddChild(glimmer);
+
+        // 分隔线
+        panel.AddChild(UIStyle.Separator(new Vector2(40, 170), pw - 80));
+
+        // 按钮（居中）
+        float btnW = 150, btnGap = 30, btnY = 190;
+        float btnStartX = (pw - btnW * 2 - btnGap) / 2;
+
+        var restartBtn = UIStyle.MakeButton("再来一局", new Vector2(btnW, 42));
+        restartBtn.Position = new Vector2(btnStartX, btnY);
+        restartBtn.ProcessMode = Node.ProcessModeEnum.Always;
+        panel.AddChild(restartBtn);
+
+        var menuBtn = UIStyle.MakeButton("返回大厅", new Vector2(btnW, 42));
+        menuBtn.Position = new Vector2(btnStartX + btnW + btnGap, btnY);
+        menuBtn.ProcessMode = Node.ProcessModeEnum.Always;
+        panel.AddChild(menuBtn);
+
+        restartBtn.Pressed += () => { layer.QueueFree(); StartGame(); };
+        menuBtn.Pressed += () => { layer.QueueFree(); ReturnToMainMenu(); };
     }
 
     public void AddGlimmer(int amount)
@@ -165,6 +227,17 @@ public partial class GameManager : Node
     {
         _killCount++;
     }
+
+    /// <summary>
+    /// 收集记忆水晶，存储到解码器
+    /// </summary>
+    public void CollectEngram(MemoryEngram engram)
+    {
+        _engramDecoder.AddEngram(engram);
+        GD.Print($"收集记忆水晶: [{engram.GetRarity()}]");
+    }
+
+    public EngramDecoder GetEngramDecoder() => _engramDecoder;
 
     public int GetGlimmer() => _glimmer;
     public float GetGameTime() => _gameTime;
@@ -300,68 +373,55 @@ public partial class GameManager : Node
     {
         GetTree().Paused = true;
 
-        float W = 1280, H = 720;
-
-        // CanvasLayer 保证 UI 在屏幕固定位置，不受相机影响
         var layer = new CanvasLayer();
         layer.Layer = 10;
         layer.ProcessMode = Node.ProcessModeEnum.Always;
         GetTree().CurrentScene.AddChild(layer);
 
-        // 全屏遮罩
-        var bg = new ColorRect();
-        bg.Size = new Vector2(W, H);
-        bg.Color = new Color(0, 0, 0, 0.75f);
-        bg.MouseFilter = Control.MouseFilterEnum.Stop;
-        layer.AddChild(bg);
+        layer.AddChild(UIStyle.Overlay(0.82f));
 
         // 标题
-        var title = new Label();
-        title.Text = "⚔ 发现新武器！";
-        title.Position = new Vector2(W / 2 - 80, 40);
-        title.AddThemeFontSizeOverride("font_size", 22);
-        bg.AddChild(title);
+        var title = UIStyle.MakeLabel("发现新武器！", 24, UIStyle.AccentGold, true);
+        title.Position = new Vector2((1280 - 180) / 2, 24);
+        layer.AddChild(title);
 
-        // 当前武器面板
-        float panelW = 260, panelH = 340;
-        float gap = 60;
+        // 两个面板
+        float panelW = 280, panelH = 340, gap = 40;
         float totalW = panelW * 2 + gap;
-        float startX = (W - totalW) / 2;
-        float panelY = 90;
+        float startX = (1280 - totalW) / 2;
+        float panelY = 70;
 
         var currentData = _player.Equipment.CurrentWeapon.Data;
         var currentPanel = CreateWeaponPanel(currentData, "当前武器");
         currentPanel.Position = new Vector2(startX, panelY);
         currentPanel.Size = new Vector2(panelW, panelH);
-        bg.AddChild(currentPanel);
+        layer.AddChild(currentPanel);
 
-        // VS
-        var vs = new Label();
-        vs.Text = "VS";
-        vs.Position = new Vector2(W / 2 - 15, panelY + panelH / 2 - 15);
-        vs.AddThemeFontSizeOverride("font_size", 26);
-        vs.AddThemeColorOverride("font_color", new Color(1, 0.8f, 0.2f));
-        bg.AddChild(vs);
+        // VS 居中在 gap 之间
+        float vsX = startX + panelW + (gap - 30) / 2;
+        var vs = UIStyle.MakeLabel("VS", 28, UIStyle.AccentGold, true);
+        vs.Position = new Vector2(vsX, panelY + panelH / 2 - 18);
+        layer.AddChild(vs);
 
-        // 新武器面板
         var newPanel = CreateWeaponPanel(newData, "新武器");
         newPanel.Position = new Vector2(startX + panelW + gap, panelY);
         newPanel.Size = new Vector2(panelW, panelH);
-        bg.AddChild(newPanel);
+        layer.AddChild(newPanel);
 
-        // 按钮
-        float btnY = panelY + panelH + 30;
-        var replaceBtn = new Button();
-        replaceBtn.Text = "替换武器";
-        replaceBtn.Position = new Vector2(W / 2 - 170, btnY);
-        replaceBtn.Size = new Vector2(150, 42);
-        bg.AddChild(replaceBtn);
+        // 按钮（居中）
+        float btnY = panelY + panelH + 20;
+        float btnW = 150, btnGap = 30;
+        float btnStartX = (1280 - btnW * 2 - btnGap) / 2;
 
-        var keepBtn = new Button();
-        keepBtn.Text = "保留当前";
-        keepBtn.Position = new Vector2(W / 2 + 20, btnY);
-        keepBtn.Size = new Vector2(150, 42);
-        bg.AddChild(keepBtn);
+        var replaceBtn = UIStyle.MakeButton("替换武器", new Vector2(btnW, 42));
+        replaceBtn.Position = new Vector2(btnStartX, btnY);
+        replaceBtn.ProcessMode = Node.ProcessModeEnum.Always;
+        layer.AddChild(replaceBtn);
+
+        var keepBtn = UIStyle.MakeButton("保留当前", new Vector2(btnW, 42));
+        keepBtn.Position = new Vector2(btnStartX + btnW + btnGap, btnY);
+        keepBtn.ProcessMode = Node.ProcessModeEnum.Always;
+        layer.AddChild(keepBtn);
 
         replaceBtn.Pressed += () =>
         {
@@ -371,75 +431,41 @@ public partial class GameManager : Node
             layer.QueueFree();
             GetTree().Paused = false;
         };
-
-        keepBtn.Pressed += () =>
-        {
-            layer.QueueFree();
-            GetTree().Paused = false;
-        };
+        keepBtn.Pressed += () => { layer.QueueFree(); GetTree().Paused = false; };
     }
 
-    private Control CreateWeaponPanel(WeaponData data, string title)
+    private Control CreateWeaponPanel(WeaponData data, string panelTitle)
     {
+        var rc = UIStyle.RarityColor(data.Rarity);
         var panel = new Control();
         panel.ZIndex = 101;
 
-        // 背景
-        var bg = new ColorRect();
-        bg.Size = new Vector2(260, 340);
-        bg.Color = new Color(0.12f, 0.12f, 0.18f, 0.95f);
+        // 背景面板（带稀有度边框）
+        var bg = UIStyle.Panel(new Vector2(280, 340), rc);
         panel.AddChild(bg);
 
-        float y = 12;
-        float x = 16;
-        float w = 228;
+        float y = 4;
+        float x = 8;
+        float w = 248;
 
-        var rarityColor = data.Rarity switch
+        Control L(string text, int fontSize, Color? color = null, bool bold = false)
         {
-            Rarity.Common => new Color(0.7f, 0.7f, 0.7f),
-            Rarity.Uncommon => new Color(0.2f, 0.8f, 0.2f),
-            Rarity.Rare => new Color(0.2f, 0.4f, 1.0f),
-            Rarity.Epic => new Color(0.6f, 0.2f, 0.8f),
-            Rarity.Legendary => new Color(1.0f, 0.8f, 0.0f),
-            _ => Colors.White
-        };
-
-        string rarityName = data.Rarity switch
-        {
-            Rarity.Common => "普通",
-            Rarity.Uncommon => "优秀",
-            Rarity.Rare => "稀有",
-            Rarity.Epic => "史诗",
-            Rarity.Legendary => "传说",
-            _ => ""
-        };
-
-        Label MakeLabel(string text, int fontSize, Color? color = null)
-        {
-            var l = new Label();
-            l.Text = text;
+            var l = UIStyle.MakeLabel(text, fontSize, color, bold);
             l.Position = new Vector2(x, y);
-            l.Size = new Vector2(w, 20);
-            l.AddThemeFontSizeOverride("font_size", fontSize);
-            if (color.HasValue) l.AddThemeColorOverride("font_color", color.Value);
-            panel.AddChild(l);
+            l.Size = new Vector2(w, 22);
+            bg.AddChild(l);
             y += fontSize + 8;
             return l;
         }
 
-        // 分隔线
-        void MakeSep()
+        void Sep()
         {
-            var sep = new ColorRect();
-            sep.Position = new Vector2(x, y + 2);
-            sep.Size = new Vector2(w, 1);
-            sep.Color = new Color(0.4f, 0.4f, 0.4f, 0.5f);
-            panel.AddChild(sep);
+            bg.AddChild(UIStyle.Separator(new Vector2(x, y + 2), w));
             y += 10;
         }
 
-        MakeLabel(title, 14, new Color(0.6f, 0.6f, 0.6f));
-        MakeLabel($"[{rarityName}] {data.DisplayName}", 20, rarityColor);
+        L(panelTitle, 13, UIStyle.TextMuted);
+        L($"[{UIStyle.RarityName(data.Rarity)}] {data.DisplayName}", 20, rc, true);
 
         string typeName = data.Type switch
         {
@@ -448,33 +474,31 @@ public partial class GameManager : Node
             WeaponType.HandCannon => "手炮",
             _ => "武器"
         };
-        MakeLabel(typeName, 14);
+        L(typeName, 14, UIStyle.TextSecondary);
 
-        MakeSep();
+        Sep();
 
-        MakeLabel($"伤害: {data.BaseDamage}", 16);
-        MakeLabel($"射速: {data.FireRate:F1}/s", 16);
-
-        if (data.BulletCount > 1)
-            MakeLabel($"弹丸数: {data.BulletCount}", 16);
-
-        if (data.KnockbackForce > 0)
-            MakeLabel($"击退: {data.KnockbackForce:F0}", 16);
+        L($"伤害: {data.BaseDamage}", 16);
+        L($"射速: {data.FireRate:F1}/s", 16);
+        if (data.BulletCount > 1) L($"弹丸数: {data.BulletCount}", 16);
+        if (data.KnockbackForce > 0) L($"击退: {data.KnockbackForce:F0}", 16);
 
         if (data.Perks.Count > 0)
         {
-            MakeSep();
-            MakeLabel("特性:", 14, new Color(0.9f, 0.8f, 0.4f));
-
+            Sep();
+            L("特性:", 14, UIStyle.AccentGold, true);
             foreach (var perk in data.Perks)
             {
                 if (PerkSystem.PerkInfo.TryGetValue(perk, out var info))
                 {
-                    MakeLabel($"• {info.Name}", 14, new Color(0.8f, 0.9f, 1.0f));
-                    var desc = MakeLabel(info.Desc, 11, new Color(0.5f, 0.5f, 0.5f));
-                    desc.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-                    desc.Size = new Vector2(w, 40);
-                    y += 18; // 额外行距
+                    L($"• {info.Name}", 14, UIStyle.AccentCyan);
+                    var desc = L(info.Desc, 11, UIStyle.TextMuted);
+                    if (desc is Label descLabel)
+                    {
+                        descLabel.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+                        descLabel.Size = new Vector2(w, 40);
+                    }
+                    y += 18;
                 }
             }
         }

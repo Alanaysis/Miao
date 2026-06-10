@@ -1,6 +1,8 @@
 using Godot;
 using System.Collections.Generic;
 using Miao.Enemy;
+using Miao.Pickup;
+using Miao.Weapon;
 
 namespace Miao.System;
 
@@ -26,6 +28,7 @@ public partial class RoomGenerator : Node
     private int _enemiesRemaining;
     private Node2D _enemyContainer;
     private Node2D _player;
+    private Vector2 _bossPosition;
 
     [Signal]
     public delegate void RoomClearedEventHandler(int roomIndex);
@@ -145,6 +148,7 @@ public partial class RoomGenerator : Node
 
         var boss = GD.Load<PackedScene>("res://scenes/enemy/BugQueen.tscn").Instantiate<BugQueen>();
         boss.GlobalPosition = _player.GlobalPosition + new Vector2(0, -300);
+        _bossPosition = boss.GlobalPosition;
         boss.SmallBugScene = SmallBugScene;
         boss.EnemyDied += OnBossDied;
         _enemyContainer.AddChild(boss);
@@ -153,6 +157,19 @@ public partial class RoomGenerator : Node
     private void OnBossDied(int experience)
     {
         GD.Print("虫后被击败！");
+
+        // Boss 掉落 1-2 个史诗/传说记忆水晶
+        int engramCount = GD.RandRange(1, 2);
+        for (int i = 0; i < engramCount; i++)
+        {
+            var rarity = GD.Randf() < 0.3f ? Rarity.Legendary : Rarity.Epic;
+            var weaponData = LootTable.GenerateWeapon(CurrentRoom, true);
+            var engram = new MemoryEngram();
+            engram.GlobalPosition = _bossPosition + new Vector2(GD.RandRange(-30, 30), GD.RandRange(-30, 30));
+            engram.Init(weaponData, rarity);
+            GetTree().CurrentScene.AddChild(engram);
+        }
+
         EmitSignal(SignalName.RoomCleared, CurrentRoom);
         EmitSignal(SignalName.AllRoomsCleared);
     }
