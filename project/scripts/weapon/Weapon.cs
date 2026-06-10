@@ -1,4 +1,5 @@
 using Godot;
+using Miao.Armor;
 using Miao.System;
 
 namespace Miao.Weapon;
@@ -21,14 +22,24 @@ public partial class Weapon : Node2D
     private const float BurstDelay = 0.05f;
 
     // Perk 修饰后的实际属性
-    public float EffectiveFireRate => Data.FireRate * PerkSystem.GetFireRateMultiplier(Data);
+    public float EffectiveFireRate
+    {
+        get
+        {
+            float baseRate = Data.FireRate * PerkSystem.GetFireRateMultiplier(Data);
+            // Apply mod bonuses from armor
+            float modBonus = GetModFireRateBonus();
+            return baseRate * (1f + modBonus);
+        }
+    }
     public int EffectiveDamage
     {
         get
         {
             float codexBonus = CollectionCodex.Instance?.CollectionDamageBonus ?? 1.0f;
             float metaBonus = MetaProgression.Instance?.GetBonusDamage() ?? 1.0f;
-            return Mathf.RoundToInt(Data.BaseDamage * PerkSystem.GetDamageMultiplier(Data) * codexBonus * metaBonus);
+            float modBonus = 1f + GetModDamageBonus();
+            return Mathf.RoundToInt(Data.BaseDamage * PerkSystem.GetDamageMultiplier(Data) * codexBonus * metaBonus * modBonus);
         }
     }
     public float EffectiveKnockback => Data.KnockbackForce * PerkSystem.GetKnockbackMultiplier(Data);
@@ -285,5 +296,62 @@ public partial class Weapon : Node2D
         {
             if (IsInstanceValid(flash)) flash.QueueFree();
         };
+    }
+
+    /// <summary>
+    /// 获取玩家护甲模组的伤害加成
+    /// </summary>
+    private float GetModDamageBonus()
+    {
+        var armorMods = GetPlayerMods();
+        if (armorMods == null) return 0f;
+        return ModEffectProcessor.GetDamageBonus(armorMods);
+    }
+
+    /// <summary>
+    /// 获取玩家护甲模组的射速加成
+    /// </summary>
+    private float GetModFireRateBonus()
+    {
+        var armorMods = GetPlayerMods();
+        if (armorMods == null) return 0f;
+        return ModEffectProcessor.GetFireRateBonus(armorMods);
+    }
+
+    /// <summary>
+    /// 获取玩家装备的所有模组
+    /// </summary>
+    private System.Collections.Generic.List<ModData> GetPlayerMods()
+    {
+        // 遍历父节点找到 Player
+        var node = GetParent();
+        while (node != null)
+        {
+            if (node is Miao.Player.Player player)
+            {
+                return GetEquippedMods(player.Armors);
+            }
+            node = node.GetParent();
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// 从 ArmorManager 获取所有已装备的模组数据
+    /// </summary>
+    private System.Collections.Generic.List<ModData> GetEquippedMods(ArmorManager armorManager)
+    {
+        if (armorManager == null) return null;
+
+        var mods = new System.Collections.Generic.List<ModData>();
+        foreach (var slot in armorManager.Slots.Values)
+        {
+            if (slot.EquippedArmor?.EquippedMods != null)
+            {
+                // TODO: Load actual ModData from mod IDs when mod loading is implemented
+                // For now, return empty list
+            }
+        }
+        return mods;
     }
 }

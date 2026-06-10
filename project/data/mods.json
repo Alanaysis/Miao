@@ -1,0 +1,124 @@
+{
+  "mods": [
+    {
+      "id": "mod_weapon_reload_speed",
+      "name": "快速装填",
+      "type": "weapon_boost",
+      "description": "装填速度+15%",
+      "effects": [{ "stat": "fire_rate", "value": 0.15, "type": "percent" }],
+      "acquisition": "meta_shop",
+      "cost": 500
+    },
+    {
+      "id": "mod_weapon_damage",
+      "name": "武器增幅",
+      "type": "weapon_boost",
+      "description": "武器伤害+10%",
+      "effects": [{ "stat": "damage", "value": 0.1, "type": "percent" }],
+      "acquisition": "meta_shop",
+      "cost": 800
+    },
+    {
+      "id": "mod_survival_health",
+      "name": "生命强化",
+      "type": "survival",
+      "description": "最大血量+20",
+      "effects": [{ "stat": "health", "value": 20, "type": "flat" }],
+      "acquisition": "meta_shop",
+      "cost": 600
+    },
+    {
+      "id": "mod_survival_armor",
+      "name": "护甲强化",
+      "type": "survival",
+      "description": "护甲+10",
+      "effects": [{ "stat": "armor", "value": 10, "type": "flat" }],
+      "acquisition": "meta_shop",
+      "cost": 600
+    },
+    {
+      "id": "mod_survival_heal_on_kill",
+      "name": "击杀回血",
+      "type": "survival",
+      "description": "击杀回复5血量",
+      "effects": [{ "stat": "heal_on_kill", "value": 5, "type": "flat" }],
+      "acquisition": "drop"
+    },
+    {
+      "id": "mod_skill_cooldown",
+      "name": "技能加速",
+      "type": "skill",
+      "description": "技能CD-15%",
+      "effects": [{ "stat": "cooldown_reduction", "value": 0.15, "type": "percent" }],
+      "acquisition": "meta_shop",
+      "cost": 700
+    },
+    {
+      "id": "mod_skill_super_charge",
+      "name": "超能加速",
+      "type": "skill",
+      "description": "超能充能速度+20%",
+      "effects": [{ "stat": "super_charge", "value": 0.2, "type": "percent" }],
+      "acquisition": "meta_shop",
+      "cost": 900
+    },
+    {
+      "id": "mod_element_fire",
+      "name": "烈日增幅",
+      "type": "element",
+      "description": "烈日伤害+15%",
+      "effects": [{ "stat": "solar_damage", "value": 0.15, "type": "percent" }],
+      "acquisition": "drop"
+    },
+    {
+      "id": "mod_element_arc",
+      "name": "电弧增幅",
+      "type": "element",
+      "description": "电弧伤害+15%",
+      "effects": [{ "stat": "arc_damage", "value": 0.15, "type": "percent" }],
+      "acquisition": "drop"
+    },
+    {
+      "id": "mod_element_void",
+      "name": "虚空增幅",
+      "type": "element",
+      "description": "虚空伤害+15%",
+      "effects": [{ "stat": "void_damage", "value": 0.15, "type": "percent" }],
+      "acquisition": "drop"
+    },
+    {
+      "id": "mod_economy_glimmer",
+      "name": "微光加成",
+      "type": "economy",
+      "description": "微光获取+25%",
+      "effects": [{ "stat": "glimmer_bonus", "value": 0.25, "type": "percent" }],
+      "acquisition": "meta_shop",
+      "cost": 400
+    },
+    {
+      "id": "mod_economy_drop_rate",
+      "name": "掉率提升",
+      "type": "economy",
+      "description": "掉落率+10%",
+      "effects": [{ "stat": "drop_rate", "value": 0.1, "type": "percent" }],
+      "acquisition": "meta_shop",
+      "cost": 500
+    },
+    {
+      "id": "mod_special_finisher_heal",
+      "name": "终结回满",
+      "type": "special",
+      "description": "终结技回满血量",
+      "effects": [{ "stat": "finisher_heal", "value": 1.0, "type": "percent" }],
+      "acquisition": "drop"
+    },
+    {
+      "id": "mod_special_blast_radius",
+      "name": "爆破范围",
+      "type": "special",
+      "description": "爆炸范围+30%",
+      "effects": [{ "stat": "blast_radius", "value": 0.3, "type": "percent" }],
+      "acquisition": "drop"
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 using Godot;
+using Miao.Armor;
 using Miao.Pickup;
 using Miao.System;
 using Miao.Weapon;
@@ -212,6 +213,9 @@ public partial class Enemy : CharacterBody2D
         if (players.Count > 0 && players[0] is Miao.Player.Player p)
         {
             p.AddSuperCharge(p.SuperChargePerKill);
+
+            // 应用模组的击杀回血效果
+            ApplyHealOnKillMod(p);
         }
 
         // 掉落经验球
@@ -243,6 +247,31 @@ public partial class Enemy : CharacterBody2D
         eliteMod?.OnDeath();
 
         QueueFree();
+    }
+
+    /// <summary>
+    /// 应用模组的击杀回血效果
+    /// </summary>
+    private void ApplyHealOnKillMod(Miao.Player.Player player)
+    {
+        if (player.Armors == null) return;
+
+        // 获取所有已装备的模组
+        var mods = new System.Collections.Generic.List<ModData>();
+        foreach (var slot in player.Armors.Slots.Values)
+        {
+            if (slot.EquippedArmor?.EquippedMods != null)
+            {
+                // TODO: Load actual ModData from mod IDs when mod loading is implemented
+            }
+        }
+
+        // 计算击杀回血量
+        float healAmount = ModEffectProcessor.GetStatBonus(mods, "heal_on_kill");
+        if (healAmount > 0)
+        {
+            player.Heal(Mathf.RoundToInt(healAmount));
+        }
     }
 
     /// <summary>
