@@ -46,6 +46,12 @@ public partial class EquipmentScreen : Control
     private string _currentClass = "hunter";
     private SubclassType _currentSubclass = SubclassType.Void;
 
+    /// <summary>设置当前职业（由 MainMenu 调用）</summary>
+    public void SetClass(string classId)
+    {
+        _currentClass = classId;
+    }
+
     public override void _Ready()
     {
         ProcessMode = ProcessModeEnum.Always;
@@ -486,8 +492,11 @@ public partial class EquipmentScreen : Control
         _currentSubclass = type;
 
         // Apply subclass change via SubclassManager if available
-        var subclassManager = GetNodeOrNull<SubclassManager>("/root/SubclassManager");
-        subclassManager?.SetSubclass(type);
+        var player = GetTree().GetFirstNodeInGroup("player") as Player;
+        if (player?.Subclass != null)
+        {
+            player.Subclass.SetSubclassForClass(_currentClass, type);
+        }
 
         RefreshDisplay();
     }
@@ -550,6 +559,7 @@ public partial class EquipmentScreen : Control
     {
         Hide();
         GameManager.Instance.SelectedMapId = _selectedMapId;
+        GameManager.Instance.SelectedClassId = _currentClass;
         GameManager.Instance.StartGame();
     }
 

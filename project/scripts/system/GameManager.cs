@@ -16,6 +16,9 @@ public partial class GameManager : Node
     /// <summary>当前选择的地图 ID（由 EquipmentScreen 设置）</summary>
     public string SelectedMapId { get; set; } = "nest";
 
+    /// <summary>当前选择的职业 ID（由 EquipmentScreen 设置）</summary>
+    public string SelectedClassId { get; set; } = "hunter";
+
     private Player.Player _player;
     private RoomGenerator _roomGenerator;
     private float _gameTime;

@@ -339,13 +339,18 @@ public partial class Player : CharacterBody2D
     }
 
     /// <summary>
+    /// 获取当前职业名称（子类可重写）
+    /// </summary>
+    protected virtual string GetClassName() => "hunter";
+
+    /// <summary>
     /// 为当前子职业加载碎片池
     /// </summary>
     private void LoadFragmentsForCurrentSubclass()
     {
         if (Subclass == null || Fragments == null) return;
 
-        string className = "hunter"; // 默认职业
+        string className = GetClassName();
         string subclassKey = Subclass.ActiveSubclass.ToString().ToLower();
         Fragments.LoadFragmentsForSubclass(className, subclassKey);
     }

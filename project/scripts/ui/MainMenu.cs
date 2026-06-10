@@ -65,8 +65,7 @@ public partial class MainMenu : Control
 		vbox.AddChild(hunterBtn);
 
 		var titanBtn = UIStyle.MakeButton("泰坦（近战坦克）", new Vector2(280, 42));
-		titanBtn.Disabled = true;
-		titanBtn.AddThemeColorOverride("font_color", UIStyle.TextMuted);
+		titanBtn.Pressed += () => StartWithClass("titan");
 		vbox.AddChild(titanBtn);
 
 		var warlockBtn = UIStyle.MakeButton("术士（AOE法师）", new Vector2(280, 42));

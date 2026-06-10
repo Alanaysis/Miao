@@ -1,0 +1,31 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/player/Titan.cs" id="1"]
+[ext_resource type="Texture2D" path="res://assets/sprites/player.png" id="2"]
+[ext_resource type="Script" path="res://scripts/weapon/EquipmentSlot.cs" id="4"]
+[ext_resource type="PackedScene" path="res://scenes/weapon/Weapon.tscn" id="5_weapon"]
+
+[sub_resource type="RectangleShape2D" id="1"]
+size = Vector2(28, 32)
+
+[node name="Titan" type="CharacterBody2D"]
+collision_layer = 1
+collision_mask = 1
+script = ExtResource("1")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2")
+modulate = Color(1, 0.7, 0.3, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("1")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+zoom = Vector2(1.5, 1.5)
+
+[node name="WeaponSlot" type="Marker2D" parent="."]
+position = Vector2(20, 0)
+
+[node name="EquipmentSlot" type="Node2D" parent="WeaponSlot"]
+script = ExtResource("4")
+WeaponScene = ExtResource("5_weapon")

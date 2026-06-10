@@ -1,4 +1,5 @@
 using Godot;
+using System.Collections.Generic;
 using Miao.System;
 using Miao.Weapon;
 using Miao.Player;
@@ -8,9 +9,31 @@ namespace Miao.System;
 
 public partial class Main : Node2D
 {
+	private static readonly Dictionary<string, string> ClassScenes = new()
+	{
+		{ "hunter", "res://scenes/player/Hunter.tscn" },
+		{ "titan", "res://scenes/player/Titan.tscn" },
+	};
+
 	public override void _Ready()
 	{
-		var player = GetNode<Hunter>("Hunter");
+		string classId = GameManager.Instance?.SelectedClassId ?? "hunter";
+		string scenePath = ClassScenes.GetValueOrDefault(classId, ClassScenes["hunter"]);
+
+		// Remove the statically defined Hunter node if it exists
+		var existingPlayer = GetNodeOrNull<Node2D>("Hunter");
+		if (existingPlayer != null)
+		{
+			existingPlayer.QueueFree();
+		}
+
+		// Instantiate the correct player scene
+		var playerScene = GD.Load<PackedScene>(scenePath);
+		var player = playerScene.Instantiate<Player>();
+		player.Name = classId == "hunter" ? "Hunter" : "Titan";
+		player.Position = new Vector2(640, 360);
+		AddChild(player);
+
 		GameManager.Instance.RegisterPlayer(player);
 
 		var hud = GetNode<UI.HUD>("HUD");
@@ -29,6 +52,9 @@ public partial class Main : Node2D
 		equipLayer.AddChild(equipScreen);
 
 		player.SetEquipmentScreen(equipScreen);
+
+		// Apply subclass for the selected class
+		player.Subclass?.SetSubclassForClass(classId, player.Subclass.ActiveSubclass);
 
 		// 开局直接装备武器（而非掉落拾取，避免重叠导致拾取失败）
 		var weaponData = LootTable.GenerateWeapon(0, false);
