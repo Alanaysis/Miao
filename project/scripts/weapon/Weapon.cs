@@ -39,7 +39,8 @@ public partial class Weapon : Node2D
             float codexBonus = CollectionCodex.Instance?.CollectionDamageBonus ?? 1.0f;
             float metaBonus = MetaProgression.Instance?.GetBonusDamage() ?? 1.0f;
             float modBonus = 1f + GetModDamageBonus();
-            return Mathf.RoundToInt(Data.BaseDamage * PerkSystem.GetDamageMultiplier(Data) * codexBonus * metaBonus * modBonus);
+            float lightMult = GetLightLevelMultiplier();
+            return Mathf.RoundToInt(Data.BaseDamage * PerkSystem.GetDamageMultiplier(Data) * codexBonus * metaBonus * modBonus * lightMult);
         }
     }
     public float EffectiveKnockback => Data.KnockbackForce * PerkSystem.GetKnockbackMultiplier(Data);
@@ -296,6 +297,24 @@ public partial class Weapon : Node2D
         {
             if (IsInstanceValid(flash)) flash.QueueFree();
         };
+    }
+
+    /// <summary>
+    /// 获取光等对伤害的倍率
+    /// </summary>
+    private float GetLightLevelMultiplier()
+    {
+        var node = GetParent();
+        while (node != null)
+        {
+            if (node is Miao.Player.Player player)
+            {
+                int totalLight = LightLevelCalculator.CalculateTotalLightLevel(Data, player.Armors);
+                return LightLevelCalculator.GetDamageMultiplier(totalLight);
+            }
+            node = node.GetParent();
+        }
+        return 1.0f;
     }
 
     /// <summary>

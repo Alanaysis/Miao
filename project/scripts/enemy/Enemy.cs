@@ -39,6 +39,9 @@ public partial class Enemy : CharacterBody2D
     /// <summary>是否为精英/Boss（影响掉落稀有度）</summary>
     [Export] public bool IsElite { get; set; }
 
+    /// <summary>敌人光等（影响受到的伤害）</summary>
+    [Export] public int LightLevel { get; set; } = 10;
+
     public int CurrentHealth { get; private set; }
 
     private Node2D _player;
@@ -193,6 +196,16 @@ public partial class Enemy : CharacterBody2D
 
         // 应用标记加成
         damage = Mathf.RoundToInt(damage * _markMultiplier);
+
+        // 应用光等对伤害的加成（基于玩家光等）
+        var player = GetTree().GetFirstNodeInGroup("player") as Miao.Player.Player;
+        if (player != null && player.Equipment?.CurrentWeapon?.Data != null)
+        {
+            int playerLight = LightLevelCalculator.CalculateTotalLightLevel(
+                player.Equipment.CurrentWeapon.Data, player.Armors);
+            float lightMult = LightLevelCalculator.GetDamageMultiplier(playerLight, LightLevel);
+            damage = Mathf.RoundToInt(damage * lightMult);
+        }
 
         CurrentHealth -= damage;
         CurrentHealth = Mathf.Max(CurrentHealth, 0);

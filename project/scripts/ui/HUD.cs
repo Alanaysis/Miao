@@ -14,58 +14,21 @@ public partial class HUD : CanvasLayer
     private Label _weaponNameLabel;
     private Label _weaponStatLabel;
     private Label _perksLabel;
-    private Label _skill1Label;
-    private Label _skill2Label;
-    private Label _superLabel;
     private Label _roomLabel;
     private Label _killLabel;
-    private ColorRect _hpBarFill;
+    private Control _skill1Slot;
+    private Control _skill2Slot;
+    private Label _superLabel;
+    private Label _lightLevelLabel;
     private Player.Player _player;
 
     public override void _Ready()
     {
-        // === 左上：血条 ===
-        _healthBar = CreateBar(new Vector2(20, 20), new Vector2(220, 22), new Color(0.2f, 0.6f, 0.2f));
-        _hpLabel = CreateLabel(new Vector2(248, 20), 14);
-        _shieldBar = CreateBar(new Vector2(20, 46), new Vector2(220, 10), Colors.Cyan);
+        BuildTopLeft();
+        BuildTopRight();
+        BuildBottomLeft();
+        BuildBottomRight();
 
-        // 血条背景色
-        var hpBg = new StyleBoxFlat();
-        hpBg.BgColor = new Color(0.15f, 0.15f, 0.15f, 0.8f);
-        hpBg.CornerRadiusTopLeft = 4; hpBg.CornerRadiusTopRight = 4;
-        hpBg.CornerRadiusBottomLeft = 4; hpBg.CornerRadiusBottomRight = 4;
-        _healthBar.AddThemeStyleboxOverride("background", hpBg);
-
-        // === 左下：技能 + 超能 ===
-        _skill1Label = CreateLabel(new Vector2(20, 650), 15);
-        _skill2Label = CreateLabel(new Vector2(90, 650), 15);
-        _superBar = CreateBar(new Vector2(20, 680), new Vector2(160, 14), new Color(1, 0.8f, 0));
-        _superLabel = CreateLabel(new Vector2(188, 678), 13);
-
-        // 超能条背景
-        var superBg = new StyleBoxFlat();
-        superBg.BgColor = new Color(0.15f, 0.15f, 0.1f, 0.8f);
-        superBg.CornerRadiusTopLeft = 3; superBg.CornerRadiusTopRight = 3;
-        superBg.CornerRadiusBottomLeft = 3; superBg.CornerRadiusBottomRight = 3;
-        _superBar.AddThemeStyleboxOverride("background", superBg);
-
-        // === 右下：武器信息面板 ===
-        float wpX = 1000, wpY = 620;
-        var wpBg = new ColorRect();
-        wpBg.Position = new Vector2(wpX - 10, wpY - 5);
-        wpBg.Size = new Vector2(270, 90);
-        wpBg.Color = new Color(0, 0, 0, 0.5f);
-        AddChild(wpBg);
-
-        _weaponNameLabel = CreateLabel(new Vector2(wpX, wpY), 16);
-        _weaponStatLabel = CreateLabel(new Vector2(wpX, wpY + 24), 13);
-        _perksLabel = CreateLabel(new Vector2(wpX, wpY + 44), 12);
-
-        // === 右上：房间/击杀信息 ===
-        _roomLabel = CreateLabel(new Vector2(1100, 20), 15);
-        _killLabel = CreateLabel(new Vector2(1100, 42), 13);
-
-        // 自动查找玩家
         if (_player == null)
         {
             var node = GetTree().GetFirstNodeInGroup("player");
@@ -81,43 +44,111 @@ public partial class HUD : CanvasLayer
         player.SuperChargeChanged += OnSuperChargeChanged;
     }
 
+    // ==================== 左上：血条 ====================
+    // 面板: (16,12) size(260,56) → ends (276,68)
+    private void BuildTopLeft()
+    {
+        var panel = UIStyle.Panel(new Vector2(260, 56));
+        panel.Position = new Vector2(16, 12);
+        AddChild(panel);
+
+        _hpLabel = UIStyle.LabelAt(new Vector2(8, 2), "100/100", 13, UIStyle.TextSecondary);
+        panel.AddChild(_hpLabel);
+
+        _healthBar = UIStyle.Bar(new Vector2(8, 20), new Vector2(228, 16), UIStyle.HealthGreen);
+        panel.AddChild(_healthBar);
+
+        _shieldBar = UIStyle.Bar(new Vector2(8, 40), new Vector2(228, 8), UIStyle.AccentCyan);
+        panel.AddChild(_shieldBar);
+    }
+
+    // ==================== 右上：房间/击杀/光等 ====================
+    // 面板: (1060,12) size(200,66) → ends (1260,78)
+    private void BuildTopRight()
+    {
+        var panel = UIStyle.Panel(new Vector2(200, 66));
+        panel.Position = new Vector2(1060, 12);
+        AddChild(panel);
+
+        _lightLevelLabel = UIStyle.LabelAt(new Vector2(8, 2), "光等: 0", 14, UIStyle.AccentGold, true);
+        panel.AddChild(_lightLevelLabel);
+
+        _roomLabel = UIStyle.LabelAt(new Vector2(8, 22), "房间 1/5", 14, UIStyle.AccentBlue, true);
+        panel.AddChild(_roomLabel);
+
+        _killLabel = UIStyle.LabelAt(new Vector2(8, 42), "击杀: 0", 12, UIStyle.TextSecondary);
+        panel.AddChild(_killLabel);
+    }
+
+    // ==================== 左下：技能 + 超能 ====================
+    // 技能: (16,648) size(48,48) → ends (64,696) and (76,648) → ends (124,696)
+    // 超能: (16,650) size(130,24) → ends (146,674)
+    private void BuildBottomLeft()
+    {
+        _skill1Slot = UIStyle.SkillSlot(new Vector2(16, 648), "Q", UIStyle.AccentBlue);
+        AddChild(_skill1Slot);
+
+        _skill2Slot = UIStyle.SkillSlot(new Vector2(76, 648), "R", UIStyle.AccentPurple);
+        AddChild(_skill2Slot);
+
+        // 超能条（放在技能方块右边，同一行）
+        var superPanel = UIStyle.Panel(new Vector2(130, 48), UIStyle.AccentGold);
+        superPanel.Position = new Vector2(136, 648);
+        AddChild(superPanel);
+
+        _superBar = UIStyle.Bar(new Vector2(8, 6), new Vector2(110, 10), UIStyle.AccentGold);
+        superPanel.AddChild(_superBar);
+
+        _superLabel = UIStyle.LabelAt(new Vector2(8, 22), "0/100", 12, UIStyle.AccentGold);
+        superPanel.AddChild(_superLabel);
+    }
+
+    // ==================== 右下：武器面板 ====================
+    // 面板: (960,640) size(300,68) → ends (1260,708)
+    private void BuildBottomRight()
+    {
+        var panel = UIStyle.Panel(new Vector2(300, 68));
+        panel.Position = new Vector2(960, 640);
+        AddChild(panel);
+
+        _weaponNameLabel = UIStyle.LabelAt(new Vector2(8, 2), "无武器", 16, UIStyle.TextMuted, true);
+        panel.AddChild(_weaponNameLabel);
+
+        _weaponStatLabel = UIStyle.LabelAt(new Vector2(8, 24), "", 12, UIStyle.TextSecondary);
+        panel.AddChild(_weaponStatLabel);
+
+        _perksLabel = UIStyle.LabelAt(new Vector2(8, 42), "", 11, UIStyle.AccentCyan);
+        panel.AddChild(_perksLabel);
+    }
+
+    // ==================== 每帧更新 ====================
     public override void _Process(double delta)
     {
         if (_player == null) return;
 
-        // 技能冷却
-        _skill1Label.Text = _player.Skill1Timer > 0
-            ? $"[Q] {_player.Skill1Timer:F1}s"
-            : "[Q] 就绪";
-        _skill1Label.AddThemeColorOverride("font_color",
-            _player.Skill1Timer > 0 ? new Color(0.5f, 0.5f, 0.5f) : new Color(0.4f, 0.9f, 0.4f));
+        UpdateSkillSlot(_skill1Slot, _player.Skill1Timer);
+        UpdateSkillSlot(_skill2Slot, _player.Skill2Timer);
 
-        _skill2Label.Text = _player.Skill2Timer > 0
-            ? $"[R] {_player.Skill2Timer:F1}s"
-            : "[R] 就绪";
-        _skill2Label.AddThemeColorOverride("font_color",
-            _player.Skill2Timer > 0 ? new Color(0.5f, 0.5f, 0.5f) : new Color(0.4f, 0.9f, 0.4f));
+        // 超能
+        if (_player.IsSuperReady)
+        {
+            _superLabel.Text = "就绪!";
+            _superLabel.AddThemeColorOverride("font_color", UIStyle.AccentGold);
+            UIStyle.UpdateBarColor(_superBar, UIStyle.AccentGold);
+        }
+        else
+        {
+            _superLabel.Text = $"{_player.SuperCharge:F0}/{_player.SuperMaxCharge:F0}";
+            _superLabel.AddThemeColorOverride("font_color", UIStyle.TextSecondary);
+            UIStyle.UpdateBarColor(_superBar, new Color("#92700a"));
+        }
 
-        _superLabel.Text = _player.IsSuperReady
-            ? "[F] 超能就绪！"
-            : $"[F] {_player.SuperCharge:F0}/{_player.SuperMaxCharge:F0}";
-        _superLabel.AddThemeColorOverride("font_color",
-            _player.IsSuperReady ? new Color(1, 0.9f, 0.3f) : new Color(0.7f, 0.6f, 0.3f));
-
-        // 武器信息
+        // 武器
         var weapon = _player.Equipment?.CurrentWeapon?.Data;
         if (weapon != null)
         {
-            var rc = weapon.Rarity switch
-            {
-                Rarity.Common => new Color(0.7f, 0.7f, 0.7f),
-                Rarity.Uncommon => new Color(0.2f, 0.8f, 0.2f),
-                Rarity.Rare => new Color(0.3f, 0.5f, 1.0f),
-                Rarity.Epic => new Color(0.7f, 0.3f, 0.9f),
-                Rarity.Legendary => new Color(1.0f, 0.85f, 0.1f),
-                _ => Colors.White
-            };
-            _weaponNameLabel.Text = weapon.DisplayName;
+            var rc = UIStyle.RarityColor(weapon.Rarity);
+            _weaponNameLabel.Text = $"[{UIStyle.RarityName(weapon.Rarity)}] {weapon.DisplayName}";
             _weaponNameLabel.AddThemeColorOverride("font_color", rc);
 
             string typeName = weapon.Type switch
@@ -135,28 +166,47 @@ public partial class HUD : CanvasLayer
                 for (int i = 0; i < weapon.Perks.Count; i++)
                     names[i] = PerkSystem.PerkInfo.ContainsKey(weapon.Perks[i]) ? PerkSystem.PerkInfo[weapon.Perks[i]].Name : "?";
                 _perksLabel.Text = string.Join(" | ", names);
-                _perksLabel.AddThemeColorOverride("font_color", new Color(0.7f, 0.85f, 1.0f));
+                _perksLabel.AddThemeColorOverride("font_color", UIStyle.AccentCyan);
             }
-            else
-            {
-                _perksLabel.Text = "";
-            }
+            else { _perksLabel.Text = ""; }
         }
         else
         {
             _weaponNameLabel.Text = "无武器";
-            _weaponNameLabel.AddThemeColorOverride("font_color", Colors.Gray);
+            _weaponNameLabel.AddThemeColorOverride("font_color", UIStyle.TextMuted);
             _weaponStatLabel.Text = "";
             _perksLabel.Text = "";
         }
 
-        // 房间信息
         var rg = GetTree().CurrentScene?.GetNodeOrNull<RoomGenerator>("RoomGenerator");
-        if (rg != null)
-        {
-            _roomLabel.Text = $"房间 {rg.CurrentRoom + 1}/{rg.TotalRooms}";
-        }
+        if (rg != null) _roomLabel.Text = $"房间 {rg.CurrentRoom + 1}/{rg.TotalRooms}";
         _killLabel.Text = $"击杀: {_player.KillCount}";
+
+        // 光等显示
+        int totalLight = LightLevelCalculator.CalculateTotalLightLevel(
+            _player.Equipment?.CurrentWeapon?.Data, _player.Armors);
+        _lightLevelLabel.Text = $"光等: {totalLight}";
+    }
+
+    private void UpdateSkillSlot(Control slot, float timer)
+    {
+        if (slot == null) return;
+        var mask = slot.GetNode<ColorRect>("CooldownMask");
+        var status = slot.GetNode<Label>("StatusLabel");
+
+        if (timer > 0)
+        {
+            float ratio = timer / 8.0f;
+            mask.Size = new Vector2(46, 46 * Mathf.Clamp(ratio, 0, 1));
+            status.Text = $"{timer:F1}s";
+            status.AddThemeColorOverride("font_color", UIStyle.TextMuted);
+        }
+        else
+        {
+            mask.Size = new Vector2(46, 0);
+            status.Text = "就绪";
+            status.AddThemeColorOverride("font_color", UIStyle.AccentGreen);
+        }
     }
 
     private void OnHealthChanged(int current, int max)
@@ -165,18 +215,10 @@ public partial class HUD : CanvasLayer
         _healthBar.Value = current;
         _hpLabel.Text = $"{current}/{max}";
 
-        // 血条颜色：绿 → 黄 → 红
         float ratio = max > 0 ? (float)current / max : 0;
-        Color color;
-        if (ratio > 0.6f) color = new Color(0.2f, 0.7f, 0.2f);
-        else if (ratio > 0.3f) color = new Color(0.9f, 0.8f, 0.1f);
-        else color = new Color(0.9f, 0.15f, 0.1f);
-
-        var fill = new StyleBoxFlat();
-        fill.BgColor = color;
-        fill.CornerRadiusTopLeft = 4; fill.CornerRadiusTopRight = 4;
-        fill.CornerRadiusBottomLeft = 4; fill.CornerRadiusBottomRight = 4;
-        _healthBar.AddThemeStyleboxOverride("fill", fill);
+        if (ratio > 0.6f) UIStyle.UpdateBarColor(_healthBar, UIStyle.HealthGreen);
+        else if (ratio > 0.3f) UIStyle.UpdateBarColor(_healthBar, UIStyle.HealthYellow);
+        else UIStyle.UpdateBarColor(_healthBar, UIStyle.HealthRed);
     }
 
     private void OnShieldChanged(float current, float max)
@@ -189,33 +231,5 @@ public partial class HUD : CanvasLayer
     {
         _superBar.MaxValue = max;
         _superBar.Value = current;
-    }
-
-    private ProgressBar CreateBar(Vector2 pos, Vector2 size, Color color)
-    {
-        var bar = new ProgressBar();
-        bar.Position = pos;
-        bar.Size = size;
-        bar.MaxValue = 100;
-        bar.Value = 100;
-        bar.ShowPercentage = false;
-
-        var fill = new StyleBoxFlat();
-        fill.BgColor = color;
-        fill.CornerRadiusTopLeft = 4; fill.CornerRadiusTopRight = 4;
-        fill.CornerRadiusBottomLeft = 4; fill.CornerRadiusBottomRight = 4;
-        bar.AddThemeStyleboxOverride("fill", fill);
-
-        AddChild(bar);
-        return bar;
-    }
-
-    private Label CreateLabel(Vector2 pos, int fontSize)
-    {
-        var label = new Label();
-        label.Position = pos;
-        label.AddThemeFontSizeOverride("font_size", fontSize);
-        AddChild(label);
-        return label;
     }
 }
