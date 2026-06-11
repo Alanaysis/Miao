@@ -134,6 +134,50 @@
 
 ---
 
+## Phase 4: Lobby & Multiplayer
+
+### Task 4.1: Lobby Scene (Spaceship)
+- Create `project/scenes/lobby/Lobby.tscn` — spaceship background with interactive facilities
+- Create `project/scripts/lobby/LobbyPlayer.cs` — player avatar in lobby (walk around)
+- Create interactive objects: EquipmentMachine, MapSandbox, MetaShop, Vault, FireteamCommunicator
+- Wire lobby as the main scene (replaces MainMenu)
+
+### Task 4.2: Interactive Facilities
+- Create `project/scripts/lobby/EquipmentMachine.cs` — opens EquipmentScreen
+- Create `project/scripts/lobby/MapSandbox.cs` — opens map selection, starts game
+- Create `project/scripts/lobby/MetaShopTerminal.cs` — opens MetaShopUI
+- Create `project/scripts/lobby/Vault.cs` — opens CollectionCodex UI
+- Implement IInteractable interface on all facilities
+
+### Task 4.3: Multiplayer Infrastructure
+- Create `project/scripts/network/NetworkManager.cs` — host/client management
+- Create `project/scripts/network/NetworkSync.cs` — player state sync (position, health, actions)
+- Implement ENet or Godot's built-in multiplayer for host/client
+- Host controls map/room/enemy generation
+- Client connects to host IP
+
+### Task 4.4: Multiplayer Game Sync
+- Sync enemy HP/behavior from host to clients
+- Sync player actions (shoot/move/skills) to other players
+- Damage calculated by clients, sent to host for aggregation
+- Loot calculated independently per player
+- Players are allies (no friendly fire, self-damage only from explosives)
+
+### Task 4.5: Fireteam Communicator UI
+- Create `project/scripts/ui/FireteamUI.cs` — multiplayer lobby UI
+- Host mode toggle (allow others to join)
+- Join game by IP input
+- Player list showing connected players
+- Ready check before starting game
+
+### Task 4.6: Lobby Integration
+- Replace MainMenu with Lobby scene
+- Wire all interactive facilities
+- Implement lobby → game → settlement → lobby flow
+- Multiplayer: all players in host's lobby, ready check, then start
+
+---
+
 ## Summary
 
 | Phase | Tasks | Focus |
@@ -141,5 +185,6 @@
 | 1 | 7 tasks | Core: Subclass + Fragments + Weapons + Engrams + Unlock Pool |
 | 2 | 5 tasks | Depth: Armor + Mods + Light Level + Equipment UI |
 | 3 | 6 tasks | Content: Meta Shop + Aspects + Maps + Titan/Warlock |
+| 4 | 6 tasks | Lobby & Multiplayer: Spaceship lobby, networking, sync |
 
 Each task produces working, testable code. Tasks within a phase can be executed sequentially.
