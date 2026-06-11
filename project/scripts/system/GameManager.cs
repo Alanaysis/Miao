@@ -69,7 +69,7 @@ public partial class GameManager : Node
         GetTree().ChangeSceneToFile("res://scenes/main.tscn");
     }
 
-    [Rpc(MultiplayerApi.TransferMode.Reliable)]
+    [Rpc]
     private void StartGameRpc()
     {
         // Client receives game start from host
@@ -231,7 +231,7 @@ public partial class GameManager : Node
             _engramDecoder, weaponName);
     }
 
-    [Rpc(MultiplayerApi.TransferMode.Reliable)]
+    [Rpc]
     private void SettleRunRpc(bool isVictory)
     {
         // Client receives settlement notification from host

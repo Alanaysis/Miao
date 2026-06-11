@@ -8,7 +8,7 @@ public partial class NetworkManager : Node
     public static NetworkManager Instance { get; private set; }
 
     public bool IsHost { get; private set; }
-    public bool IsConnected { get; private set; }
+    public new bool IsConnected { get; private set; }
     public int LocalPlayerId { get; private set; }
 
     private ENetMultiplayerPeer _peer;

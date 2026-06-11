@@ -39,7 +39,7 @@ public partial class PlayerActionSync : Node
     /// <summary>
     /// Receive interpolated position from a remote player.
     /// </summary>
-    [Rpc(MultiplayerApi.TransferMode.Unreliable)]
+    [Rpc]
     public void ReceivePosition(Vector2 position, float rotation)
     {
         if (IsLocalPlayer()) return;
@@ -52,7 +52,7 @@ public partial class PlayerActionSync : Node
     /// <summary>
     /// Broadcast a shoot event. Called by the local player when firing.
     /// </summary>
-    [Rpc(MultiplayerApi.TransferMode.Reliable)]
+    [Rpc]
     public void BroadcastShoot(Vector2 position, Vector2 direction, int weaponType)
     {
         if (IsLocalPlayer()) return;
@@ -64,7 +64,7 @@ public partial class PlayerActionSync : Node
     /// <summary>
     /// Receive shoot broadcast on remote clients.
     /// </summary>
-    [Rpc(MultiplayerApi.TransferMode.Reliable)]
+    [Rpc]
     public void ReceiveShoot(Vector2 position, Vector2 direction, int weaponType)
     {
         if (IsLocalPlayer()) return;
@@ -75,7 +75,7 @@ public partial class PlayerActionSync : Node
     /// <summary>
     /// Broadcast a skill event. Called by the local player when using a skill.
     /// </summary>
-    [Rpc(MultiplayerApi.TransferMode.Reliable)]
+    [Rpc]
     public void BroadcastSkill(int skillIndex, Vector2 position, Vector2 direction)
     {
         if (IsLocalPlayer()) return;
@@ -87,7 +87,7 @@ public partial class PlayerActionSync : Node
     /// <summary>
     /// Receive skill broadcast on remote clients.
     /// </summary>
-    [Rpc(MultiplayerApi.TransferMode.Reliable)]
+    [Rpc]
     public void ReceiveSkill(int skillIndex, Vector2 position, Vector2 direction)
     {
         if (IsLocalPlayer()) return;
@@ -98,7 +98,7 @@ public partial class PlayerActionSync : Node
     /// <summary>
     /// Broadcast damage taken to show numbers on remote clients.
     /// </summary>
-    [Rpc(MultiplayerApi.TransferMode.Reliable)]
+    [Rpc]
     public void BroadcastDamageTaken(int damage)
     {
         if (IsLocalPlayer()) return;
@@ -110,7 +110,7 @@ public partial class PlayerActionSync : Node
     /// <summary>
     /// Receive damage taken broadcast.
     /// </summary>
-    [Rpc(MultiplayerApi.TransferMode.Reliable)]
+    [Rpc]
     public void ReceiveDamageTaken(int damage)
     {
         if (IsLocalPlayer()) return;

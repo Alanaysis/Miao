@@ -1,5 +1,5 @@
 using Godot;
-using Miao.Enemy;
+using EnemyClass = Miao.Enemy.Enemy;
 
 namespace Miao.Network;
 
@@ -9,14 +9,14 @@ namespace Miao.Network;
 /// </summary>
 public partial class EnemySync : Node
 {
-    private Enemy _enemy;
+    private EnemyClass _enemy;
     private int _networkId;
     private float _syncTimer;
     private const float SyncInterval = 0.1f; // 10 Hz for enemies
 
     public override void _Ready()
     {
-        _enemy = GetParent<Enemy>();
+        _enemy = GetParent<EnemyClass>();
     }
 
     public void SetNetworkId(int id)
@@ -41,7 +41,7 @@ public partial class EnemySync : Node
     /// <summary>
     /// Receive enemy state from host. Called on clients only.
     /// </summary>
-    [Rpc(MultiplayerApi.TransferMode.Unreliable)]
+    [Rpc]
     public void ReceiveEnemyState(int enemyId, Vector2 position, int health, bool isDead)
     {
         if (NetworkManager.Instance.IsHost) return;
@@ -59,7 +59,7 @@ public partial class EnemySync : Node
     /// <summary>
     /// Notify clients that this enemy has died. Host calls this before freeing.
     /// </summary>
-    [Rpc(MultiplayerApi.TransferMode.Reliable)]
+    [Rpc]
     public void NotifyEnemyDeath(int enemyId)
     {
         if (NetworkManager.Instance.IsHost) return;
@@ -73,7 +73,7 @@ public partial class EnemySync : Node
     /// <summary>
     /// Client sends damage request to host. Host validates and applies.
     /// </summary>
-    [Rpc(MultiplayerApi.TransferMode.Reliable)]
+    [Rpc]
     public void RequestDamage(int enemyId, int damage, int sourcePlayerId)
     {
         if (!NetworkManager.Instance.IsHost) return;

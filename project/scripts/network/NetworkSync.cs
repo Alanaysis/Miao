@@ -7,9 +7,11 @@ public partial class NetworkSync : MultiplayerSynchronizer
     [Export] public float SyncInterval = 0.05f; // 20Hz sync
 
     private float _syncTimer;
+    private Node2D _parent;
 
     public override void _Ready()
     {
+        _parent = GetParent<Node2D>();
         // Only the authority (owner) should sync
         SetMultiplayerAuthority(int.Parse(Name));
     }
@@ -28,15 +30,17 @@ public partial class NetworkSync : MultiplayerSynchronizer
 
     private void SyncState()
     {
+        if (_parent == null) return;
         // Sync position, health, weapon state
-        Rpc(nameof(ReceiveState), GlobalPosition);
+        Rpc(nameof(ReceiveState), _parent.GlobalPosition);
     }
 
-    [Rpc(MultiplayerApi.TransferMode.Unreliable)]
+    [Rpc]
     private void ReceiveState(Vector2 position)
     {
         if (IsMultiplayerAuthority()) return;
+        if (_parent == null) return;
         // Apply interpolated state
-        GlobalPosition = GlobalPosition.Lerp(position, 0.3f);
+        _parent.GlobalPosition = _parent.GlobalPosition.Lerp(position, 0.3f);
     }
 }
