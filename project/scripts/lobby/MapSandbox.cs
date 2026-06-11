@@ -1,9 +1,13 @@
 using Godot;
+using Miao.System;
+using Miao.UI;
 
 namespace Miao.Lobby;
 
 public partial class MapSandbox : LobbyFacility
 {
+    private EquipmentScreen _equipScreen;
+
     public override void _Ready()
     {
         FacilityName = "地图沙盘";
@@ -17,9 +21,22 @@ public partial class MapSandbox : LobbyFacility
         AddChild(visual);
     }
 
+    public void SetEquipmentScreen(EquipmentScreen screen)
+    {
+        _equipScreen = screen;
+    }
+
     public override void Interact()
     {
-        GD.Print("打开地图选择");
-        // TODO: open map selection UI
+        // Open equipment screen with map selection
+        if (_equipScreen != null)
+        {
+            _equipScreen.OpenForMapSelection();
+        }
+        else
+        {
+            // Fallback: start game directly
+            GameManager.Instance.StartGame();
+        }
     }
 }

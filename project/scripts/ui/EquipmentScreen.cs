@@ -332,6 +332,16 @@ public partial class EquipmentScreen : Control
     }
 
     /// <summary>
+    /// 打开装备界面并聚焦地图选择（从地图沙盘触发）
+    /// </summary>
+    public void OpenForMapSelection()
+    {
+        _isInGameMode = false;
+        RefreshDisplay();
+        Show();
+    }
+
+    /// <summary>
     /// 以游戏内只读模式打开装备界面（Tab 键触发，暂停游戏）
     /// </summary>
     public void OpenInGame()

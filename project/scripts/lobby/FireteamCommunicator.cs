@@ -6,8 +6,8 @@ public partial class FireteamCommunicator : LobbyFacility
 {
     public override void _Ready()
     {
-        FacilityName = "火力队通讯器";
-        InteractText = "[E] 火力队";
+        FacilityName = "火力战队通讯仪";
+        InteractText = "[E] 多人联机";
         base._Ready();
 
         var visual = new ColorRect();
@@ -19,7 +19,7 @@ public partial class FireteamCommunicator : LobbyFacility
 
     public override void Interact()
     {
-        GD.Print("打开火力队通讯");
-        // TODO: open Fireteam UI
+        GD.Print("打开多人联机界面");
+        // TODO: create and show FireteamUI
     }
 }

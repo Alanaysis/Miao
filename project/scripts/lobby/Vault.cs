@@ -7,7 +7,7 @@ public partial class Vault : LobbyFacility
     public override void _Ready()
     {
         FacilityName = "保险库";
-        InteractText = "[E] 保险库";
+        InteractText = "[E] 图鉴";
         base._Ready();
 
         var visual = new ColorRect();
@@ -19,7 +19,7 @@ public partial class Vault : LobbyFacility
 
     public override void Interact()
     {
-        GD.Print("打开保险库");
-        // TODO: open Vault UI
+        GD.Print("打开图鉴/收藏系统");
+        // TODO: create and show CollectionCodex UI
     }
 }

@@ -1,13 +1,16 @@
 using Godot;
+using Miao.UI;
 
 namespace Miao.Lobby;
 
 public partial class MetaShopTerminal : LobbyFacility
 {
+    private MetaShopUI _shopUI;
+
     public override void _Ready()
     {
-        FacilityName = "元商店终端";
-        InteractText = "[E] 元商店";
+        FacilityName = "Meta商店";
+        InteractText = "[E] Meta商店";
         base._Ready();
 
         var visual = new ColorRect();
@@ -17,9 +20,16 @@ public partial class MetaShopTerminal : LobbyFacility
         AddChild(visual);
     }
 
+    public void SetShopUI(MetaShopUI ui)
+    {
+        _shopUI = ui;
+    }
+
     public override void Interact()
     {
-        GD.Print("打开元商店");
-        // TODO: open MetaShop UI
+        if (_shopUI != null)
+        {
+            _shopUI.Open();
+        }
     }
 }

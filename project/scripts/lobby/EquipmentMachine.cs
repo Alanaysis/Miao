@@ -1,9 +1,12 @@
 using Godot;
+using Miao.UI;
 
 namespace Miao.Lobby;
 
 public partial class EquipmentMachine : LobbyFacility
 {
+    private EquipmentScreen _equipScreen;
+
     public override void _Ready()
     {
         FacilityName = "装备配置机器";
@@ -17,9 +20,20 @@ public partial class EquipmentMachine : LobbyFacility
         AddChild(visual);
     }
 
+    public void SetEquipmentScreen(EquipmentScreen screen)
+    {
+        _equipScreen = screen;
+    }
+
     public override void Interact()
     {
-        GD.Print("打开装备配置界面");
-        // TODO: open EquipmentScreen
+        if (_equipScreen != null)
+        {
+            _equipScreen.Open();
+        }
+        else
+        {
+            GD.PushWarning("EquipmentMachine: EquipmentScreen not set");
+        }
     }
 }
