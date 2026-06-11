@@ -1,5 +1,6 @@
 using Godot;
 using Miao.Armor;
+using Miao.Network;
 using Miao.System;
 using Miao.UI;
 using Miao.Weapon;
@@ -12,6 +13,12 @@ namespace Miao.Player;
 /// </summary>
 public partial class Player : CharacterBody2D
 {
+    /// <summary>网络玩家 ID</summary>
+    public int PlayerId { get; set; }
+
+    /// <summary>是否为本地玩家（控制输入）</summary>
+    public bool IsLocalPlayer =>
+        !Multiplayer.HasMultiplayerPeer() || PlayerId == Multiplayer.GetUniqueId();
     /// <summary>移动速度</summary>
     [Export] public float MoveSpeed = 200f;
 
@@ -151,6 +158,13 @@ public partial class Player : CharacterBody2D
         {
             GameManager.Instance.RegisterPlayer(this);
         }
+
+        // Attach PlayerActionSync for multiplayer action broadcasting
+        if (Multiplayer.HasMultiplayerPeer())
+        {
+            var actionSync = new PlayerActionSync();
+            AddChild(actionSync);
+        }
     }
 
     public override void _Process(double delta)
@@ -161,6 +175,9 @@ public partial class Player : CharacterBody2D
 
     public override void _PhysicsProcess(double delta)
     {
+        // Only process input for local player
+        if (!IsLocalPlayer) return;
+
         // 移动（高位俯视角，8方向移动）
         var inputDir = Input.GetVector("move_left", "move_right", "move_up", "move_down");
         Velocity = inputDir * MoveSpeed;
@@ -178,11 +195,24 @@ public partial class Player : CharacterBody2D
         if (Input.IsActionPressed("shoot"))
         {
             EmitSignal(SignalName.Shoot);
+
+            // Broadcast shoot to other players
+            if (Multiplayer.HasMultiplayerPeer())
+            {
+                var actionSync = GetNodeOrNull<PlayerActionSync>("PlayerActionSync");
+                var shootDir = (mousePos - GlobalPosition).Normalized();
+                int weaponType = (int)(Equipment?.CurrentWeapon?.Data?.Type ?? 0);
+                actionSync?.Rpc(nameof(PlayerActionSync.ReceiveShoot),
+                    GlobalPosition, shootDir, weaponType);
+            }
         }
     }
 
     public override void _UnhandledInput(InputEvent @event)
     {
+        // Only process input for local player
+        if (!IsLocalPlayer) return;
+
         if (@event.IsActionPressed("equipment"))
         {
             ToggleEquipmentScreen();
@@ -191,19 +221,36 @@ public partial class Player : CharacterBody2D
         if (@event.IsActionPressed("skill_1") && Skill1Timer <= 0)
         {
             UseSkill1();
+            BroadcastSkillAction(1);
         }
         if (@event.IsActionPressed("skill_2") && Skill2Timer <= 0)
         {
             UseSkill2();
+            BroadcastSkillAction(2);
         }
         if (@event.IsActionPressed("super_ability") && IsSuperReady)
         {
             UseSuper();
+            BroadcastSkillAction(3);
         }
         if (@event.IsActionPressed("interact"))
         {
             GameManager.Instance?.TryInteract();
         }
+    }
+
+    /// <summary>
+    /// Broadcast skill usage to other players.
+    /// </summary>
+    private void BroadcastSkillAction(int skillIndex)
+    {
+        if (!Multiplayer.HasMultiplayerPeer()) return;
+
+        var actionSync = GetNodeOrNull<PlayerActionSync>("PlayerActionSync");
+        var mousePos = GetGlobalMousePosition();
+        var direction = (mousePos - GlobalPosition).Normalized();
+        actionSync?.Rpc(nameof(PlayerActionSync.ReceiveSkill),
+            skillIndex, GlobalPosition, direction);
     }
 
     /// <summary>
@@ -243,6 +290,13 @@ public partial class Player : CharacterBody2D
         CurrentHealth = Mathf.Max(CurrentHealth, 0);
         EmitSignal(SignalName.HealthChanged, CurrentHealth, MaxHealth);
         EmitSignal(SignalName.ShieldChanged, Shield, MaxShield);
+
+        // Broadcast damage taken to other players
+        if (Multiplayer.HasMultiplayerPeer() && IsLocalPlayer)
+        {
+            var actionSync = GetNodeOrNull<PlayerActionSync>("PlayerActionSync");
+            actionSync?.Rpc(nameof(PlayerActionSync.ReceiveDamageTaken), damage);
+        }
 
         if (CurrentHealth <= 0) Die();
     }

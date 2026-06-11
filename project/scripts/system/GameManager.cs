@@ -1,5 +1,6 @@
 using Godot;
 using System.Collections.Generic;
+using Miao.Network;
 using Miao.Pickup;
 using Miao.UI;
 using Miao.Weapon;
@@ -58,6 +59,26 @@ public partial class GameManager : Node
         _killCount = 0;
         _glimmer = 0;
         _engramDecoder?.Clear();
+
+        // In multiplayer, host tells all clients to start
+        if (Multiplayer.HasMultiplayerPeer() && NetworkManager.Instance.IsHost)
+        {
+            Rpc(nameof(StartGameRpc));
+        }
+
+        GetTree().ChangeSceneToFile("res://scenes/main.tscn");
+    }
+
+    [Rpc(MultiplayerApi.TransferMode.Reliable)]
+    private void StartGameRpc()
+    {
+        // Client receives game start from host
+        if (NetworkManager.Instance.IsHost) return;
+        CurrentState = GameState.Playing;
+        _gameTime = 0;
+        _killCount = 0;
+        _glimmer = 0;
+        _engramDecoder?.Clear();
         GetTree().ChangeSceneToFile("res://scenes/main.tscn");
     }
 
@@ -65,6 +86,13 @@ public partial class GameManager : Node
     {
         if (_player == player) return; // 防止重复注册
         _player = player;
+
+        // Set network player ID if in multiplayer
+        if (Multiplayer.HasMultiplayerPeer())
+        {
+            player.PlayerId = player.Name.ToString().ToInt();
+        }
+
         player.PlayerDied += OnPlayerDied;
     }
 
@@ -170,10 +198,17 @@ public partial class GameManager : Node
     /// <summary>
     /// 统一结算流程 — 胜利和失败共用
     /// 转移微光到 MetaProgression，显示结算 UI
+    /// 每个玩家独立结算（loot/engram 不同步）
     /// </summary>
     private void SettleRun(bool isVictory)
     {
         GetTree().Paused = true;
+
+        // Notify clients of settlement in multiplayer
+        if (Multiplayer.HasMultiplayerPeer() && NetworkManager.Instance.IsHost)
+        {
+            Rpc(nameof(SettleRunRpc), isVictory);
+        }
 
         // 转移微光到持久化存储
         if (_glimmer > 0)
@@ -194,6 +229,15 @@ public partial class GameManager : Node
         GetTree().CurrentScene.AddChild(settlementUI);
         settlementUI.SetData(isVictory, _killCount, _gameTime, _glimmer,
             _engramDecoder, weaponName);
+    }
+
+    [Rpc(MultiplayerApi.TransferMode.Reliable)]
+    private void SettleRunRpc(bool isVictory)
+    {
+        // Client receives settlement notification from host
+        if (NetworkManager.Instance.IsHost) return;
+        CurrentState = isVictory ? GameState.Settlement : GameState.GameOver;
+        SettleRun(isVictory);
     }
 
     /// <summary>

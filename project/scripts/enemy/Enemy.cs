@@ -1,5 +1,6 @@
 using Godot;
 using Miao.Armor;
+using Miao.Network;
 using Miao.Pickup;
 using Miao.System;
 using Miao.Weapon;
@@ -12,6 +13,8 @@ namespace Miao.Enemy;
 /// </summary>
 public partial class Enemy : CharacterBody2D
 {
+    /// <summary>网络 ID，用于跨网络标识敌人</summary>
+    public int NetworkId { get; set; }
     /// <summary>移动速度</summary>
     [Export] public float MoveSpeed = 80f;
 
@@ -66,6 +69,23 @@ public partial class Enemy : CharacterBody2D
         AddToGroup("enemy");
 
         SetupVisuals();
+
+        // Attach EnemySync for multiplayer state synchronization
+        if (Multiplayer.HasMultiplayerPeer())
+        {
+            var sync = new EnemySync();
+            sync.SetNetworkId(NetworkId);
+            AddChild(sync);
+        }
+    }
+
+    /// <summary>
+    /// Allow network layer to update health on clients.
+    /// </summary>
+    public void SetNetworkHealth(int health)
+    {
+        CurrentHealth = Mathf.Clamp(health, 0, MaxHealth);
+        UpdateHpBar();
     }
 
     private void SetupVisuals()
@@ -117,6 +137,9 @@ public partial class Enemy : CharacterBody2D
 
     public override void _PhysicsProcess(double delta)
     {
+        // Only host runs enemy AI in multiplayer
+        if (Multiplayer.HasMultiplayerPeer() && !NetworkManager.Instance.IsHost) return;
+
         if (_player == null) return;
 
         // 受伤冷却计时
@@ -219,6 +242,13 @@ public partial class Enemy : CharacterBody2D
 
     private void Die()
     {
+        // Notify clients of enemy death before freeing
+        if (Multiplayer.HasMultiplayerPeer() && NetworkManager.Instance.IsHost)
+        {
+            var sync = GetNodeOrNull<EnemySync>("EnemySync");
+            sync?.Rpc(nameof(EnemySync.NotifyEnemyDeath), NetworkId);
+        }
+
         EmitSignal(SignalName.EnemyDied, ExperienceValue);
 
         // 找到 player 并充能超能

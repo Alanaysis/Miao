@@ -2,6 +2,7 @@ using Godot;
 using System.Collections.Generic;
 using Miao.Data;
 using Miao.Enemy;
+using Miao.Network;
 using Miao.Pickup;
 using Miao.Weapon;
 
@@ -34,6 +35,7 @@ public partial class RoomGenerator : Node
     private Node2D _enemyContainer;
     private Node2D _player;
     private Vector2 _bossPosition;
+    private int _nextEnemyNetworkId = 100; // Start enemy IDs above player IDs
 
     [Signal]
     public delegate void RoomClearedEventHandler(int roomIndex);
@@ -64,6 +66,13 @@ public partial class RoomGenerator : Node
 
         // 应用地图主题
         ApplyMapTheme();
+
+        // In multiplayer, only host spawns enemies
+        if (Multiplayer.HasMultiplayerPeer() && !NetworkManager.Instance.IsHost)
+        {
+            GD.Print("Client: waiting for host to spawn enemies");
+            return;
+        }
 
         StartRoom();
     }
@@ -113,6 +122,9 @@ public partial class RoomGenerator : Node
 
     private void SpawnWave()
     {
+        // Only host spawns enemies in multiplayer
+        if (Multiplayer.HasMultiplayerPeer() && !NetworkManager.Instance.IsHost) return;
+
         if (IsBossRoom)
         {
             SpawnBoss();
@@ -137,6 +149,7 @@ public partial class RoomGenerator : Node
             var enemy = scene.Instantiate<Enemy.Enemy>();
             enemy.GlobalPosition = GetSpawnPosition();
             enemy.RoomIndex = CurrentRoom;
+            enemy.NetworkId = _nextEnemyNetworkId++;
 
             enemy.EnemyDied += OnEnemyDied;
 
@@ -156,6 +169,7 @@ public partial class RoomGenerator : Node
 
     private void OnSplitEnemySpawned(Enemy.Enemy enemy)
     {
+        enemy.NetworkId = _nextEnemyNetworkId++;
         enemy.EnemyDied += OnEnemyDied;
         _enemiesRemaining++;
     }
@@ -199,6 +213,7 @@ public partial class RoomGenerator : Node
 
         var boss = bossScene.Instantiate<BugQueen>();
         boss.GlobalPosition = _player.GlobalPosition + new Vector2(0, -300);
+        boss.NetworkId = _nextEnemyNetworkId++;
         _bossPosition = boss.GlobalPosition;
         boss.SmallBugScene = SmallBugScene;
         boss.EnemyDied += OnBossDied;
@@ -277,6 +292,9 @@ public partial class RoomGenerator : Node
 
     public void AdvanceRoom()
     {
+        // Only host advances rooms in multiplayer
+        if (Multiplayer.HasMultiplayerPeer() && !NetworkManager.Instance.IsHost) return;
+
         CurrentRoom++;
         if (CurrentRoom >= TotalRooms)
         {
