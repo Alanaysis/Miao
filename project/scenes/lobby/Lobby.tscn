@@ -1,0 +1,18 @@
+[gd_scene format=3]
+
+[node name="Lobby" type="Node2D"]
+
+[node name="Background" type="ColorRect" parent="."]
+offset_right = 1280
+offset_bottom = 720
+color = Color(0.05, 0.07, 0.12, 1)
+
+[node name="Floor" type="Node2D" parent="."]
+
+[node name="Walls" type="Node2D" parent="."]
+
+[node name="Facilities" type="Node2D" parent="."]
+
+[node name="LobbyPlayer" type="CharacterBody2D" parent="."]
+collision_layer = 1
+collision_mask = 1
