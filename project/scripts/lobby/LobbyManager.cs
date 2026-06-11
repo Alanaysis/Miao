@@ -14,6 +14,7 @@ public partial class LobbyManager : Node2D
     public override void _Ready()
     {
         _player = GetNode<LobbyPlayer>("LobbyPlayer");
+        GD.Print("[LobbyManager] Ready - 开始创建设施");
 
         // Create shared UIs
         _equipScreen = new EquipmentScreen();
@@ -26,6 +27,7 @@ public partial class LobbyManager : Node2D
         AddChild(_fireteamUI);
 
         CreateFacilities();
+        GD.Print("[LobbyManager] 所有设施创建完成");
     }
 
     private void CreateFacilities()

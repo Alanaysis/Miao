@@ -35,8 +35,10 @@ public abstract partial class LobbyFacility : Area2D, IInteractable
 
     private void OnBodyEntered(Node2D body)
     {
+        GD.Print($"[LobbyFacility] BodyEntered: {body.Name} (type: {body.GetType().Name})");
         if (body is LobbyPlayer player)
         {
+            GD.Print($"[LobbyFacility] 玩家进入范围: {FacilityName}");
             player.SetNearbyInteractable(this);
             _label.Show();
         }
@@ -46,6 +48,7 @@ public abstract partial class LobbyFacility : Area2D, IInteractable
     {
         if (body is LobbyPlayer player)
         {
+            GD.Print($"[LobbyFacility] 玩家离开范围: {FacilityName}");
             player.ClearNearbyInteractable();
             _label.Hide();
         }

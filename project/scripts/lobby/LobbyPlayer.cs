@@ -15,6 +15,7 @@ public partial class LobbyPlayer : CharacterBody2D
         _sprite = GetNode<Sprite2D>("Sprite2D");
         _interactPrompt = GetNode<Label>("InteractPrompt");
         _interactPrompt?.Hide();
+        GD.Print("[LobbyPlayer] Ready - 玩家已加载");
     }
 
     public override void _PhysicsProcess(double delta)
