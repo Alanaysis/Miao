@@ -284,11 +284,11 @@ public partial class GameManager : Node
     public float GetGameTime() => _gameTime;
     public int GetKillCount() => _killCount;
 
-    public void ReturnToMainMenu()
+    public void ReturnToLobby()
     {
         GetTree().Paused = false;
         CurrentState = GameState.MainMenu;
-        GetTree().ChangeSceneToFile("res://scenes/ui/MainMenu.tscn");
+        GetTree().ChangeSceneToFile("res://scenes/lobby/Lobby.tscn");
     }
 
     public void SpawnWeaponDrop(Vector2 position, WeaponData data)

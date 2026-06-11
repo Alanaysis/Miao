@@ -245,6 +245,6 @@ public partial class SettlementUI : CanvasLayer
     private void OnReturnToMenu()
     {
         QueueFree();
-        GameManager.Instance.ReturnToMainMenu();
+        GameManager.Instance.ReturnToLobby();
     }
 }
