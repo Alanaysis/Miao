@@ -24,6 +24,7 @@ config/icon="res://icon.svg"
 
 GameManager="*res://scenes/system/GameManager.tscn"
 MetaProgression="*res://scenes/system/MetaProgression.tscn"
+NetworkManager="*res://scenes/network/NetworkManager.tscn"
 
 [display]
 
