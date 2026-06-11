@@ -1,8 +1,11 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/lobby/LobbyManager.cs" id="1"]
 [ext_resource type="Script" path="res://scripts/lobby/LobbyPlayer.cs" id="2"]
 [ext_resource type="Texture2D" path="res://assets/sprites/player.png" id="3"]
+
+[sub_resource type="RectangleShape2D" id="1"]
+size = Vector2(24, 28)
 
 [node name="Lobby" type="Node2D"]
 script = ExtResource("1")
@@ -19,6 +22,7 @@ color = Color(0.05, 0.07, 0.12, 1)
 [node name="Facilities" type="Node2D" parent="."]
 
 [node name="LobbyPlayer" type="CharacterBody2D" parent="."]
+position = Vector2(640, 360)
 collision_layer = 1
 collision_mask = 1
 script = ExtResource("2")
@@ -27,12 +31,13 @@ script = ExtResource("2")
 texture = ExtResource("3")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="LobbyPlayer"]
+shape = SubResource("1")
 
 [node name="InteractPrompt" type="Label" parent="LobbyPlayer"]
-offset_left = -40
-offset_top = -30
-offset_right = 40
-offset_bottom = -10
+offset_left = -50
+offset_top = -40
+offset_right = 50
+offset_bottom = -20
 text = "[E] 互动"
 horizontal_alignment = 1
 visible = false

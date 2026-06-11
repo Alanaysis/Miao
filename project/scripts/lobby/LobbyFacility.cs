@@ -14,9 +14,18 @@ public abstract partial class LobbyFacility : Area2D, IInteractable
         CollisionLayer = 4;
         CollisionMask = 1;
 
+        // 添加碰撞体（检测玩家进入范围）
+        var shape = new CircleShape2D();
+        shape.Radius = 60;
+        var collision = new CollisionShape2D();
+        collision.Shape = shape;
+        AddChild(collision);
+
+        // 交互提示标签（显示在设施上方）
         _label = new Label();
         _label.Text = InteractText;
-        _label.Position = new Vector2(-40, -40);
+        _label.Position = new Vector2(-50, -60);
+        _label.AddThemeFontSizeOverride("font_size", 14);
         _label.Hide();
         AddChild(_label);
 
