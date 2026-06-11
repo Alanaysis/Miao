@@ -8,6 +8,7 @@ public partial class LobbyManager : Node2D
     private LobbyPlayer _player;
     private EquipmentScreen _equipScreen;
     private MetaShopUI _shopUI;
+    private FireteamUI _fireteamUI;
 
     public override void _Ready()
     {
@@ -19,6 +20,9 @@ public partial class LobbyManager : Node2D
 
         _shopUI = new MetaShopUI();
         AddChild(_shopUI);
+
+        _fireteamUI = new FireteamUI();
+        AddChild(_fireteamUI);
 
         CreateFacilities();
     }
@@ -53,6 +57,7 @@ public partial class LobbyManager : Node2D
         // Fireteam Communicator
         var fireteam = new FireteamCommunicator();
         fireteam.Position = new Vector2(640, 500);
+        fireteam.SetFireteamUI(_fireteamUI);
         facilities.AddChild(fireteam);
     }
 }

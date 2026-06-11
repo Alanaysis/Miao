@@ -1,9 +1,12 @@
 using Godot;
+using Miao.UI;
 
 namespace Miao.Lobby;
 
 public partial class FireteamCommunicator : LobbyFacility
 {
+    private FireteamUI _fireteamUI;
+
     public override void _Ready()
     {
         FacilityName = "火力战队通讯仪";
@@ -17,9 +20,20 @@ public partial class FireteamCommunicator : LobbyFacility
         AddChild(visual);
     }
 
+    public void SetFireteamUI(FireteamUI ui)
+    {
+        _fireteamUI = ui;
+    }
+
     public override void Interact()
     {
-        GD.Print("打开多人联机界面");
-        // TODO: create and show FireteamUI
+        if (_fireteamUI != null)
+        {
+            _fireteamUI.Open();
+        }
+        else
+        {
+            GD.PushWarning("FireteamCommunicator: FireteamUI not set");
+        }
     }
 }
