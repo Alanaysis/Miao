@@ -10,6 +10,7 @@ public partial class LobbyManager : Node2D
     private EquipmentScreen _equipScreen;
     private MetaShopUI _shopUI;
     private FireteamUI _fireteamUI;
+    private CodexUI _codexUI;
 
     public override void _Ready()
     {
@@ -25,6 +26,9 @@ public partial class LobbyManager : Node2D
 
         _fireteamUI = new FireteamUI();
         AddChild(_fireteamUI);
+
+        _codexUI = new CodexUI();
+        AddChild(_codexUI);
 
         CreateFacilities();
         GD.Print("[LobbyManager] 所有设施创建完成");
@@ -55,6 +59,7 @@ public partial class LobbyManager : Node2D
         // Vault
         var vault = new Vault();
         vault.Position = new Vector2(300, 500);
+        vault.SetCodexUI(_codexUI);
         facilities.AddChild(vault);
 
         // Fireteam Communicator

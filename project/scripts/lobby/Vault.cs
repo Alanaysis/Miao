@@ -1,9 +1,12 @@
 using Godot;
+using Miao.UI;
 
 namespace Miao.Lobby;
 
 public partial class Vault : LobbyFacility
 {
+    private CodexUI _codexUI;
+
     public override void _Ready()
     {
         FacilityName = "保险库";
@@ -17,9 +20,16 @@ public partial class Vault : LobbyFacility
         AddChild(visual);
     }
 
+    public void SetCodexUI(CodexUI ui)
+    {
+        _codexUI = ui;
+    }
+
     public override void Interact()
     {
-        GD.Print("打开图鉴/收藏系统");
-        // TODO: create and show CollectionCodex UI
+        if (_codexUI != null)
+        {
+            _codexUI.Open();
+        }
     }
 }
