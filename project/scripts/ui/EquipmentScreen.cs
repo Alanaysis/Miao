@@ -326,9 +326,11 @@ public partial class EquipmentScreen : Control
 
     public void Open()
     {
+        GD.Print("[EquipmentScreen] Open() 被调用");
         _isInGameMode = false;
         RefreshDisplay();
         Show();
+        GD.Print("[EquipmentScreen] 界面已显示");
     }
 
     /// <summary>

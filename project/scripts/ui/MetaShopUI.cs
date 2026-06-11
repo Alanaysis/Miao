@@ -81,8 +81,10 @@ public partial class MetaShopUI : CanvasLayer
 
     public void Open()
     {
+        GD.Print("[MetaShopUI] Open() 被调用");
         RefreshAll();
         Show();
+        GD.Print("[MetaShopUI] 界面已显示");
     }
 
     private void RefreshAll()

@@ -27,8 +27,10 @@ public partial class EquipmentMachine : LobbyFacility
 
     public override void Interact()
     {
+        GD.Print("[EquipmentMachine] Interact 被调用");
         if (_equipScreen != null)
         {
+            GD.Print("[EquipmentMachine] 打开装备界面");
             _equipScreen.Open();
         }
         else
