@@ -23,21 +23,25 @@ public abstract partial class LobbyFacility : Area2D, IInteractable
         collision.Shape = shape;
         AddChild(collision);
 
-        // 加载贴图
-        if (!string.IsNullOrEmpty(TexturePath) && FileAccess.FileExists(TexturePath))
+        // 加载贴图（失败则回退到彩色方块）
+        _sprite = new Sprite2D();
+        AddChild(_sprite);
+
+        if (!string.IsNullOrEmpty(TexturePath))
         {
-            _sprite = new Sprite2D();
-            _sprite.Texture = GD.Load<Texture2D>(TexturePath);
-            AddChild(_sprite);
+            var tex = GD.Load<Texture2D>(TexturePath);
+            if (tex != null)
+            {
+                _sprite.Texture = tex;
+            }
+            else
+            {
+                AddFallbackVisual();
+            }
         }
         else
         {
-            // 回退：彩色方块
-            var visual = new ColorRect();
-            visual.Size = new Vector2(64, 64);
-            visual.Position = new Vector2(-32, -32);
-            visual.Color = new Color(0.3f, 0.3f, 0.3f);
-            AddChild(visual);
+            AddFallbackVisual();
         }
 
         // 交互提示标签
@@ -71,4 +75,13 @@ public abstract partial class LobbyFacility : Area2D, IInteractable
     }
 
     public abstract void Interact();
+
+    private void AddFallbackVisual()
+    {
+        var visual = new ColorRect();
+        visual.Size = new Vector2(64, 64);
+        visual.Position = new Vector2(-32, -32);
+        visual.Color = new Color(0.3f, 0.3f, 0.5f);
+        AddChild(visual);
+    }
 }
