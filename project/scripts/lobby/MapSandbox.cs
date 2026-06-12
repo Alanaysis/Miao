@@ -12,13 +12,8 @@ public partial class MapSandbox : LobbyFacility
     {
         FacilityName = "地图沙盘";
         InteractText = "[E] 选择地图";
+        TexturePath = "res://assets/sprites/lobby/map_sandbox.png";
         base._Ready();
-
-        var visual = new ColorRect();
-        visual.Size = new Vector2(80, 80);
-        visual.Position = new Vector2(-40, -40);
-        visual.Color = new Color("#22c55e");
-        AddChild(visual);
     }
 
     public void SetEquipmentScreen(EquipmentScreen screen)
@@ -28,14 +23,12 @@ public partial class MapSandbox : LobbyFacility
 
     public override void Interact()
     {
-        // Open equipment screen with map selection
         if (_equipScreen != null)
         {
             _equipScreen.OpenForMapSelection();
         }
         else
         {
-            // Fallback: start game directly
             GameManager.Instance.StartGame();
         }
     }

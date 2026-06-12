@@ -11,13 +11,8 @@ public partial class FireteamCommunicator : LobbyFacility
     {
         FacilityName = "火力战队通讯仪";
         InteractText = "[E] 多人联机";
+        TexturePath = "res://assets/sprites/lobby/fireteam_comm.png";
         base._Ready();
-
-        var visual = new ColorRect();
-        visual.Size = new Vector2(80, 80);
-        visual.Position = new Vector2(-40, -40);
-        visual.Color = new Color("#ef4444");
-        AddChild(visual);
     }
 
     public void SetFireteamUI(FireteamUI ui)
@@ -30,10 +25,6 @@ public partial class FireteamCommunicator : LobbyFacility
         if (_fireteamUI != null)
         {
             _fireteamUI.Open();
-        }
-        else
-        {
-            GD.PushWarning("FireteamCommunicator: FireteamUI not set");
         }
     }
 }

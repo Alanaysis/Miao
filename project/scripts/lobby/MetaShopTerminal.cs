@@ -11,13 +11,8 @@ public partial class MetaShopTerminal : LobbyFacility
     {
         FacilityName = "Meta商店";
         InteractText = "[E] Meta商店";
+        TexturePath = "res://assets/sprites/lobby/meta_shop.png";
         base._Ready();
-
-        var visual = new ColorRect();
-        visual.Size = new Vector2(80, 80);
-        visual.Position = new Vector2(-40, -40);
-        visual.Color = new Color("#a855f7");
-        AddChild(visual);
     }
 
     public void SetShopUI(MetaShopUI ui)

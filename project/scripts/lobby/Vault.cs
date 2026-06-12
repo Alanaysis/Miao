@@ -11,13 +11,8 @@ public partial class Vault : LobbyFacility
     {
         FacilityName = "保险库";
         InteractText = "[E] 图鉴";
+        TexturePath = "res://assets/sprites/lobby/vault.png";
         base._Ready();
-
-        var visual = new ColorRect();
-        visual.Size = new Vector2(80, 80);
-        visual.Position = new Vector2(-40, -40);
-        visual.Color = new Color("#eab308");
-        AddChild(visual);
     }
 
     public void SetCodexUI(CodexUI ui)
