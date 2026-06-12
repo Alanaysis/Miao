@@ -11,7 +11,7 @@ public partial class FireteamCommunicator : LobbyFacility
     {
         FacilityName = "火力战队通讯仪";
         InteractText = "[E] 多人联机";
-        TexturePath = "res://assets/sprites/lobby/fireteam_comm.png";
+        TexturePath = "res://assets/sprites/game/lobby/facility_fireteam.png";
         base._Ready();
     }
 

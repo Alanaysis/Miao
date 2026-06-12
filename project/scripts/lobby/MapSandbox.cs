@@ -12,7 +12,7 @@ public partial class MapSandbox : LobbyFacility
     {
         FacilityName = "地图沙盘";
         InteractText = "[E] 选择地图";
-        TexturePath = "res://assets/sprites/lobby/map_sandbox.png";
+        TexturePath = "res://assets/sprites/game/lobby/facility_map_sandbox.png";
         base._Ready();
     }
 

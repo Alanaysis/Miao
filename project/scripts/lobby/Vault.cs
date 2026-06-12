@@ -11,7 +11,7 @@ public partial class Vault : LobbyFacility
     {
         FacilityName = "保险库";
         InteractText = "[E] 图鉴";
-        TexturePath = "res://assets/sprites/lobby/vault.png";
+        TexturePath = "res://assets/sprites/game/lobby/facility_vault.png";
         base._Ready();
     }
 

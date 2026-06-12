@@ -11,7 +11,7 @@ public partial class EquipmentMachine : LobbyFacility
     {
         FacilityName = "装备配置机器";
         InteractText = "[E] 装备配置";
-        TexturePath = "res://assets/sprites/lobby/equipment_machine.png";
+        TexturePath = "res://assets/sprites/game/lobby/facility_equipment.png";
         base._Ready();
     }
 

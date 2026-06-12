@@ -11,7 +11,7 @@ public partial class MetaShopTerminal : LobbyFacility
     {
         FacilityName = "Meta商店";
         InteractText = "[E] Meta商店";
-        TexturePath = "res://assets/sprites/lobby/meta_shop.png";
+        TexturePath = "res://assets/sprites/game/lobby/facility_meta_shop.png";
         base._Ready();
     }
 
