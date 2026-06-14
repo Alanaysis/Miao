@@ -31,6 +31,7 @@ public partial class Main : Node2D
 		var playerScene = GD.Load<PackedScene>(scenePath);
 		var player = playerScene.Instantiate<PlayerClass>();
 		player.Name = classId == "hunter" ? "Hunter" : "Titan";
+		player.SetMultiplayerAuthority(1);
 		player.Position = new Vector2(640, 360);
 		AddChild(player);
 

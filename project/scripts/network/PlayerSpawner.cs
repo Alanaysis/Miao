@@ -15,6 +15,7 @@ public partial class PlayerSpawner : MultiplayerSpawner
     {
         var player = PlayerScene.Instantiate();
         player.Name = id.ToString();
+        player.SetMultiplayerAuthority(id);
         // Set position based on player count
         var players = GetTree().GetNodesInGroup("player");
         player.GetNode<CharacterBody2D>(".").GlobalPosition = new Vector2(400 + players.Count * 100, 360);

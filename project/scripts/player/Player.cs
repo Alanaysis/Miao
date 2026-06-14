@@ -176,7 +176,7 @@ public partial class Player : CharacterBody2D
     public override void _PhysicsProcess(double delta)
     {
         // Only process input for local player
-        if (!IsLocalPlayer) return;
+        if (!IsMultiplayerAuthority()) return;
 
         // 移动（高位俯视角，8方向移动）
         var inputDir = Input.GetVector("move_left", "move_right", "move_up", "move_down");

@@ -138,7 +138,7 @@ public partial class Enemy : CharacterBody2D
     public override void _PhysicsProcess(double delta)
     {
         // Only host runs enemy AI in multiplayer
-        if (Multiplayer.HasMultiplayerPeer() && !NetworkManager.Instance.IsHost) return;
+        if (!Multiplayer.IsServer()) return;
 
         if (_player == null) return;
 
@@ -243,7 +243,7 @@ public partial class Enemy : CharacterBody2D
     private void Die()
     {
         // Notify clients of enemy death before freeing
-        if (Multiplayer.HasMultiplayerPeer() && NetworkManager.Instance.IsHost)
+        if (Multiplayer.IsServer())
         {
             var sync = GetNodeOrNull<EnemySync>("EnemySync");
             sync?.Rpc(nameof(EnemySync.NotifyEnemyDeath), NetworkId);

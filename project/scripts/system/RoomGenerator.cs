@@ -68,7 +68,7 @@ public partial class RoomGenerator : Node
         ApplyMapTheme();
 
         // In multiplayer, only host spawns enemies
-        if (Multiplayer.HasMultiplayerPeer() && !NetworkManager.Instance.IsHost)
+        if (!Multiplayer.IsServer())
         {
             GD.Print("Client: waiting for host to spawn enemies");
             return;
@@ -123,7 +123,7 @@ public partial class RoomGenerator : Node
     private void SpawnWave()
     {
         // Only host spawns enemies in multiplayer
-        if (Multiplayer.HasMultiplayerPeer() && !NetworkManager.Instance.IsHost) return;
+        if (!Multiplayer.IsServer()) return;
 
         if (IsBossRoom)
         {
@@ -293,7 +293,7 @@ public partial class RoomGenerator : Node
     public void AdvanceRoom()
     {
         // Only host advances rooms in multiplayer
-        if (Multiplayer.HasMultiplayerPeer() && !NetworkManager.Instance.IsHost) return;
+        if (!Multiplayer.IsServer()) return;
 
         CurrentRoom++;
         if (CurrentRoom >= TotalRooms)

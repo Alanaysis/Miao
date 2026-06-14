@@ -61,7 +61,7 @@ public partial class GameManager : Node
         _engramDecoder?.Clear();
 
         // In multiplayer, host tells all clients to start
-        if (Multiplayer.HasMultiplayerPeer() && NetworkManager.Instance.IsHost)
+        if (Multiplayer.IsServer())
         {
             Rpc(nameof(StartGameRpc));
         }
@@ -73,7 +73,7 @@ public partial class GameManager : Node
     private void StartGameRpc()
     {
         // Client receives game start from host
-        if (NetworkManager.Instance.IsHost) return;
+        if (Multiplayer.IsServer()) return;
         CurrentState = GameState.Playing;
         _gameTime = 0;
         _killCount = 0;
@@ -205,7 +205,7 @@ public partial class GameManager : Node
         GetTree().Paused = true;
 
         // Notify clients of settlement in multiplayer
-        if (Multiplayer.HasMultiplayerPeer() && NetworkManager.Instance.IsHost)
+        if (Multiplayer.IsServer())
         {
             Rpc(nameof(SettleRunRpc), isVictory);
         }
@@ -235,7 +235,7 @@ public partial class GameManager : Node
     private void SettleRunRpc(bool isVictory)
     {
         // Client receives settlement notification from host
-        if (NetworkManager.Instance.IsHost) return;
+        if (Multiplayer.IsServer()) return;
         CurrentState = isVictory ? GameState.Settlement : GameState.GameOver;
         SettleRun(isVictory);
     }

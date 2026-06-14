@@ -1,0 +1,4 @@
+[gd_scene format=3 uid="uid://b61b57lpmr1eh"]
+
+[node name="MultiplayerSpawner" type="MultiplayerSpawner" unique_id=2071625140]
+_spawnable_scenes = PackedStringArray("res://scenes/player/Player.tscn", "res://scenes/player/Hunter.tscn")

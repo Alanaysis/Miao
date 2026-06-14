@@ -27,7 +27,7 @@ public partial class EnemySync : Node
     public override void _Process(double delta)
     {
         if (!Multiplayer.HasMultiplayerPeer()) return;
-        if (!NetworkManager.Instance.IsHost) return;
+        if (!Multiplayer.IsServer()) return;
 
         _syncTimer -= (float)delta;
         if (_syncTimer <= 0)
@@ -44,7 +44,7 @@ public partial class EnemySync : Node
     [Rpc]
     public void ReceiveEnemyState(int enemyId, Vector2 position, int health, bool isDead)
     {
-        if (NetworkManager.Instance.IsHost) return;
+        if (Multiplayer.IsServer()) return;
 
         // Apply enemy state from host with interpolation
         _enemy.GlobalPosition = _enemy.GlobalPosition.Lerp(position, 0.3f);
@@ -62,7 +62,7 @@ public partial class EnemySync : Node
     [Rpc]
     public void NotifyEnemyDeath(int enemyId)
     {
-        if (NetworkManager.Instance.IsHost) return;
+        if (Multiplayer.IsServer()) return;
 
         if (!_enemy.IsQueuedForDeletion())
         {
@@ -76,7 +76,7 @@ public partial class EnemySync : Node
     [Rpc]
     public void RequestDamage(int enemyId, int damage, int sourcePlayerId)
     {
-        if (!NetworkManager.Instance.IsHost) return;
+        if (!Multiplayer.IsServer()) return;
 
         // Host validates and applies damage
         _enemy.TakeDamage(damage);
