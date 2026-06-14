@@ -11,8 +11,6 @@ public partial class NetworkManager : Node
     public new bool IsConnected { get; private set; }
     public int LocalPlayerId { get; private set; }
 
-    private ENetMultiplayerPeer _peer;
-
     [Signal]
     public delegate void PlayerConnectedEventHandler(int playerId);
     [Signal]
@@ -31,17 +29,17 @@ public partial class NetworkManager : Node
         Multiplayer.ConnectionFailed += OnConnectionFailed;
     }
 
-    public Error HostGame(int port = 7777, int maxPlayers = 4)
+    public Error HostGame(int port = 7777, int maxPlayers = 6)
     {
-        _peer = new ENetMultiplayerPeer();
-        var error = _peer.CreateServer(port, maxPlayers);
+        var peer = new ENetMultiplayerPeer();
+        var error = peer.CreateServer(port, maxPlayers);
         if (error != Error.Ok)
         {
             GD.PushError($"NetworkManager: Failed to create server: {error}");
             return error;
         }
 
-        Multiplayer.MultiplayerPeer = _peer;
+        Multiplayer.MultiplayerPeer = peer;
         IsHost = true;
         IsConnected = true;
         LocalPlayerId = 1;
@@ -53,15 +51,15 @@ public partial class NetworkManager : Node
 
     public Error JoinGame(string address, int port = 7777)
     {
-        _peer = new ENetMultiplayerPeer();
-        var error = _peer.CreateClient(address, port);
+        var peer = new ENetMultiplayerPeer();
+        var error = peer.CreateClient(address, port);
         if (error != Error.Ok)
         {
             GD.PushError($"NetworkManager: Failed to connect to server: {error}");
             return error;
         }
 
-        Multiplayer.MultiplayerPeer = _peer;
+        Multiplayer.MultiplayerPeer = peer;
         IsHost = false;
 
         GD.Print($"Connecting to {address}:{port}");
@@ -70,12 +68,12 @@ public partial class NetworkManager : Node
 
     public void Disconnect()
     {
-        if (_peer != null)
+        var peer = Multiplayer.MultiplayerPeer;
+        if (peer is not OfflineMultiplayerPeer)
         {
-            _peer.Close();
-            _peer = null;
+            peer.Close();
         }
-        Multiplayer.MultiplayerPeer = null;
+        Multiplayer.MultiplayerPeer = new OfflineMultiplayerPeer();
         IsHost = false;
         IsConnected = false;
         LocalPlayerId = 0;
