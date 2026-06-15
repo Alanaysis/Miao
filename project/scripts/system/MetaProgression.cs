@@ -96,24 +96,36 @@ public partial class MetaProgression : Node
 
     // ==================== Stat Bonuses (meta upgrades) ====================
 
+    /// <summary>
+    /// 光等模块提供的额外生命值（每级+5）
+    /// </summary>
     public int GetBonusHealth()
     {
-        return 0; // TODO: implement based on purchased upgrades
+        return _lightModuleLevel * 5;
     }
 
+    /// <summary>
+    /// 光等模块提供的移速加成（每级+1%）
+    /// </summary>
     public float GetBonusMoveSpeed()
     {
-        return 1.0f; // TODO: implement based on purchased upgrades
+        return 1.0f + _lightModuleLevel * 0.01f;
     }
 
+    /// <summary>
+    /// 光等模块提供的伤害加成（每级+2%）
+    /// </summary>
     public float GetBonusDamage()
     {
-        return 1.0f; // TODO: implement based on purchased upgrades
+        return 1.0f + _lightModuleLevel * 0.02f;
     }
 
+    /// <summary>
+    /// 光等模块提供的掉率加成（每级+1.5%）
+    /// </summary>
     public float GetBonusDropRate()
     {
-        return 1.0f; // TODO: implement based on purchased upgrades
+        return 1.0f + _lightModuleLevel * 0.015f;
     }
 
     // ==================== Glimmer ====================

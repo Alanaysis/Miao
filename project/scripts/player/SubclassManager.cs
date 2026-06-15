@@ -8,6 +8,7 @@ public partial class SubclassManager : Node
 {
     public SubclassType ActiveSubclass { get; private set; } = SubclassType.Void;
     public SubclassConfig ActiveConfig { get; private set; }
+    public string ClassName { get; private set; } = "hunter";
 
     private Dictionary<string, Dictionary<string, SubclassConfig>> _allSubclasses;
 
@@ -23,8 +24,17 @@ public partial class SubclassManager : Node
         if (json != null)
         {
             _allSubclasses = json;
-            SetSubclass(ActiveSubclass);
+            // 不在此处调用 SetSubclass —— 等 SetClassName 被 Player._Ready 调用后再加载
         }
+    }
+
+    /// <summary>
+    /// 设置当前职业名称（由 Player 子类在 _Ready 中调用）
+    /// </summary>
+    public void SetClassName(string className)
+    {
+        ClassName = className;
+        SetSubclass(ActiveSubclass);
     }
 
     public void SetSubclass(SubclassType type)
@@ -32,11 +42,9 @@ public partial class SubclassManager : Node
         ActiveSubclass = type;
         string key = type.ToString().ToLower();
 
-        // Find the subclass config for the current class (hunter/titan/warlock)
-        // For now, default to hunter
-        if (_allSubclasses != null && _allSubclasses.ContainsKey("hunter") && _allSubclasses["hunter"].ContainsKey(key))
+        if (_allSubclasses != null && _allSubclasses.ContainsKey(ClassName) && _allSubclasses[ClassName].ContainsKey(key))
         {
-            ActiveConfig = _allSubclasses["hunter"][key];
+            ActiveConfig = _allSubclasses[ClassName][key];
         }
     }
 
@@ -86,7 +94,7 @@ public partial class SubclassManager : Node
     /// <summary>
     /// 获取当前职业名称（用于星相/碎片查询）
     /// </summary>
-    public string GetClassName() => "hunter";
+    public string GetClassName() => ClassName;
 
     /// <summary>
     /// 获取当前子职业键名（用于星相/碎片查询）

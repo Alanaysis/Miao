@@ -74,7 +74,23 @@ public partial class RoomGenerator : Node
             return;
         }
 
+        // 主机通知所有客户端开始游戏
+        Rpc(nameof(NotifyGameStart), CurrentMapId);
         StartRoom();
+    }
+
+    /// <summary>
+    /// 通知客户端游戏开始，同步地图配置
+    /// </summary>
+    [Rpc]
+    public void NotifyGameStart(string mapId)
+    {
+        if (Multiplayer.IsServer()) return;
+
+        CurrentMapId = mapId;
+        LoadMapConfig();
+        ApplyMapTheme();
+        GD.Print($"Client: 收到游戏开始通知，地图: {mapId}");
     }
 
     private void LoadMapConfig()
@@ -112,12 +128,33 @@ public partial class RoomGenerator : Node
         _enemiesRemaining = 0;
         GD.Print($"进入房间 {CurrentRoom + 1}/{TotalRooms}");
 
+        // 主机通知客户端房间切换
+        Rpc(nameof(NotifyRoomStart), CurrentRoom);
+
         // 切换房间主题（地图主题下房间仍有细微变化）
         var scene = GetTree().CurrentScene;
         scene.GetNodeOrNull<MapBackground>("MapBackground")?.SetRoomTheme(CurrentRoom);
         scene.GetNodeOrNull<MapBoundary>("MapBoundary")?.SetRoomTheme(CurrentRoom);
 
         SpawnWave();
+    }
+
+    /// <summary>
+    /// 通知客户端房间切换
+    /// </summary>
+    [Rpc]
+    public void NotifyRoomStart(int roomIndex)
+    {
+        if (Multiplayer.IsServer()) return;
+
+        CurrentRoom = roomIndex;
+        _currentWave = 0;
+        GD.Print($"Client: 收到房间切换通知，房间 {roomIndex + 1}/{TotalRooms}");
+
+        // 切换房间主题
+        var scene = GetTree().CurrentScene;
+        scene.GetNodeOrNull<MapBackground>("MapBackground")?.SetRoomTheme(CurrentRoom);
+        scene.GetNodeOrNull<MapBoundary>("MapBoundary")?.SetRoomTheme(CurrentRoom);
     }
 
     private void SpawnWave()
@@ -298,6 +335,8 @@ public partial class RoomGenerator : Node
         CurrentRoom++;
         if (CurrentRoom >= TotalRooms)
         {
+            // 通知客户端所有房间清完
+            Rpc(nameof(NotifyAllRoomsCleared));
             EmitSignal(SignalName.AllRoomsCleared);
         }
         else
@@ -305,6 +344,18 @@ public partial class RoomGenerator : Node
             CleanupRoom();
             StartRoom();
         }
+    }
+
+    /// <summary>
+    /// 通知客户端所有房间清完
+    /// </summary>
+    [Rpc]
+    public void NotifyAllRoomsCleared()
+    {
+        if (Multiplayer.IsServer()) return;
+
+        GD.Print("Client: 收到所有房间清完通知");
+        EmitSignal(SignalName.AllRoomsCleared);
     }
 
     private void CleanupRoom()

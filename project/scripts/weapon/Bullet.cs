@@ -1,6 +1,7 @@
 using Godot;
 using System.Collections.Generic;
 using Miao.Enemy;
+using Miao.Network;
 
 namespace Miao.Weapon;
 
@@ -52,7 +53,24 @@ public partial class Bullet : Area2D
 		if (body is Enemy.Enemy enemy && !_hitTargets.Contains(body))
 		{
 			_hitTargets.Add(body);
-			enemy.TakeDamage(Damage);
+
+			// 多人联机：伤害走主机验证
+			if (Multiplayer.HasMultiplayerPeer() && !Multiplayer.IsServer())
+			{
+				// 客户端发送伤害请求给主机
+				var enemySync = enemy.GetNodeOrNull<EnemySync>("EnemySync");
+				if (enemySync != null)
+				{
+					int sourcePlayerId = (int)Multiplayer.GetUniqueId();
+					enemySync.Rpc(nameof(EnemySync.RequestDamage), enemy.NetworkId, Damage, sourcePlayerId);
+				}
+			}
+			else
+			{
+				// 单人或主机直接应用伤害
+				enemy.TakeDamage(Damage);
+			}
+
 			enemy.ApplyKnockback(Velocity.Normalized() * Knockback);
 
 			// 命中特效：小爆炸
@@ -67,6 +85,7 @@ public partial class Bullet : Area2D
 					var boom = explosion.Instantiate<RocketExplosion>();
 					boom.GlobalPosition = GlobalPosition;
 					boom.Init(Damage, 80f);
+					boom.SourcePlayerId = (int)Multiplayer.GetUniqueId();
 					GetTree().CurrentScene.AddChild(boom);
 				}
 			}

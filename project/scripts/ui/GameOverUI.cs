@@ -1,4 +1,5 @@
 using Godot;
+using System.Collections.Generic;
 using Miao.System;
 using Miao.Weapon;
 
@@ -24,6 +25,7 @@ public partial class SettlementUI : CanvasLayer
     private int _glimmerEarned;
     private bool _isVictory;
     private string _weaponName;
+    private HashSet<WeaponData> _decomposedWeapons = new();
 
     public override void _Ready()
     {
@@ -200,11 +202,29 @@ public partial class SettlementUI : CanvasLayer
         foreach (var weapon in _decoder.DecodedWeapons)
         {
             var rc = UIStyle.RarityColor(weapon.Rarity);
+            var hbox = new HBoxContainer();
+
             var label = UIStyle.MakeLabel(
                 $"[{UIStyle.RarityName(weapon.Rarity)}] {weapon.DisplayName}",
                 14, rc
             );
-            _resultList.AddChild(label);
+            hbox.AddChild(label);
+
+            // 分解按钮
+            if (!_decomposedWeapons.Contains(weapon))
+            {
+                int glimmerValue = GetDecomposeValue(weapon.Rarity);
+                var decomposeBtn = UIStyle.MakeButton($"分解 (+{glimmerValue}微光)", new Vector2(120, 24));
+                decomposeBtn.Pressed += () => OnDecompose(weapon, glimmerValue);
+                hbox.AddChild(decomposeBtn);
+            }
+            else
+            {
+                var decomposedLabel = UIStyle.MakeLabel("[已分解]", 12, UIStyle.TextMuted);
+                hbox.AddChild(decomposedLabel);
+            }
+
+            _resultList.AddChild(hbox);
         }
 
         if (_decoder.DecodedWeapons.Count == 0)
@@ -234,6 +254,35 @@ public partial class SettlementUI : CanvasLayer
         _decoder?.DecodeAll();
         GD.Print($"一键解码完成，共获得 {_decoder?.DecodedWeapons.Count ?? 0} 把武器");
         RefreshEngramList();
+    }
+
+    /// <summary>
+    /// 分解武器获得微光
+    /// </summary>
+    private void OnDecompose(WeaponData weapon, int glimmerValue)
+    {
+        _decomposedWeapons.Add(weapon);
+        _glimmerEarned += glimmerValue;
+        _glimmerLabel.Text = $"获得微光: {_glimmerEarned}";
+        GD.Print($"分解武器: {weapon.DisplayName}，获得 {glimmerValue} 微光");
+        RefreshEngramList();
+    }
+
+    /// <summary>
+    /// 根据稀有度返回分解获得的微光
+    /// </summary>
+    private int GetDecomposeValue(Rarity rarity)
+    {
+        return rarity switch
+        {
+            Rarity.Common => 10,
+            Rarity.Uncommon => 25,
+            Rarity.Rare => 60,
+            Rarity.Epic => 150,
+            Rarity.Legendary => 350,
+            Rarity.Exotic => 500,
+            _ => 10
+        };
     }
 
     private void OnRestart()

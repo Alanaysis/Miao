@@ -18,8 +18,9 @@ public static class LootTable
         if (isBoss)
         {
             float roll = GD.Randf();
-            if (roll < 0.10f) return Rarity.Legendary;
-            if (roll < 0.40f) return Rarity.Epic;
+            if (roll < 0.05f) return Rarity.Exotic;
+            if (roll < 0.15f) return Rarity.Legendary;
+            if (roll < 0.45f) return Rarity.Epic;
             if (roll < 0.80f) return Rarity.Rare;
             return Rarity.Uncommon;
         }
@@ -187,6 +188,7 @@ public static class LootTable
             Rarity.Rare => 1.25f,
             Rarity.Epic => 1.4f,
             Rarity.Legendary => 1.6f,
+            Rarity.Exotic => 1.8f,
             _ => 1.0f
         };
         data.BaseDamage = Mathf.RoundToInt(data.BaseDamage * rarityMult);
@@ -200,8 +202,8 @@ public static class LootTable
             exclude.Add(perk);
         }
 
-        // 金武：分配独有特性
-        if (rarity == Rarity.Legendary)
+        // 金武/异域：分配独有特性
+        if (rarity == Rarity.Legendary || rarity == Rarity.Exotic)
         {
             var traits = Enum.GetValues<LegendaryTraitId>();
             data.LegendaryTrait = traits[GD.RandRange(1, traits.Length - 1)]; // skip Default
@@ -220,6 +222,7 @@ public static class LootTable
             Rarity.Rare => "改良",
             Rarity.Epic => "精锐",
             Rarity.Legendary => "传说",
+            Rarity.Exotic => "异域",
             _ => ""
         };
 

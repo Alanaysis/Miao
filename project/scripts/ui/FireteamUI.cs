@@ -1,4 +1,5 @@
 using Godot;
+using System.Collections.Generic;
 using Miao.Network;
 
 namespace Miao.UI;
@@ -15,6 +16,7 @@ public partial class FireteamUI : CanvasLayer
     private Label _readyLabel;
 
     private bool _isReady = false;
+    private Dictionary<int, bool> _remoteReadyStates = new();
 
     public override void _Ready()
     {
@@ -146,7 +148,10 @@ public partial class FireteamUI : CanvasLayer
         // Show remote players
         foreach (var id in net.GetConnectedPlayerIds())
         {
-            var label = UIStyle.MakeLabel($"玩家 {id}", 14, UIStyle.TextPrimary);
+            bool remoteReady = _remoteReadyStates.GetValueOrDefault(id, false);
+            var label = UIStyle.MakeLabel(
+                $"玩家 {id} {(remoteReady ? "[已准备]" : "")}",
+                14, remoteReady ? UIStyle.AccentGreen : UIStyle.TextPrimary);
             _playerList.AddChild(label);
         }
     }
@@ -172,6 +177,7 @@ public partial class FireteamUI : CanvasLayer
         _isReady = false;
         _readyBtn.Text = "准备";
         _readyLabel.Text = "";
+        _remoteReadyStates.Clear();
         RefreshUI();
     }
 
@@ -180,17 +186,44 @@ public partial class FireteamUI : CanvasLayer
         _isReady = !_isReady;
         _readyBtn.Text = _isReady ? "取消准备" : "准备";
         _readyLabel.Text = _isReady ? "已准备" : "";
+
+        // 广播准备状态给其他玩家
+        BroadcastReadyState(_isReady);
         RefreshPlayerList();
-        // TODO: broadcast ready state to other players
+    }
+
+    /// <summary>
+    /// 广播准备状态给所有远程玩家
+    /// </summary>
+    private void BroadcastReadyState(bool isReady)
+    {
+        if (!Multiplayer.HasMultiplayerPeer()) return;
+
+        int localId = (int)Multiplayer.GetUniqueId();
+        Rpc(nameof(ReceiveReadyState), localId, isReady);
+    }
+
+    /// <summary>
+    /// 接收远程玩家的准备状态
+    /// </summary>
+    [Rpc]
+    public void ReceiveReadyState(int playerId, bool isReady)
+    {
+        // 忽略自己发给自己的广播
+        if (playerId == (int)Multiplayer.GetUniqueId()) return;
+        _remoteReadyStates[playerId] = isReady;
+        RefreshPlayerList();
     }
 
     private void OnPlayerConnected(int playerId)
     {
+        _remoteReadyStates[playerId] = false;
         RefreshUI();
     }
 
     private void OnPlayerDisconnected(int playerId)
     {
+        _remoteReadyStates.Remove(playerId);
         RefreshUI();
     }
 

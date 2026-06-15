@@ -50,71 +50,116 @@ public partial class PlayerActionSync : Node
     }
 
     /// <summary>
-    /// Broadcast a shoot event. Called by the local player when firing.
-    /// </summary>
-    [Rpc]
-    public void BroadcastShoot(Vector2 position, Vector2 direction, int weaponType)
-    {
-        if (IsLocalPlayer()) return;
-
-        // Show shoot visual on remote player
-        // TODO: spawn visual bullet for remote player
-    }
-
-    /// <summary>
-    /// Receive shoot broadcast on remote clients.
+    /// Receive shoot broadcast on remote clients — spawn visual bullet.
     /// </summary>
     [Rpc]
     public void ReceiveShoot(Vector2 position, Vector2 direction, int weaponType)
     {
         if (IsLocalPlayer()) return;
 
-        // TODO: spawn visual bullet effect
+        // 在远程玩家位置生成视觉子弹（仅视觉，无伤害）
+        SpawnVisualBullet(position, direction, weaponType);
     }
 
     /// <summary>
-    /// Broadcast a skill event. Called by the local player when using a skill.
-    /// </summary>
-    [Rpc]
-    public void BroadcastSkill(int skillIndex, Vector2 position, Vector2 direction)
-    {
-        if (IsLocalPlayer()) return;
-
-        // Show skill visual on remote player
-        // TODO: spawn skill effect
-    }
-
-    /// <summary>
-    /// Receive skill broadcast on remote clients.
+    /// Receive skill broadcast on remote clients — spawn skill effect.
     /// </summary>
     [Rpc]
     public void ReceiveSkill(int skillIndex, Vector2 position, Vector2 direction)
     {
         if (IsLocalPlayer()) return;
 
-        // TODO: spawn skill effect visual
+        // 生成技能视觉特效
+        SpawnSkillEffect(skillIndex, position, direction);
     }
 
     /// <summary>
-    /// Broadcast damage taken to show numbers on remote clients.
-    /// </summary>
-    [Rpc]
-    public void BroadcastDamageTaken(int damage)
-    {
-        if (IsLocalPlayer()) return;
-
-        // Show damage number on remote player
-        // TODO: spawn floating damage number
-    }
-
-    /// <summary>
-    /// Receive damage taken broadcast.
+    /// Receive damage taken broadcast — show floating damage number.
     /// </summary>
     [Rpc]
     public void ReceiveDamageTaken(int damage)
     {
         if (IsLocalPlayer()) return;
 
-        // TODO: show floating damage number visual
+        // 在远程玩家头上显示伤害数字
+        var parent = GetParent<Node2D>();
+        SpawnFloatingDamageNumber(parent.GlobalPosition, damage);
+    }
+
+    /// <summary>
+    /// 生成视觉子弹（仅渲染，无碰撞伤害）
+    /// </summary>
+    private void SpawnVisualBullet(Vector2 position, Vector2 direction, int weaponType)
+    {
+        var bullet = new Node2D();
+        bullet.GlobalPosition = position;
+        bullet.Rotation = direction.Angle();
+
+        // 子弹视觉
+        var visual = new ColorRect();
+        visual.Size = new Vector2(12, 4);
+        visual.Position = new Vector2(-6, -2);
+        visual.Color = new Color(1.0f, 0.9f, 0.3f);
+        bullet.AddChild(visual);
+
+        GetTree().CurrentScene.AddChild(bullet);
+
+        // 子弹飞行动画
+        var tween = GetTree().CreateTween();
+        tween.TweenProperty(bullet, "position", position + direction * 400, 0.3);
+        tween.TweenCallback(Callable.From(() =>
+        {
+            if (IsInstanceValid(bullet)) bullet.QueueFree();
+        }));
+    }
+
+    /// <summary>
+    /// 生成技能视觉特效
+    /// </summary>
+    private void SpawnSkillEffect(int skillIndex, Vector2 position, Vector2 direction)
+    {
+        // 简单的技能特效：圆形扩散
+        var effect = new Node2D();
+        effect.GlobalPosition = position;
+
+        var circle = new ColorRect();
+        circle.Size = new Vector2(20, 20);
+        circle.Position = new Vector2(-10, -10);
+        circle.Color = new Color(0.3f, 0.6f, 1.0f, 0.8f);
+        effect.AddChild(circle);
+
+        GetTree().CurrentScene.AddChild(effect);
+
+        // 扩散 + 消失动画
+        var tween = GetTree().CreateTween();
+        tween.TweenProperty(effect, "scale", new Vector2(3, 3), 0.3);
+        tween.Parallel().TweenProperty(circle, "modulate:a", 0.0f, 0.3);
+        tween.TweenCallback(Callable.From(() =>
+        {
+            if (IsInstanceValid(effect)) effect.QueueFree();
+        }));
+    }
+
+    /// <summary>
+    /// 生成浮动伤害数字
+    /// </summary>
+    private void SpawnFloatingDamageNumber(Vector2 position, int damage)
+    {
+        var label = new Label();
+        label.Text = damage.ToString();
+        label.GlobalPosition = position + new Vector2(-10, -30);
+        label.AddThemeColorOverride("font_color", new Color(1, 0.3f, 0.3f));
+        label.AddThemeFontSizeOverride("font_size", 16);
+        label.ZIndex = 20;
+        GetTree().CurrentScene.AddChild(label);
+
+        // 上浮 + 消失动画
+        var tween = GetTree().CreateTween();
+        tween.TweenProperty(label, "position", label.Position + new Vector2(0, -40), 0.8);
+        tween.Parallel().TweenProperty(label, "modulate:a", 0.0f, 0.8);
+        tween.TweenCallback(Callable.From(() =>
+        {
+            if (IsInstanceValid(label)) label.QueueFree();
+        }));
     }
 }

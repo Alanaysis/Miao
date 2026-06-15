@@ -134,6 +134,7 @@ public partial class Player : CharacterBody2D
         // 初始化子职业管理器
         Subclass = new SubclassManager();
         AddChild(Subclass);
+        Subclass.SetClassName(GetClassName());
 
         // 初始化碎片管理器
         Fragments = new FragmentManager();
@@ -163,6 +164,7 @@ public partial class Player : CharacterBody2D
         if (Multiplayer.HasMultiplayerPeer())
         {
             var actionSync = new PlayerActionSync();
+            actionSync.Name = "PlayerActionSync";
             AddChild(actionSync);
         }
     }
@@ -337,6 +339,14 @@ public partial class Player : CharacterBody2D
     }
 
     /// <summary>
+    /// 减少技能2冷却时间（供碎片效果使用）
+    /// </summary>
+    public void ReduceSkill2Cooldown(float fraction)
+    {
+        Skill2Timer = Mathf.Max(0, Skill2Timer - fraction * Skill2Cooldown);
+    }
+
+    /// <summary>
     /// 升级处理
     /// </summary>
     private void PerformLevelUp()
@@ -425,4 +435,95 @@ public partial class Player : CharacterBody2D
         }
         MoveSpeed = _baseMoveSpeed * (1f + Armors.GetTotalMoveSpeedBonus());
     }
+
+    // ==================== 星相效果辅助方法 ====================
+
+    private bool _isInvisible = false;
+    private float _empowerBonus = 0f;
+
+    /// <summary>
+    /// 应用隐身效果（消隐步星相）
+    /// </summary>
+    public void ApplyInvisibility(float duration)
+    {
+        _isInvisible = true;
+        UpdateModulate();
+
+        var tween = CreateTween();
+        tween.TweenInterval(duration);
+        tween.TweenCallback(Callable.From(() =>
+        {
+            _isInvisible = false;
+            UpdateModulate();
+        }));
+    }
+
+    /// <summary>
+    /// 应用增幅效果（流动状态星相）
+    /// </summary>
+    public void ApplyEmpower(float bonusPercent, float duration)
+    {
+        _empowerBonus = bonusPercent;
+        UpdateModulate();
+
+        var tween = CreateTween();
+        tween.TweenInterval(duration);
+        tween.TweenCallback(Callable.From(() =>
+        {
+            _empowerBonus = 0;
+            UpdateModulate();
+        }));
+    }
+
+    /// <summary>
+    /// 根据当前状态合成 Modulate 颜色
+    /// </summary>
+    private void UpdateModulate()
+    {
+        if (_isInvisible && _empowerBonus > 0)
+        {
+            // 隐身 + 增幅：半透明紫色
+            Modulate = new Color(0.8f, 0.6f, 1.0f, 0.3f);
+        }
+        else if (_isInvisible)
+        {
+            Modulate = new Color(1, 1, 1, 0.3f);
+        }
+        else if (_empowerBonus > 0)
+        {
+            Modulate = new Color(1, 0.8f, 1);
+        }
+        else
+        {
+            Modulate = Colors.White;
+        }
+    }
+
+    /// <summary>
+    /// 应用致盲光环（陷阱伏击星相）
+    /// </summary>
+    public void ApplyBlindAura(float radius, float duration)
+    {
+        foreach (var node in GetTree().GetNodesInGroup("enemy"))
+        {
+            if (node is Enemy.Enemy enemy)
+            {
+                float dist = GlobalPosition.DistanceTo(enemy.GlobalPosition);
+                if (dist <= radius)
+                {
+                    enemy.ApplyStun(duration); // 臻盲 = 眩晕
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// 获取当前增幅加成（供武器伤害计算使用）
+    /// </summary>
+    public float GetEmpowerBonus() => _empowerBonus;
+
+    /// <summary>
+    /// 是否处于隐身状态
+    /// </summary>
+    public bool IsInvisible() => _isInvisible;
 }

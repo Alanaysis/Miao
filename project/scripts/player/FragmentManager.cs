@@ -129,6 +129,85 @@ public partial class FragmentManager : Node
         return mult;
     }
 
+    /// <summary>
+    /// 处理触发器效果 — 在击杀、命中等事件时调用
+    /// </summary>
+    public void ProcessTrigger(string trigger, object context = null)
+    {
+        var player = GetParent<Player>();
+        if (player == null) return;
+
+        foreach (var fragment in CollectedFragments)
+        {
+            foreach (var effect in fragment.Effects)
+            {
+                if (effect.Type == "trigger" && effect.Trigger == trigger)
+                {
+                    ApplyTriggerEffect(player, effect, context);
+                }
+            }
+        }
+    }
+
+    private void ApplyTriggerEffect(Player player, FragmentEffect effect, object context)
+    {
+        switch (effect.Effect)
+        {
+            case "heal":
+                player.Heal(Mathf.RoundToInt(effect.Value));
+                break;
+
+            case "damage_boost":
+                player.ApplyEmpower(effect.Value, effect.Duration);
+                break;
+
+            case "invisible":
+                player.ApplyInvisibility(effect.Duration);
+                break;
+
+            case "reload_speed":
+                // 装填速度加成（简化：直接应用到下次射击的射速）
+                // TODO: 接入实际装填速度系统
+                break;
+
+            case "grenade_energy":
+                // 回复技能2能量（简化）
+                player.ReduceSkill2Cooldown(effect.Value);
+                break;
+
+            case "refund_super":
+                player.AddSuperCharge(effect.Value * player.SuperMaxCharge);
+                break;
+
+            case "ignite":
+                // 点燃周围敌人
+                if (context is Godot.Vector2 pos)
+                {
+                    float radius = effect.Value; // 用 value 作为半径
+                    foreach (var node in player.GetTree().GetNodesInGroup("enemy"))
+                    {
+                        if (node is Enemy.Enemy enemy)
+                        {
+                            float dist = pos.DistanceTo(enemy.GlobalPosition);
+                            if (dist < radius)
+                            {
+                                enemy.TakeDamage(10); // 简化：固定伤害
+                            }
+                        }
+                    }
+                }
+                break;
+
+            case "cure":
+                player.Heal(Mathf.RoundToInt(effect.Value));
+                break;
+
+            case "radiant":
+                player.ApplyEmpower(0.15f, effect.Duration);
+                break;
+        }
+    }
+
     public void Clear()
     {
         CollectedFragments.Clear();

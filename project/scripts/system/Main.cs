@@ -1,5 +1,6 @@
 using Godot;
 using System.Collections.Generic;
+using Miao.Armor;
 using Miao.System;
 using Miao.Weapon;
 using Miao.UI;
@@ -13,6 +14,7 @@ public partial class Main : Node2D
 	{
 		{ "hunter", "res://scenes/player/Hunter.tscn" },
 		{ "titan", "res://scenes/player/Titan.tscn" },
+		{ "warlock", "res://scenes/player/Warlock.tscn" },
 	};
 
 	public override void _Ready()
@@ -30,7 +32,13 @@ public partial class Main : Node2D
 		// Instantiate the correct player scene
 		var playerScene = GD.Load<PackedScene>(scenePath);
 		var player = playerScene.Instantiate<PlayerClass>();
-		player.Name = classId == "hunter" ? "Hunter" : "Titan";
+		player.Name = classId switch
+		{
+			"hunter" => "Hunter",
+			"titan" => "Titan",
+			"warlock" => "Warlock",
+			_ => "Player",
+		};
 		player.SetMultiplayerAuthority(1);
 		player.Position = new Vector2(640, 360);
 		AddChild(player);
@@ -60,5 +68,12 @@ public partial class Main : Node2D
 		// 开局直接装备武器（而非掉落拾取，避免重叠导致拾取失败）
 		var weaponData = LootTable.GenerateWeapon(0, false);
 		player.Equipment.EquipWeapon(weaponData);
+
+		// 装备初始护甲套装
+		var starterArmor = ArmorLootTable.GetStarterSet(classId);
+		foreach (var armor in starterArmor)
+		{
+			player.Armors?.EquipArmor(armor);
+		}
 	}
 }

@@ -1,5 +1,6 @@
 using Godot;
 using System.Collections.Generic;
+using Miao.Armor;
 using Miao.Network;
 using Miao.Pickup;
 using Miao.UI;
@@ -304,6 +305,7 @@ public partial class GameManager : Node
             Rarity.Rare => new Color(0.2f, 0.4f, 1.0f),
             Rarity.Epic => new Color(0.6f, 0.2f, 0.8f),
             Rarity.Legendary => new Color(1.0f, 0.8f, 0.0f),
+            Rarity.Exotic => new Color(1.0f, 0.3f, 0.3f),
             _ => Colors.White
         };
 
@@ -339,6 +341,55 @@ public partial class GameManager : Node
     private readonly Dictionary<Node2D, WeaponData> _dropData = new();
     private readonly Dictionary<Node2D, Label> _dropPrompts = new();
 
+    // 护甲掉落
+    private readonly List<Node2D> _armorDrops = new();
+    private readonly Dictionary<Node2D, ArmorData> _armorDropData = new();
+    private readonly Dictionary<Node2D, Label> _armorDropPrompts = new();
+    private Node2D _closestArmorDrop = null;
+
+    public void SpawnArmorDrop(Vector2 position, ArmorData data)
+    {
+        var drop = new Node2D();
+        drop.GlobalPosition = position + new Vector2(GD.RandRange(-20, 20), GD.RandRange(-20, 20));
+
+        // 护甲掉落颜色（蓝色调区别于武器）
+        var rarityColor = data.Rarity.ToLower() switch
+        {
+            "common" => new Color(0.5f, 0.6f, 0.8f),
+            "uncommon" => new Color(0.3f, 0.7f, 0.5f),
+            "rare" => new Color(0.3f, 0.5f, 1.0f),
+            "epic" => new Color(0.5f, 0.3f, 0.9f),
+            "legendary" => new Color(0.8f, 0.6f, 0.2f),
+            "exotic" => new Color(1.0f, 0.3f, 0.3f),
+            _ => new Color(0.6f, 0.7f, 0.8f)
+        };
+
+        // 掉落物视觉（盾牌形状）
+        var visual = new ColorRect
+        {
+            Size = new Vector2(12, 14),
+            Position = new Vector2(-6, -7),
+            Color = rarityColor,
+        };
+        drop.AddChild(visual);
+
+        // 护甲名称提示
+        var prompt = new Label();
+        prompt.Text = $"[E] {data.Name}";
+        prompt.Position = new Vector2(-50, -30);
+        prompt.AddThemeColorOverride("font_color", rarityColor);
+        prompt.AddThemeFontSizeOverride("font_size", 13);
+        prompt.Visible = false;
+        prompt.ZIndex = 20;
+        drop.AddChild(prompt);
+
+        _armorDropData[drop] = data;
+        _armorDropPrompts[drop] = prompt;
+
+        GetTree().CurrentScene.AddChild(drop);
+        _armorDrops.Add(drop);
+    }
+
     public void CleanupWeaponDrops()
     {
         foreach (var drop in _weaponDrops)
@@ -349,6 +400,15 @@ public partial class GameManager : Node
         _dropData.Clear();
         _dropPrompts.Clear();
         _closestWeaponDrop = null;
+
+        foreach (var drop in _armorDrops)
+        {
+            if (IsInstanceValid(drop)) drop.QueueFree();
+        }
+        _armorDrops.Clear();
+        _armorDropData.Clear();
+        _armorDropPrompts.Clear();
+        _closestArmorDrop = null;
     }
 
     public override void _Process(double delta)
@@ -386,12 +446,52 @@ public partial class GameManager : Node
             }
         }
         _closestWeaponDrop = closestDrop;
+
+        // 检测护甲掉落
+        Node2D closestArmor = null;
+        float closestArmorDist = 50f;
+        for (int i = _armorDrops.Count - 1; i >= 0; i--)
+        {
+            var drop = _armorDrops[i];
+            if (!IsInstanceValid(drop))
+            {
+                _armorDrops.RemoveAt(i);
+                _armorDropData.Remove(drop);
+                _armorDropPrompts.Remove(drop);
+                continue;
+            }
+            float dist = playerPos.DistanceTo(drop.GlobalPosition);
+            if (_armorDropPrompts.TryGetValue(drop, out var armorPrompt))
+            {
+                armorPrompt.Visible = dist < closestArmorDist;
+            }
+            if (dist < closestArmorDist)
+            {
+                closestArmorDist = dist;
+                closestArmor = drop;
+            }
+        }
+        _closestArmorDrop = closestArmor;
     }
 
     private Node2D _closestWeaponDrop;
 
     public void TryInteract()
     {
+        // 优先拾取护甲
+        if (_closestArmorDrop != null && IsInstanceValid(_closestArmorDrop))
+        {
+            if (_armorDropData.TryGetValue(_closestArmorDrop, out var armorData))
+            {
+                _player.Armors?.EquipArmor(armorData);
+                _armorDrops.Remove(_closestArmorDrop);
+                _closestArmorDrop.QueueFree();
+                _closestArmorDrop = null;
+                return;
+            }
+        }
+
+        // 武器拾取
         if (_closestWeaponDrop == null || !IsInstanceValid(_closestWeaponDrop)) return;
         if (!_dropData.TryGetValue(_closestWeaponDrop, out var data)) return;
 
@@ -451,8 +551,13 @@ public partial class GameManager : Node
 
         // 按钮（居中）
         float btnY = panelY + panelH + 20;
-        float btnW = 150, btnGap = 30;
-        float btnStartX = (1280 - btnW * 2 - btnGap) / 2;
+        float btnW = 150, btnGap = 20;
+
+        // 检查是否可以灌注
+        bool canInfuse = _player.Equipment.CanInfuse(newData);
+        int btnCount = canInfuse ? 3 : 2;
+        float totalBtnW = btnW * btnCount + btnGap * (btnCount - 1);
+        float btnStartX = (1280 - totalBtnW) / 2;
 
         var replaceBtn = UIStyle.MakeButton("替换武器", new Vector2(btnW, 42));
         replaceBtn.Position = new Vector2(btnStartX, btnY);
@@ -463,6 +568,33 @@ public partial class GameManager : Node
         keepBtn.Position = new Vector2(btnStartX + btnW + btnGap, btnY);
         keepBtn.ProcessMode = Node.ProcessModeEnum.Always;
         layer.AddChild(keepBtn);
+
+        if (canInfuse)
+        {
+            var infuseBtn = UIStyle.MakeButton("灌注 Perk", new Vector2(btnW, 42));
+            infuseBtn.Position = new Vector2(btnStartX + (btnW + btnGap) * 2, btnY);
+            infuseBtn.ProcessMode = Node.ProcessModeEnum.Always;
+            layer.AddChild(infuseBtn);
+
+            infuseBtn.Pressed += () =>
+            {
+                // 从新武器选择第一个 Perk 灌注到当前武器的第一个槽位
+                if (newData.Perks.Count > 0)
+                {
+                    var sourcePerk = newData.Perks[0];
+                    int targetSlot = 0;
+                    if (_player.Equipment.CurrentWeapon?.Data?.Perks.Count > 0)
+                    {
+                        targetSlot = 0; // 替换第一个 Perk 槽
+                    }
+                    _player.Equipment.TryInfusePerk(newData, sourcePerk, targetSlot);
+                }
+                _weaponDrops.Remove(drop);
+                if (IsInstanceValid(drop)) drop.QueueFree();
+                layer.QueueFree();
+                GetTree().Paused = false;
+            };
+        }
 
         replaceBtn.Pressed += () =>
         {

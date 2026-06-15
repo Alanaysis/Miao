@@ -10,6 +10,8 @@ public partial class Hunter : Player
 
     private ArcRollEffect _arcRollEffect;
 
+    protected override string GetClassName() => "hunter";
+
     public override void _Ready()
     {
         MoveSpeed = 240;
@@ -92,6 +94,12 @@ public partial class Hunter : Player
             blinkDir = GlobalTransform.X.Normalized();
 
         GlobalPosition += blinkDir * 120;
+
+        // 星相：消隐步 - 闪现后获得2秒隐身
+        if (Aspects?.HasBlinkInvis() == true)
+        {
+            ApplyInvisibility(2.0f);
+        }
     }
 
     private void UseVoidSkill2()
@@ -120,6 +128,12 @@ public partial class Hunter : Player
         if (nearest != null)
         {
             nearest.ApplyMark(1.2f, 10.0f);
+
+            // 星相：陷阱伏击 - 标记技能致盲周围敌人
+            if (Aspects?.HasMarkBlind() == true)
+            {
+                ApplyBlindAura(150f, 3.0f);
+            }
         }
     }
 
@@ -137,6 +151,12 @@ public partial class Hunter : Player
 
         GlobalPosition += rollDir * 120;
         _arcRollEffect.Apply(this);
+
+        // 星相：流动状态 - 翻滚后获得增幅（伤害+20%持续3秒）
+        if (Aspects?.HasRollEmpower() == true)
+        {
+            ApplyEmpower(0.2f, 3.0f);
+        }
     }
 
     private void UseArcSkill2()
@@ -212,6 +232,24 @@ public partial class Hunter : Player
 
     protected override void UseSuper()
     {
+        if (Subclass == null) return;
+
+        switch (Subclass.ActiveSubclass)
+        {
+            case SubclassType.Void:
+                VoidArrowRain();
+                break;
+            case SubclassType.Arc:
+                ArcStormtrance();
+                break;
+            case SubclassType.Solar:
+                SolarGoldenGun();
+                break;
+        }
+    }
+
+    private void VoidArrowRain()
+    {
         // 虚空箭雨：扇形射出大量箭矢，穿透所有敌人
         SuperCharge = 0;
         EmitSignal(SignalName.SuperChargeChanged, SuperCharge, SuperMaxCharge);
@@ -235,6 +273,66 @@ public partial class Hunter : Player
             bullet.CanPenetrate = true;
             bullet.Lifetime = 2.0f;
             GetTree().CurrentScene.AddChild(bullet);
+        }
+    }
+
+    private void ArcStormtrance()
+    {
+        // 电弧风暴：周围持续电弧伤害，持续5秒
+        SuperCharge = 0;
+        EmitSignal(SignalName.SuperChargeChanged, SuperCharge, SuperMaxCharge);
+        EmitSignal(SignalName.SuperUsed);
+
+        float duration = 5.0f;
+        float damagePerTick = 15.0f;
+        float tickInterval = 0.3f;
+
+        var tween = CreateTween();
+        tween.TweenCallback(Callable.From(() =>
+        {
+            foreach (var node in GetTree().GetNodesInGroup("enemy"))
+            {
+                if (node is Enemy.Enemy enemy)
+                {
+                    float dist = GlobalPosition.DistanceTo(enemy.GlobalPosition);
+                    if (dist < 150)
+                    {
+                        enemy.TakeDamage(Mathf.RoundToInt(damagePerTick));
+                    }
+                }
+            }
+        })).SetDelay(tickInterval);
+        tween.SetLoops(Mathf.RoundToInt(duration / tickInterval));
+    }
+
+    private void SolarGoldenGun()
+    {
+        // 黄金枪：3发高伤害精准射击
+        SuperCharge = 0;
+        EmitSignal(SignalName.SuperChargeChanged, SuperCharge, SuperMaxCharge);
+        EmitSignal(SignalName.SuperUsed);
+
+        int shotsRemaining = 3;
+        float shotInterval = 0.5f;
+
+        var tween = CreateTween();
+        for (int i = 0; i < shotsRemaining; i++)
+        {
+            tween.TweenCallback(Callable.From(() =>
+            {
+                var mousePos = GetGlobalMousePosition();
+                var dir = GlobalPosition.DirectionTo(mousePos);
+
+                var bullet = ArrowScene.Instantiate<Bullet>();
+                bullet.GlobalPosition = GlobalPosition;
+                bullet.Velocity = dir * 800;
+                bullet.Damage = 100;
+                bullet.CanPenetrate = false;
+                bullet.Lifetime = 1.0f;
+                GetTree().CurrentScene.AddChild(bullet);
+            }));
+            if (i < shotsRemaining - 1)
+                tween.TweenInterval(shotInterval);
         }
     }
 

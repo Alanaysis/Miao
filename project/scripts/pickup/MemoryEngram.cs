@@ -82,6 +82,7 @@ public partial class MemoryEngram : Area2D, IPickable
             Rarity.Rare => new Color(0.2f, 0.4f, 1.0f),
             Rarity.Epic => new Color(0.6f, 0.2f, 0.8f),
             Rarity.Legendary => new Color(1.0f, 0.8f, 0.0f),
+            Rarity.Exotic => new Color(1.0f, 0.3f, 0.3f),
             _ => Colors.White
         };
     }

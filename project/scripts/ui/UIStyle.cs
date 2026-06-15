@@ -66,6 +66,7 @@ public static class UIStyle
         Rarity.Rare => new Color("#3b82f6"),
         Rarity.Epic => new Color("#a855f7"),
         Rarity.Legendary => new Color("#f59e0b"),
+        Rarity.Exotic => new Color("#ef4444"),
         _ => TextPrimary
     };
 
@@ -76,6 +77,7 @@ public static class UIStyle
         Rarity.Rare => "稀有",
         Rarity.Epic => "史诗",
         Rarity.Legendary => "传说",
+        Rarity.Exotic => "异域",
         _ => ""
     };
 

@@ -23,7 +23,8 @@ public enum Rarity
     Uncommon,    // 绿
     Rare,        // 蓝
     Epic,        // 紫
-    Legendary    // 金
+    Legendary,   // 金
+    Exotic       // 异域（独有特性 + 累计击杀升级）
 }
 
 public enum PerkId
@@ -76,6 +77,7 @@ public partial class WeaponData : Resource
         Rarity.Rare => 2,
         Rarity.Epic => 2,
         Rarity.Legendary => 2,
+        Rarity.Exotic => 3,
         _ => 0
     };
 }

@@ -154,9 +154,16 @@ public partial class HUD : CanvasLayer
             string typeName = weapon.Type switch
             {
                 WeaponType.AutoRifle => "步枪",
-                WeaponType.Shotgun => "霰弹",
+                WeaponType.PulseRifle => "战斗步枪",
+                WeaponType.ScoutRifle => "斥候步枪",
                 WeaponType.HandCannon => "手炮",
-                _ => ""
+                WeaponType.SMG => "冲锋枪",
+                WeaponType.Shotgun => "霰弹枪",
+                WeaponType.SniperRifle => "狙击步枪",
+                WeaponType.FusionRifle => "融合步枪",
+                WeaponType.RocketLauncher => "火箭筒",
+                WeaponType.Sword => "刀剑",
+                _ => "武器"
             };
             _weaponStatLabel.Text = $"{typeName} | 伤害:{weapon.BaseDamage} | 射速:{weapon.FireRate:F1}/s";
 

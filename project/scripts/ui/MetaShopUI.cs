@@ -1,6 +1,9 @@
 using Godot;
 using global::System.Collections.Generic;
+using Miao.Data;
+using Miao.Player;
 using Miao.System;
+using Miao.Weapon;
 
 namespace Miao.UI;
 
@@ -93,8 +96,10 @@ public partial class MetaShopUI : CanvasLayer
         _glimmerLabel.Text = $"微光: {meta.Glimmer}";
 
         RefreshSubclassTab();
+        RefreshAspectTab();
         RefreshModTab();
         RefreshLightModuleTab();
+        RefreshWeaponTab();
     }
 
     private void RefreshSubclassTab()
@@ -235,6 +240,127 @@ public partial class MetaShopUI : CanvasLayer
             }
 
             _lightModuleList.AddChild(hbox);
+        }
+    }
+
+    private void RefreshAspectTab()
+    {
+        foreach (var child in _aspectList.GetChildren()) child.QueueFree();
+
+        var meta = MetaProgression.Instance;
+        var allAspects = DataLoader.Load<Dictionary<string, Dictionary<string, List<AspectConfig>>>>("aspects.json");
+
+        if (allAspects == null)
+        {
+            _aspectList.AddChild(UIStyle.MakeLabel("星相数据加载失败", 14));
+            return;
+        }
+
+        int aspectCost = 800;
+
+        foreach (var classEntry in allAspects)
+        {
+            string className = classEntry.Key;
+            string classLabel = className switch
+            {
+                "hunter" => "猎人",
+                "titan" => "泰坦",
+                "warlock" => "术士",
+                _ => className
+            };
+
+            _aspectList.AddChild(UIStyle.MakeLabel($"{classLabel}星相", 16));
+
+            foreach (var subclassEntry in classEntry.Value)
+            {
+                string subclassKey = subclassEntry.Key;
+                string subLabel = subclassKey switch
+                {
+                    "void" => "虚空",
+                    "arc" => "电弧",
+                    "solar" => "烈日",
+                    _ => subclassKey
+                };
+
+                foreach (var aspect in subclassEntry.Value)
+                {
+                    var hbox = new HBoxContainer();
+                    hbox.AddChild(UIStyle.MakeLabel($"[{subLabel}] {aspect.Name} - {aspect.Description}", 12));
+
+                    bool unlocked = meta.IsAspectUnlocked(aspect.Id);
+                    if (unlocked)
+                    {
+                        var label = UIStyle.MakeLabel("已解锁", 12);
+                        label.Modulate = new Color("#22c55e");
+                        hbox.AddChild(label);
+                    }
+                    else
+                    {
+                        var btn = new Button();
+                        btn.Text = $"({aspectCost} 微光)";
+                        btn.Disabled = meta.Glimmer < aspectCost;
+                        btn.Pressed += () =>
+                        {
+                            if (meta.TryUnlockAspect(aspect.Id, aspectCost))
+                            {
+                                RefreshAll();
+                            }
+                        };
+                        hbox.AddChild(btn);
+                    }
+
+                    _aspectList.AddChild(hbox);
+                }
+            }
+
+            _aspectList.AddChild(new HSeparator());
+        }
+    }
+
+    private void RefreshWeaponTab()
+    {
+        foreach (var child in _weaponList.GetChildren()) child.QueueFree();
+
+        var pool = WeaponUnlockPool.Instance;
+        if (pool == null)
+        {
+            _weaponList.AddChild(UIStyle.MakeLabel("武器解锁池未初始化", 14));
+            return;
+        }
+
+        _weaponList.AddChild(UIStyle.MakeLabel("武器解锁", 16));
+        _weaponList.AddChild(UIStyle.MakeLabel("击杀敌人、通关地图可解锁新武器", 12));
+        _weaponList.AddChild(new HSeparator());
+
+        // 按稀有度分组显示已解锁武器
+        foreach (Rarity rarity in global::System.Enum.GetValues<Rarity>())
+        {
+            var types = pool.GetUnlockedTypesForRarity(rarity);
+            if (types.Count == 0) continue;
+
+            string rarityName = UIStyle.RarityName(rarity);
+            var header = UIStyle.MakeLabel($"{rarityName}武器 ({types.Count})", 14);
+            header.AddThemeColorOverride("font_color", UIStyle.RarityColor(rarity));
+            _weaponList.AddChild(header);
+
+            foreach (var type in types)
+            {
+                string typeName = type switch
+                {
+                    WeaponType.AutoRifle => "自动步枪",
+                    WeaponType.PulseRifle => "战斗步枪",
+                    WeaponType.ScoutRifle => "斥候步枪",
+                    WeaponType.HandCannon => "手炮",
+                    WeaponType.SMG => "冲锋枪",
+                    WeaponType.Shotgun => "霰弹枪",
+                    WeaponType.SniperRifle => "狙击步枪",
+                    WeaponType.FusionRifle => "融合步枪",
+                    WeaponType.RocketLauncher => "火箭筒",
+                    WeaponType.Sword => "刀剑",
+                    _ => type.ToString()
+                };
+                _weaponList.AddChild(UIStyle.MakeLabel($"  {typeName}", 12));
+            }
         }
     }
 }

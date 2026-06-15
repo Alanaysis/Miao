@@ -52,6 +52,7 @@ public partial class Enemy : CharacterBody2D
     private Vector2 _knockbackVelocity;
     private float _markMultiplier = 1.0f;
     private float _markTimer = 0;
+    private float _stunTimer = 0;
     private float _shield;
 
     // 视觉
@@ -137,8 +138,8 @@ public partial class Enemy : CharacterBody2D
 
     public override void _PhysicsProcess(double delta)
     {
-        // Only host runs enemy AI in multiplayer
-        if (!Multiplayer.IsServer()) return;
+        // Only host runs enemy AI in multiplayer; always run in single-player
+        if (Multiplayer.HasMultiplayerPeer() && !Multiplayer.IsServer()) return;
 
         if (_player == null) return;
 
@@ -155,8 +156,16 @@ public partial class Enemy : CharacterBody2D
             if (_markTimer <= 0) _markMultiplier = 1.0f;
         }
 
-        // 击退衰减
+        // 击退衰减（眩晕时也要衰减）
         _knockbackVelocity = _knockbackVelocity.Lerp(Vector2.Zero, 10f * (float)delta);
+
+        // 眩晕计时
+        if (_stunTimer > 0)
+        {
+            _stunTimer -= (float)delta;
+            if (_stunTimer <= 0) Modulate = Colors.White;
+            return; // 眩晕时不移动不攻击
+        }
 
         // 向玩家移动 + 击退
         var direction = (_player.GlobalPosition - GlobalPosition).Normalized();
@@ -191,6 +200,16 @@ public partial class Enemy : CharacterBody2D
     {
         _markMultiplier = multiplier;
         _markTimer = duration;
+    }
+
+    /// <summary>
+    /// 眩晕敌人（陷阱伏击星相效果）
+    /// </summary>
+    public void ApplyStun(float duration)
+    {
+        // 眩晕 = 停止移动和攻击
+        _stunTimer = duration;
+        Modulate = new Color(1, 1, 0.5f); // 黄色表示眩晕
     }
 
     public void AddShield(float amount)
@@ -273,7 +292,13 @@ public partial class Enemy : CharacterBody2D
                 {
                     // KillReturn: simplified -- no ammo system yet, placeholder
                 }
+
+                // 触发传奇特性效果
+                weapon.OnKill(GlobalPosition, true); // 简化：所有击杀都视为精准击杀
             }
+
+            // 触发碎片击杀效果
+            p.Fragments?.ProcessTrigger("kill", GlobalPosition);
         }
 
         // 掉落经验球
@@ -295,6 +320,18 @@ public partial class Enemy : CharacterBody2D
         {
             var weaponData = LootTable.GenerateWeapon(RoomIndex, IsElite);
             GameManager.Instance.SpawnWeaponDrop(GlobalPosition, weaponData);
+        }
+
+        // 掉落护甲（8% 概率）
+        float armorRoll = GD.Randf();
+        if (armorRoll < 0.08f)
+        {
+            string classId = GameManager.Instance?.SelectedClassId ?? "hunter";
+            var armorData = ArmorLootTable.GenerateArmorDrop(RoomIndex, classId);
+            if (armorData != null)
+            {
+                GameManager.Instance.SpawnArmorDrop(GlobalPosition, armorData);
+            }
         }
 
         // 掉落微光（通过击杀和完成游戏获得）

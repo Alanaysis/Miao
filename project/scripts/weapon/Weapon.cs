@@ -26,6 +26,16 @@ public partial class Weapon : Node2D
     private bool _killClipActive = false;
     private float _killClipTimer = 0;
 
+    // Rampage state (击杀叠加伤害)
+    private int _rampageStacks = 0;
+    private float _rampageTimer = 0;
+    private const float RampageDuration = 4.0f;
+    private const float RampageDamagePerStack = 0.15f; // 每层+15%伤害
+
+    // Outlaw state (精准击杀加速装填)
+    private bool _outlawActive = false;
+    private float _outlawTimer = 0;
+
     // Perk 修饰后的实际属性
     public float EffectiveFireRate
     {
@@ -46,7 +56,21 @@ public partial class Weapon : Node2D
             float modBonus = 1f + GetModDamageBonus();
             float lightMult = GetLightLevelMultiplier();
             float killClipMult = _killClipActive ? 1.3f : 1.0f;
-            return Mathf.RoundToInt(Data.BaseDamage * PerkSystem.GetDamageMultiplier(Data) * codexBonus * metaBonus * modBonus * lightMult * killClipMult);
+            float rampageMult = 1f + _rampageStacks * RampageDamagePerStack;
+            float outlawMult = _outlawActive ? 1.5f : 1.0f;
+            // 星相增幅加成
+            float empowerMult = 1f;
+            var node = GetParent();
+            while (node != null)
+            {
+                if (node is Miao.Player.Player p)
+                {
+                    empowerMult = 1f + p.GetEmpowerBonus();
+                    break;
+                }
+                node = node.GetParent();
+            }
+            return Mathf.RoundToInt(Data.BaseDamage * PerkSystem.GetDamageMultiplier(Data) * codexBonus * metaBonus * modBonus * lightMult * killClipMult * rampageMult * outlawMult * empowerMult);
         }
     }
     public float EffectiveKnockback => Data.KnockbackForce * PerkSystem.GetKnockbackMultiplier(Data);
@@ -64,6 +88,86 @@ public partial class Weapon : Node2D
     {
         _killClipActive = true;
         _killClipTimer = 5.0f; // 5 seconds
+    }
+
+    /// <summary>
+    /// 击杀时触发传奇特性效果
+    /// </summary>
+    public void OnKill(Vector2 killPosition, bool isPrecisionKill)
+    {
+        if (Data?.LegendaryTrait == null) return;
+
+        switch (Data.LegendaryTrait)
+        {
+            case LegendaryTraitId.Firefly:
+                // 击杀爆炸：在击杀位置产生AOE伤害
+                SpawnFireflyExplosion(killPosition);
+                break;
+
+            case LegendaryTraitId.Outlaw:
+                // 精准击杀大幅加速装填（简化：下次射击射速翻倍）
+                if (isPrecisionKill)
+                {
+                    _outlawActive = true;
+                    _outlawTimer = 3.0f;
+                }
+                break;
+
+            case LegendaryTraitId.Rampage:
+                // 击杀叠加伤害，最多3层
+                _rampageStacks = Mathf.Min(_rampageStacks + 1, 3);
+                _rampageTimer = RampageDuration;
+                break;
+
+            case LegendaryTraitId.Dragonfly:
+                // 精准击杀元素爆炸
+                if (isPrecisionKill)
+                {
+                    SpawnFireflyExplosion(killPosition);
+                }
+                break;
+
+            case LegendaryTraitId.KillClip:
+                // 装填后伤害提升（已通过 ActivateKillClip 处理）
+                break;
+        }
+    }
+
+    private void SpawnFireflyExplosion(Vector2 position)
+    {
+        // 在击杀位置产生小范围AOE
+        var explosion = new Node2D();
+        explosion.GlobalPosition = position;
+
+        var circle = new ColorRect();
+        circle.Size = new Vector2(60, 60);
+        circle.Position = new Vector2(-30, -30);
+        circle.Color = new Color(1, 0.6f, 0, 0.6f);
+        explosion.AddChild(circle);
+
+        GetTree().CurrentScene.AddChild(explosion);
+
+        // 伤害范围内敌人
+        foreach (var node in GetTree().GetNodesInGroup("enemy"))
+        {
+            if (node is Enemy.Enemy enemy)
+            {
+                float dist = position.DistanceTo(enemy.GlobalPosition);
+                if (dist < 30)
+                {
+                    int explosionDamage = Mathf.RoundToInt(Data.BaseDamage * 0.5f);
+                    enemy.TakeDamage(explosionDamage);
+                }
+            }
+        }
+
+        // 动画消失
+        var tween = GetTree().CreateTween();
+        tween.TweenProperty(circle, "modulate:a", 0.0f, 0.3);
+        tween.TweenCallback(Callable.From(() =>
+        {
+            if (IsInstanceValid(explosion)) explosion.QueueFree();
+        }));
     }
 
     public override void _Process(double delta)
@@ -104,6 +208,23 @@ public partial class Weapon : Node2D
         {
             _killClipTimer -= dt;
             if (_killClipTimer <= 0) _killClipActive = false;
+        }
+
+        // Rampage timer
+        if (_rampageStacks > 0)
+        {
+            _rampageTimer -= dt;
+            if (_rampageTimer <= 0)
+            {
+                _rampageStacks = 0;
+            }
+        }
+
+        // Outlaw timer
+        if (_outlawActive)
+        {
+            _outlawTimer -= dt;
+            if (_outlawTimer <= 0) _outlawActive = false;
         }
     }
 
@@ -381,15 +502,15 @@ public partial class Weapon : Node2D
     {
         if (armorManager == null) return null;
 
-        var mods = new List<ModData>();
+        var modIds = new List<string>();
         foreach (var slot in armorManager.Slots.Values)
         {
             if (slot.EquippedArmor?.EquippedMods != null)
             {
-                // TODO: Load actual ModData from mod IDs when mod loading is implemented
-                // For now, return empty list
+                modIds.AddRange(slot.EquippedArmor.EquippedMods);
             }
         }
-        return mods;
+
+        return ModLoader.GetMods(modIds);
     }
 }
