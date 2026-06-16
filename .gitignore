@@ -2,6 +2,7 @@
 
 # Godot 专属目录
 .godot/
+/android/
 *.translation
 
 # Godot 导入缓录
