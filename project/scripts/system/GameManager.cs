@@ -67,7 +67,7 @@ public partial class GameManager : Node
             Rpc(nameof(StartGameRpc));
         }
 
-        GetTree().ChangeSceneToFile("res://scenes/main.tscn");
+        TransitionManager.Instance?.TransitionToScene("res://scenes/main.tscn");
     }
 
     [Rpc]
@@ -80,7 +80,7 @@ public partial class GameManager : Node
         _killCount = 0;
         _glimmer = 0;
         _engramDecoder?.Clear();
-        GetTree().ChangeSceneToFile("res://scenes/main.tscn");
+        TransitionManager.Instance?.TransitionToScene("res://scenes/main.tscn");
     }
 
     public void RegisterPlayer(Player.Player player)
@@ -289,7 +289,7 @@ public partial class GameManager : Node
     {
         GetTree().Paused = false;
         CurrentState = GameState.MainMenu;
-        GetTree().ChangeSceneToFile("res://scenes/lobby/Lobby.tscn");
+        TransitionManager.Instance?.TransitionToScene("res://scenes/lobby/Lobby.tscn");
     }
 
     public void SpawnWeaponDrop(Vector2 position, WeaponData data)

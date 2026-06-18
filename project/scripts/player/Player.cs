@@ -300,6 +300,13 @@ public partial class Player : CharacterBody2D
             actionSync?.Rpc(nameof(PlayerActionSync.ReceiveDamageTaken), damage);
         }
 
+        // 受击视觉反馈
+        if (IsLocalPlayer)
+        {
+            FlashDamage();
+            ShakeCamera(3f, 0.1f);
+        }
+
         if (CurrentHealth <= 0) Die();
     }
 
@@ -434,6 +441,53 @@ public partial class Player : CharacterBody2D
             CurrentHealth = Mathf.RoundToInt(CurrentHealth * (float)MaxHealth / oldMaxHealth);
         }
         MoveSpeed = _baseMoveSpeed * (1f + Armors.GetTotalMoveSpeedBonus());
+    }
+
+    // ==================== 视觉反馈 ====================
+
+    /// <summary>
+    /// 受击闪光效果
+    /// </summary>
+    public void FlashDamage()
+    {
+        if (_sprite == null) return;
+
+        // 如果有 ShaderMaterial，用 Shader 闪光
+        if (_sprite.Material is ShaderMaterial mat && mat.Shader?.ResourcePath.Contains("damage_flash") == true)
+        {
+            mat.SetShaderParameter("flash_intensity", 1.0f);
+            var tween = CreateTween();
+            tween.TweenProperty(mat, "shader_parameter/flash_intensity", 0.0, 0.25f);
+            return;
+        }
+
+        // 否则用 Modulate 闪光
+        var origMod = _sprite.Modulate;
+        _sprite.Modulate = new Color(10f, 2f, 2f);
+        var flashTween = CreateTween();
+        flashTween.TweenProperty(_sprite, "modulate", origMod, 0.15f);
+    }
+
+    /// <summary>
+    /// 震动摄像机
+    /// </summary>
+    public void ShakeCamera(float intensity, float duration)
+    {
+        var camera = GetNodeOrNull<Camera2D>("Camera2D");
+        if (camera == null) return;
+
+        if (camera is System.CameraShake shake)
+        {
+            shake.Shake(intensity, duration);
+        }
+        else
+        {
+            // 降级：直接用 Tween 模拟简易震动
+            var orig = camera.Offset;
+            var tween = CreateTween().SetParallel().SetLoops(3);
+            tween.TweenProperty(camera, "offset", orig + new Vector2(GD.Randf() * intensity, GD.Randf() * intensity), 0.03f);
+            tween.Chain().TweenProperty(camera, "offset", orig, 0.03f);
+        }
     }
 
     // ==================== 星相效果辅助方法 ====================

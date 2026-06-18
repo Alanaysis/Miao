@@ -253,6 +253,23 @@ public partial class Enemy : CharacterBody2D
         CurrentHealth = Mathf.Max(CurrentHealth, 0);
         UpdateHpBar();
 
+        // 受击视觉反馈（仅本地玩家触发）
+        var localPlayer = GetTree().GetFirstNodeInGroup("player") as Miao.Player.Player;
+        if (localPlayer != null && localPlayer.IsLocalPlayer)
+        {
+            // 重击停顿（伤害 >= 30 时触发）
+            if (damage >= 30)
+            {
+                System.HitStop.Apply(GetTree(), 0.04f, 0.05f);
+                localPlayer.ShakeCamera(6f, 0.15f);
+            }
+            else
+            {
+                // 轻击也有一点点震动
+                localPlayer.ShakeCamera(2f, 0.06f);
+            }
+        }
+
         if (CurrentHealth <= 0)
         {
             CallDeferred(nameof(Die));
