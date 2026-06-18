@@ -272,12 +272,66 @@ public static class UIStyle
         return root;
     }
 
-    /// <summary>全屏半透明遮罩</summary>
+    /// <summary>全屏半透明遮罩（自适应分辨率）</summary>
     public static ColorRect Overlay(float alpha = 0.85f)
     {
         var bg = new ColorRect();
-        bg.Size = new Vector2(1280, 720);
+        bg.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         bg.Color = new Color(0, 0, 0, alpha);
+        bg.MouseFilter = Control.MouseFilterEnum.Ignore;
         return bg;
+    }
+
+    /// <summary>创建带 Tween 动画的进度条（支持颜色渐变）</summary>
+    public static ProgressBar AnimatedBar(Vector2 pos, Vector2 size, Color fillColor, Color? bgColor = null)
+    {
+        var bar = Bar(pos, size, fillColor, bgColor);
+        bar.Name = "AnimatedBar";
+        return bar;
+    }
+
+    /// <summary>平滑更新进度条值（带 Tween 动画）</summary>
+    public static void SmoothUpdateBar(ProgressBar bar, float targetValue, float duration = 0.3f)
+    {
+        if (bar == null) return;
+
+        // 先杀掉旧动画
+        if (bar.HasMeta("tween"))
+        {
+            var existingTween = (Tween)bar.GetMeta("tween");
+            existingTween?.Kill();
+        }
+
+        var tween = bar.CreateTween();
+        tween.TweenProperty(bar, "value", targetValue, duration);
+        tween.SetTrans(Tween.TransitionType.Cubic);
+        tween.SetEase(Tween.EaseType.Out);
+        bar.SetMeta("tween", tween);
+    }
+
+    /// <summary>脉冲动画（用于超能条满时闪烁）</summary>
+    public static Tween Pulse(Control target, Color pulseColor, float duration = 0.6f)
+    {
+        var tween = target.CreateTween().SetLoops();
+        tween.TweenProperty(target, "modulate", pulseColor, duration / 2);
+        tween.TweenProperty(target, "modulate", Colors.White, duration / 2);
+        return tween;
+    }
+
+    /// <summary>全屏闪烁效果（受击反馈）</summary>
+    public static void ScreenFlash(CanvasLayer parent, Color color, float duration = 0.15f)
+    {
+        var flash = new ColorRect();
+        flash.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        flash.Color = new Color(color.R, color.G, color.B, 0.3f);
+        flash.MouseFilter = Control.MouseFilterEnum.Ignore;
+        flash.ZIndex = 99;
+        parent.AddChild(flash);
+
+        var tween = parent.CreateTween();
+        tween.TweenProperty(flash, "color:a", 0.0f, duration);
+        tween.SetTrans(Tween.TransitionType.Quad);
+        tween.SetEase(Tween.EaseType.Out);
+        tween.TweenCallback(Callable.From(() => flash.QueueFree()));
     }
 }

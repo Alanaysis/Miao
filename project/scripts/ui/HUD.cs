@@ -21,6 +21,8 @@ public partial class HUD : CanvasLayer
     private Label _superLabel;
     private Label _lightLevelLabel;
     private Player.Player _player;
+    private Tween _superPulseTween;
+    private Control _superPanel;
 
     public override void _Ready()
     {
@@ -92,15 +94,15 @@ public partial class HUD : CanvasLayer
         AddChild(_skill2Slot);
 
         // 超能条（放在技能方块右边，同一行）
-        var superPanel = UIStyle.Panel(new Vector2(130, 48), UIStyle.AccentGold);
-        superPanel.Position = new Vector2(136, 648);
-        AddChild(superPanel);
+        _superPanel = UIStyle.Panel(new Vector2(130, 48), UIStyle.AccentGold);
+        _superPanel.Position = new Vector2(136, 648);
+        AddChild(_superPanel);
 
         _superBar = UIStyle.Bar(new Vector2(8, 6), new Vector2(110, 10), UIStyle.AccentGold);
-        superPanel.AddChild(_superBar);
+        _superPanel.AddChild(_superBar);
 
         _superLabel = UIStyle.LabelAt(new Vector2(8, 22), "0/100", 12, UIStyle.AccentGold);
-        superPanel.AddChild(_superLabel);
+        _superPanel.AddChild(_superLabel);
     }
 
     // ==================== 右下：武器面板 ====================
@@ -135,12 +137,26 @@ public partial class HUD : CanvasLayer
             _superLabel.Text = "就绪!";
             _superLabel.AddThemeColorOverride("font_color", UIStyle.AccentGold);
             UIStyle.UpdateBarColor(_superBar, UIStyle.AccentGold);
+
+            // 超能满时脉冲效果
+            if (_superPulseTween == null || !_superPulseTween.IsValid())
+            {
+                _superPulseTween = UIStyle.Pulse(_superPanel, new Color(1.2f, 1.2f, 0.8f), 0.5f);
+            }
         }
         else
         {
             _superLabel.Text = $"{_player.SuperCharge:F0}/{_player.SuperMaxCharge:F0}";
             _superLabel.AddThemeColorOverride("font_color", UIStyle.TextSecondary);
             UIStyle.UpdateBarColor(_superBar, new Color("#92700a"));
+
+            // 取消脉冲
+            if (_superPulseTween != null && _superPulseTween.IsValid())
+            {
+                _superPulseTween.Kill();
+                _superPanel.Modulate = Colors.White;
+                _superPulseTween = null;
+            }
         }
 
         // 武器
@@ -204,13 +220,24 @@ public partial class HUD : CanvasLayer
         if (timer > 0)
         {
             float ratio = timer / 8.0f;
-            mask.Size = new Vector2(46, 46 * Mathf.Clamp(ratio, 0, 1));
+            float targetHeight = 46 * Mathf.Clamp(ratio, 0, 1);
+            // 平滑冷却遮罩高度
+            mask.Size = new Vector2(46, Mathf.Lerp(mask.Size.Y, targetHeight, 0.15f));
             status.Text = $"{timer:F1}s";
             status.AddThemeColorOverride("font_color", UIStyle.TextMuted);
         }
         else
         {
-            mask.Size = new Vector2(46, 0);
+            // 就绪时弹跳效果
+            if (mask.Size.Y > 0)
+            {
+                mask.Size = new Vector2(46, 0);
+                slot.Scale = new Vector2(1.1f, 1.1f);
+                var tween = slot.CreateTween();
+                tween.TweenProperty(slot, "scale", Vector2.One, 0.15f);
+                tween.SetTrans(Tween.TransitionType.Back);
+                tween.SetEase(Tween.EaseType.Out);
+            }
             status.Text = "就绪";
             status.AddThemeColorOverride("font_color", UIStyle.AccentGreen);
         }
@@ -219,19 +246,24 @@ public partial class HUD : CanvasLayer
     private void OnHealthChanged(int current, int max)
     {
         _healthBar.MaxValue = max;
-        _healthBar.Value = current;
+        // 平滑过渡血条
+        UIStyle.SmoothUpdateBar(_healthBar, current, 0.3f);
         _hpLabel.Text = $"{current}/{max}";
 
         float ratio = max > 0 ? (float)current / max : 0;
-        if (ratio > 0.6f) UIStyle.UpdateBarColor(_healthBar, UIStyle.HealthGreen);
-        else if (ratio > 0.3f) UIStyle.UpdateBarColor(_healthBar, UIStyle.HealthYellow);
-        else UIStyle.UpdateBarColor(_healthBar, UIStyle.HealthRed);
+        Color targetColor = ratio > 0.6f ? UIStyle.HealthGreen
+                          : ratio > 0.3f ? UIStyle.HealthYellow
+                          : UIStyle.HealthRed;
+
+        // 颜色渐变
+        var tween = _healthBar.CreateTween();
+        tween.TweenProperty(_healthBar, "modulate", targetColor, 0.2f);
     }
 
     private void OnShieldChanged(float current, float max)
     {
         _shieldBar.MaxValue = max;
-        _shieldBar.Value = current;
+        UIStyle.SmoothUpdateBar(_shieldBar, current, 0.25f);
     }
 
     private void OnSuperChargeChanged(float current, float max)
